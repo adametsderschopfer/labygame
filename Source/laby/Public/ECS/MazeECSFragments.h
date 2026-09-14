@@ -109,6 +109,7 @@ struct FMazeGeneratedData
 	FMazeSurface Surface;
 	FTransform FloorTransform;
 	FVector Start = FVector::ZeroVector;
+	TArray<FVector> PlayerStarts;
 	TArray<FVector> ExitPositions;
 	TArray<FRotator> ExitRotations;
 };
@@ -158,4 +159,38 @@ struct FMazeSessionFragment : public FMassFragment
 	bool bSessionStarted = false;
 	UPROPERTY()
 	bool bMinimapVisible = true;
+};
+
+USTRUCT()
+struct FMazeRoomMember
+{
+	GENERATED_BODY()
+	UPROPERTY()
+	int32 Id = INDEX_NONE;
+	UPROPERTY()
+	FString Name;
+	UPROPERTY()
+	int32 Slot = 0;
+};
+
+USTRUCT()
+struct FMazeRoomFragment : public FMassFragment
+{
+	GENERATED_BODY()
+	UPROPERTY()
+	TArray<FMazeRoomMember> Members;
+	UPROPERTY()
+	int32 HostId = INDEX_NONE;
+	UPROPERTY()
+	bool bStarted = false;
+	UPROPERTY()
+	bool bActive = false;
+};
+
+template <> struct TMassFragmentTraits<FMazeRoomFragment> final
+{
+	enum
+	{
+		AuthorAcceptsItsNotTriviallyCopyable = true
+	};
 };

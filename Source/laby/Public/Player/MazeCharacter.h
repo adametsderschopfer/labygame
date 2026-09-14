@@ -22,10 +22,23 @@ public:
 	                         AController* EventInstigator,
 	                         AActor* DamageCauser) override;
 	FMazeVitals GetVitals() const;
+	void ClearLocalInput();
 	int32 GetReachedExit() const;
 	virtual void SetupPlayerInputComponent(UInputComponent* Input) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerSnapshot)
+	FMazeVitals ReplicatedVitals;
+
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerSnapshot)
+	int32 ReplicatedExit = 0;
+
+	UFUNCTION()
+	void OnRep_PlayerSnapshot();
+	UFUNCTION(Server, Reliable)
+	void ServerSetSprint(bool bHeld);
+
 	UPROPERTY(Transient)
 	FMassEntityHandle PlayerEntity;
 

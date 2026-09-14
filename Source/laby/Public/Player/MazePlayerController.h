@@ -30,6 +30,10 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	void ToggleMenu();
 	void StartNewGame();
+	virtual void PlayerTick(float DeltaTime) override;
+	void ShowNetworkMenu();
+	UFUNCTION(Server, Reliable)
+	void ServerStartRoom();
 	bool IsMenuOpen() const
 	{
 		return ReadSession().bMenuOpen;
@@ -64,6 +68,9 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<class UMazeECSSubsystem> ECSSubsystem;
+	TSharedPtr<class SWidget> NetworkMenu;
+	bool bDisplayedRoom = false;
+	bool bDisplayedStarted = false;
 
 	FMazeSessionFragment ReadSession() const;
 };

@@ -11,40 +11,36 @@
 #include "Components/SkyAtmosphereComponent.h"
 #include "GameFramework/PlayerStart.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
+#include "GameFramework/GameSession.h"
+#include "ECS/MazeECSSubsystem.h"
+#include "World/MazeOnlineGameInstance.h"
+#include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 AMazeGameMode::AMazeGameMode()
 {
 	DefaultPawnClass = AMazeCharacter::StaticClass();
 	HUDClass = AMazeHUD::StaticClass();
 	PlayerControllerClass = AMazePlayerController::StaticClass();
+	GameStateClass = AMazeGameState::StaticClass();
+	bPauseable = false;
 }
 
 void AMazeGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
 
+	if (GameSession)
+		GameSession->MaxPlayers = 4;
+
+	if (UGameplayStatics::HasOption(Options, TEXT("Room")))
+		GetWorld()->GetSubsystem<UMazeECSSubsystem>()->OpenRoom();
+
 	auto* Maze = GetWorld()->SpawnActor<AMazeWorld>();
 
 	Maze->InitializeMaze();
 	GetWorld()->SpawnActor<APlayerStart>(Maze->StartLocation(), FRotator::ZeroRotator);
-
-	auto* Sun = GetWorld()->SpawnActor<ADirectionalLight>(FVector(0, 0, 2000), FRotator(-55, -35, 0));
-
-	Sun->GetLightComponent()->SetMobility(EComponentMobility::Movable);
-	Sun->GetLightComponent()->SetIntensity(5.f);
-	CastChecked<UDirectionalLightComponent>(Sun->GetLightComponent())->SetAtmosphereSunLight(true);
-
-	auto* Sky = GetWorld()->SpawnActor<ASkyLight>();
-
-	Sky->GetLightComponent()->SetMobility(EComponentMobility::Movable);
-	Sky->GetLightComponent()->SetIntensity(1.2f);
-	Sky->GetLightComponent()->SetRealTimeCaptureEnabled(true);
-
-	auto* AtmosphereActor = GetWorld()->SpawnActor<AActor>();
-	auto* Atmosphere = NewObject<USkyAtmosphereComponent>(AtmosphereActor);
-
-	AtmosphereActor->SetRootComponent(Atmosphere);
-	Atmosphere->RegisterComponent();
 }
 
 void AMazeHUD::BeginPlay()
@@ -74,4 +70,93 @@ void AMazeHUD::EndPlay(const EEndPlayReason::Type Reason)
 
 	HUDWidget = nullptr;
 	Super::EndPlay(Reason);
+}
+
+void AMazeGameMode::PreLogin(const FString& Options,
+                             const FString& Address,
+                             const FUniqueNetIdRepl& UniqueId,
+                             FString& ErrorMessage)
+{
+	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+
+	if (ErrorMessage.IsEmpty())
+		ErrorMessage = GetWorld()->GetSubsystem<UMazeECSSubsystem>()->RoomAdmissionError();
+}
+
+void AMazeGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+
+	auto* ECS = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
+
+	if (!ECS->ReadRoom().bActive || !NewPlayer->PlayerState)
+		return;
+
+	const bool bHost = NewPlayer->IsLocalController();
+
+	if (!ECS->AddRoomMember(NewPlayer->PlayerState->GetPlayerId(), NewPlayer->PlayerState->GetPlayerName(), bHost))
+	{
+		GameSession->KickPlayer(NewPlayer, FText::FromString(TEXT("Room is full or already started")));
+
+		return;
+	}
+
+	PublishRoom();
+}
+
+void AMazeGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
+{
+	// No pawn exists in the lobby. StartRoom creates everyone together.
+}
+
+void AMazeGameMode::Logout(AController* Exiting)
+{
+	if (Exiting->PlayerState)
+		GetWorld()->GetSubsystem<UMazeECSSubsystem>()->RemoveRoomMember(Exiting->PlayerState->GetPlayerId());
+
+	Super::Logout(Exiting);
+	PublishRoom();
+}
+
+void AMazeGameMode::PublishRoom()
+{
+	if (auto* State = GetGameState<AMazeGameState>())
+	{
+		State->Room = GetWorld()->GetSubsystem<UMazeECSSubsystem>()->ReadRoom();
+		State->ForceNetUpdate();
+	}
+}
+
+void AMazeGameMode::StartRoom(APlayerController* Requester)
+{
+	auto* ECS = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
+
+	if (!Requester || !Requester->PlayerState || !ECS->StartRoom(Requester->PlayerState->GetPlayerId()))
+		return;
+
+	if (auto* Online = GetGameInstance<UMazeOnlineGameInstance>())
+		Online->CloseAdmission();
+
+	for (auto It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		auto* PC = It->Get();
+
+		if (PC && PC->PlayerState)
+			RestartPlayerAtTransform(PC,
+			                         FTransform(FRotator::ZeroRotator, ECS->RoomSpawn(PC->PlayerState->GetPlayerId())));
+	}
+
+	PublishRoom();
+}
+
+void AMazeGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMazeGameState, Room);
+}
+
+void AMazeGameState::OnRep_Room()
+{
+	if (auto* ECS = GetWorld()->GetSubsystem<UMazeECSSubsystem>())
+		ECS->ReceiveRoom(Room);
 }

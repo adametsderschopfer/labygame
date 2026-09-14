@@ -17,6 +17,10 @@
 	],
 	"Plugins": [
 		{
+			"Name": "OnlineSubsystemEOS",
+			"Enabled": true
+		},
+		{
 			"Name": "ProceduralMeshComponent",
 			"Enabled": true
 		},

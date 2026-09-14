@@ -39,6 +39,7 @@ public:
 	void SetInputAxis(FMassEntityHandle Entity, EMazeInputAxis Axis, float Value);
 	void SetInputAction(FMassEntityHandle Entity, EMazeInputAction Action, bool bPressed);
 	void ClearPlayerInput();
+	void ClearInput(FMassEntityHandle Entity);
 	FMazePlayerCommandFragment ResolvePlayer(FMassEntityHandle Entity, const FMazePlayerPoseFragment& Pose);
 	int32 ReadReachedExit(FMassEntityHandle Entity) const;
 	FMassEntityHandle CreateMaze(int32 Seed, FVector Origin);
@@ -49,6 +50,16 @@ public:
 	void SetSessionStarted(bool bStarted);
 	void SetMenu(bool bOpen, bool bSettings = false);
 	void ToggleMinimap();
+	FMazeRoomFragment ReadRoom() const;
+	FString RoomAdmissionError() const;
+	void ReceiveRoom(const FMazeRoomFragment& Room);
+	void OpenRoom();
+	bool AddRoomMember(int32 Id, const FString& Name, bool bHost);
+	void RemoveRoomMember(int32 Id);
+	bool StartRoom(int32 Requester);
+	FVector RoomSpawn(int32 Id) const;
+	bool IsSprintHeld(FMassEntityHandle Entity) const;
+	void ReceivePlayer(FMassEntityHandle Entity, const FMazeVitals& Vitals, int32 Exit);
 
 protected:
 	virtual bool DoesSupportWorldType(EWorldType::Type WorldType) const override;

@@ -65,12 +65,8 @@ struct FMazeLayout
 					Walls[C + 1] &= ~8;
 				}
 
-		// Exactly three openings on separate sides, away from corners.
+		// One opening on the north boundary, away from corners.
 		Exits.Add(Random.RandRange(2, Size - 3));
-		Exits.Add(Random.RandRange(2, Size - 3) * Size + Size - 1);
-		Exits.Add((Size - 1) * Size + Random.RandRange(2, Size - 3));
-
-		for (int32 D = 0; D < 3; ++D)
-			Walls[Exits[D]] &= ~(1 << D);
+		Walls[Exits[0]] &= ~1;
 	}
 };

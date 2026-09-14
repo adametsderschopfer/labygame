@@ -61,7 +61,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 		}
 
 		TestEqual(TEXT("All cells reachable from A"), Seen.Num(), Maze.Size * Maze.Size);
-		TestEqual(TEXT("Exactly three boundary openings"), Openings, 3);
+		TestEqual(TEXT("Exactly one boundary opening"), Openings, 1);
 
 		for (int32 Exit : Maze.Exits)
 			TestTrue(TEXT("Exit reachable"), Seen.Contains(Exit));

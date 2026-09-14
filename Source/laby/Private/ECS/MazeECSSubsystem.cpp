@@ -44,7 +44,7 @@ void UMazeECSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	InputQuery->AddRequirement<FMazePlayerInputFragment>(EMassFragmentAccess::ReadWrite);
 	InputQuery->AddRequirement<FMazeLocomotionFragment>(EMassFragmentAccess::ReadWrite);
 
-	const UScriptStruct* SessionFragments[] = {FMazeSessionFragment::StaticStruct()};
+	const UScriptStruct* SessionFragments[] = {FMazeSessionFragment::StaticStruct(), FMazeRoomFragment::StaticStruct()};
 
 	SessionEntity = Manager.CreateEntity(Manager.CreateArchetype(MakeArrayView(SessionFragments)));
 }
@@ -79,7 +79,8 @@ void UMazeECSSubsystem::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (!MassSubsystem || !VitalsQuery || !GetWorld()->HasBegunPlay() || GetWorld()->IsPaused())
+	if (!MassSubsystem || !VitalsQuery || !GetWorld()->HasBegunPlay() || GetWorld()->IsPaused() ||
+	    GetWorld()->GetNetMode() == NM_Client)
 		return;
 
 	auto Context = MassSubsystem->GetMutableEntityManager().CreateExecutionContext(DeltaSeconds);
@@ -246,9 +247,11 @@ FMazePlayerCommandFragment UMazeECSSubsystem::ResolvePlayer(FMassEntityHandle En
 	}
 
 	*StoredPose = Pose;
-	StoredPose->bInputEnabled &= !ReadSession().bMenuOpen;
+	StoredPose->bInputEnabled &= !ReadRoom().bActive || ReadRoom().bStarted;
 	*Command = FMazePlayerControlSystem::Resolve(*Input, *StoredPose, *Vitals, *Locomotion);
-	UpdateProgress(Entity);
+
+	if (GetWorld()->GetNetMode() != NM_Client)
+		UpdateProgress(Entity);
 
 	return *Command;
 }
@@ -379,8 +382,6 @@ void UMazeECSSubsystem::SetMenu(bool bOpen, bool bSettings)
 		Session->bMenuOpen = bOpen;
 		Session->bSettingsOpen = bOpen && bSettings;
 	}
-
-	ClearPlayerInput();
 }
 
 void UMazeECSSubsystem::ToggleMinimap()
@@ -391,4 +392,99 @@ void UMazeECSSubsystem::ToggleMinimap()
 		Session->bMinimapVisible = !Session->bMinimapVisible;
 
 #endif
+}
+
+FMazeRoomFragment UMazeECSSubsystem::ReadRoom() const
+{
+	const auto* Room = FindFragment<FMazeRoomFragment>(SessionEntity);
+
+	return Room ? *Room : FMazeRoomFragment();
+}
+
+void UMazeECSSubsystem::ReceiveRoom(const FMazeRoomFragment& Room)
+{
+	if (auto* Stored = FindFragment<FMazeRoomFragment>(SessionEntity))
+		*Stored = Room;
+
+	SetSessionStarted(Room.bStarted);
+}
+
+void UMazeECSSubsystem::OpenRoom()
+{
+	if (auto* Room = FindFragment<FMazeRoomFragment>(SessionEntity))
+		Room->bActive = true;
+}
+
+bool UMazeECSSubsystem::AddRoomMember(int32 Id, const FString& Name, bool bHost)
+{
+	auto* Room = FindFragment<FMazeRoomFragment>(SessionEntity);
+
+	return Room && FMazeRoomSystem::Add(*Room, Id, Name, bHost);
+}
+
+void UMazeECSSubsystem::RemoveRoomMember(int32 Id)
+{
+	if (auto* Room = FindFragment<FMazeRoomFragment>(SessionEntity))
+		Room->Members.RemoveAll(
+		    [Id](const auto& M)
+		    {
+			    return M.Id == Id;
+		    });
+}
+
+bool UMazeECSSubsystem::StartRoom(int32 Requester)
+{
+	auto* Room = FindFragment<FMazeRoomFragment>(SessionEntity);
+
+	if (!Room || !FMazeRoomSystem::Start(*Room, Requester))
+		return false;
+
+	SetSessionStarted(true);
+
+	return true;
+}
+
+FVector UMazeECSSubsystem::RoomSpawn(int32 Id) const
+{
+	const auto Room = ReadRoom();
+	const auto Maze = ReadMaze(ReadSession().Maze);
+	const auto* Member = Room.Members.FindByPredicate(
+	    [Id](const auto& M)
+	    {
+		    return M.Id == Id;
+	    });
+
+	return Maze.Data && Member && Maze.Data->PlayerStarts.IsValidIndex(Member->Slot)
+	           ? Maze.Origin + Maze.Data->PlayerStarts[Member->Slot]
+	           : FVector::ZeroVector;
+}
+
+bool UMazeECSSubsystem::IsSprintHeld(FMassEntityHandle Entity) const
+{
+	const auto* Input = FindFragment<FMazePlayerInputFragment>(Entity);
+
+	return Input && Input->bSprintHeld;
+}
+
+void UMazeECSSubsystem::ReceivePlayer(FMassEntityHandle Entity, const FMazeVitals& Vitals, int32 Exit)
+{
+	if (auto* Stored = FindVitals(Entity))
+		*Stored = Vitals;
+
+	if (auto* Progress = FindFragment<FMazeProgressFragment>(Entity))
+		Progress->ReachedExit = Exit;
+}
+
+void UMazeECSSubsystem::ClearInput(FMassEntityHandle Entity)
+{
+	if (auto* Input = FindFragment<FMazePlayerInputFragment>(Entity))
+		*Input = FMazePlayerInputFragment();
+
+	if (auto* Locomotion = FindFragment<FMazeLocomotionFragment>(Entity))
+		Locomotion->bRunning = false;
+}
+
+FString UMazeECSSubsystem::RoomAdmissionError() const
+{
+	return FMazeRoomSystem::AdmissionError(ReadRoom());
 }

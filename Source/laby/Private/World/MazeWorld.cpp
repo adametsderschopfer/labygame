@@ -1,4 +1,9 @@
 #include "World/MazeWorld.h"
+#include "Engine/DirectionalLight.h"
+#include "Engine/SkyLight.h"
+#include "Components/DirectionalLightComponent.h"
+#include "Components/SkyLightComponent.h"
+#include "Components/SkyAtmosphereComponent.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "ProceduralMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -34,6 +39,24 @@ AMazeWorld::AMazeWorld()
 void AMazeWorld::BeginPlay()
 {
 	Super::BeginPlay();
+
+	auto* Sun = GetWorld()->SpawnActor<ADirectionalLight>(FVector(0, 0, 2000), FRotator(-55, -35, 0));
+
+	Sun->GetLightComponent()->SetMobility(EComponentMobility::Movable);
+	Sun->GetLightComponent()->SetIntensity(5.f);
+	CastChecked<UDirectionalLightComponent>(Sun->GetLightComponent())->SetAtmosphereSunLight(true);
+
+	auto* Sky = GetWorld()->SpawnActor<ASkyLight>();
+
+	Sky->GetLightComponent()->SetMobility(EComponentMobility::Movable);
+	Sky->GetLightComponent()->SetIntensity(1.2f);
+	Sky->GetLightComponent()->SetRealTimeCaptureEnabled(true);
+
+	auto* AtmosphereActor = GetWorld()->SpawnActor<AActor>();
+	auto* Atmosphere = NewObject<USkyAtmosphereComponent>(AtmosphereActor);
+
+	AtmosphereActor->SetRootComponent(Atmosphere);
+	Atmosphere->RegisterComponent();
 	InitializeMaze();
 }
 
@@ -162,7 +185,7 @@ void AMazeWorld::Build()
 
 	UE_LOG(LogTemp,
 	       Display,
-	       TEXT("Maze generated: seed=%d cells=%d exits=3 wall triangles=%d"),
+	       TEXT("Maze generated: seed=%d cells=%d exits=1 wall triangles=%d"),
 	       Seed,
 	       Layout.Walls.Num(),
 	       Surface.Triangles.Num() / 3);
