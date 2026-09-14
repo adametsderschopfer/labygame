@@ -31,7 +31,7 @@ void UMazeOnlineGameInstance::Shutdown()
 	Super::Shutdown();
 }
 
-void UMazeOnlineGameInstance::Finish(const FString& Message)
+void UMazeOnlineGameInstance::Finish(const FText& Message)
 {
 	bBusy = false;
 	Status = Message;
@@ -46,7 +46,7 @@ bool UMazeOnlineGameInstance::Prepare(bool bHost, const FString& Code)
 
 	if (!OSS)
 	{
-		Finish(TEXT("EOS не настроен. См. Docs/Multiplayer.md"));
+		Finish(NSLOCTEXT("Maze.Online", "EosNotConfigured", "Online play is not configured yet."));
 
 		return false;
 	}
@@ -56,14 +56,14 @@ bool UMazeOnlineGameInstance::Prepare(bool bHost, const FString& Code)
 
 	if (!Sessions.IsValid() || !Identity.IsValid())
 	{
-		Finish(TEXT("Сервис EOS недоступен"));
+		Finish(NSLOCTEXT("Maze.Online", "EosUnavailable", "Online services are unavailable."));
 
 		return false;
 	}
 
 	if (Sessions->GetNamedSession(NAME_GameSession))
 	{
-		Finish(TEXT("Сначала выйдите из текущей комнаты"));
+		Finish(NSLOCTEXT("Maze.Online", "LeaveCurrentRoom", "Leave your current room first."));
 
 		return false;
 	}
@@ -90,10 +90,10 @@ bool UMazeOnlineGameInstance::Prepare(bool bHost, const FString& Code)
 		ContinueOperation();
 	else
 	{
-		Status = TEXT("Вход в Epic Games…");
+		Status = NSLOCTEXT("Maze.Online", "SigningIn", "Signing in to Epic Games...");
 
 		if (!Identity->Login(0, FOnlineAccountCredentials(TEXT("accountportal"), TEXT(""), TEXT(""))))
-			Finish(TEXT("Не удалось начать вход в Epic Games"));
+			Finish(NSLOCTEXT("Maze.Online", "SignInStartFailed", "Could not start Epic Games sign-in."));
 	}
 
 	return true;
@@ -113,7 +113,7 @@ void UMazeOnlineGameInstance::Join(const FString& Code)
 
 	if (Clean.Len() != 10)
 	{
-		Finish(TEXT("Введите код из 10 символов"));
+		Finish(NSLOCTEXT("Maze.Online", "CodeLength", "Enter a 10-character room code."));
 
 		return;
 	}
@@ -121,7 +121,7 @@ void UMazeOnlineGameInstance::Join(const FString& Code)
 	for (TCHAR C : Clean)
 		if (!FChar::IsHexDigit(C))
 		{
-			Finish(TEXT("Код содержит только 0–9 и A–F"));
+			Finish(NSLOCTEXT("Maze.Online", "CodeCharacters", "Room codes contain only 0-9 and A-F."));
 
 			return;
 		}
@@ -137,14 +137,14 @@ void UMazeOnlineGameInstance::OnLogin(int32 User, bool bSuccess, const FUniqueNe
 	if (bSuccess)
 		ContinueOperation();
 	else
-		Finish(TEXT("Вход отменён или недоступен. Проверьте настройки EOS."));
+		Finish(NSLOCTEXT("Maze.Online", "SignInFailed", "Sign-in was cancelled or is unavailable. Please try again."));
 }
 
 void UMazeOnlineGameInstance::ContinueOperation()
 {
 	if (bHosting)
 	{
-		Status = TEXT("Создание комнаты…");
+		Status = NSLOCTEXT("Maze.Online", "CreatingRoom", "Creating room...");
 
 		FOnlineSessionSettings Settings;
 
@@ -159,18 +159,18 @@ void UMazeOnlineGameInstance::ContinueOperation()
 		Settings.Set(FName(TEXT("LABY_CODE")), RoomCode, EOnlineDataAdvertisementType::ViaOnlineService);
 
 		if (!Sessions->CreateSession(0, NAME_GameSession, Settings))
-			Finish(TEXT("Не удалось создать комнату"));
+			Finish(NSLOCTEXT("Maze.Online", "CreateFailed", "Could not create the room."));
 	}
 	else
 	{
-		Status = TEXT("Поиск комнаты…");
+		Status = NSLOCTEXT("Maze.Online", "FindingRoom", "Finding room...");
 		Search = MakeShared<FOnlineSessionSearch>();
 		Search->MaxSearchResults = 20;
 		Search->QuerySettings.Set(SEARCH_LOBBIES, true, EOnlineComparisonOp::Equals);
 		Search->QuerySettings.Set(FName(TEXT("LABY_CODE")), RoomCode, EOnlineComparisonOp::Equals);
 
 		if (!Sessions->FindSessions(0, Search.ToSharedRef()))
-			Finish(TEXT("Не удалось начать поиск"));
+			Finish(NSLOCTEXT("Maze.Online", "SearchStartFailed", "Could not start the room search."));
 	}
 }
 
@@ -178,12 +178,12 @@ void UMazeOnlineGameInstance::OnCreate(FName Name, bool bSuccess)
 {
 	if (!bSuccess)
 	{
-		Finish(TEXT("Ошибка создания комнаты"));
+		Finish(NSLOCTEXT("Maze.Online", "CreateError", "Room creation failed."));
 
 		return;
 	}
 
-	Finish(TEXT(""));
+	Finish(FText::GetEmpty());
 	UGameplayStatics::OpenLevel(this, TEXT("/Game/Maps/Maze"), true, TEXT("listen?Room=1"));
 }
 
@@ -191,7 +191,7 @@ void UMazeOnlineGameInstance::OnFind(bool bSuccess)
 {
 	if (!bSuccess || !Search.IsValid())
 	{
-		Finish(TEXT("Ошибка поиска комнаты"));
+		Finish(NSLOCTEXT("Maze.Online", "SearchError", "Room search failed."));
 
 		return;
 	}
@@ -204,16 +204,16 @@ void UMazeOnlineGameInstance::OnFind(bool bSuccess)
 
 		if (Code == RoomCode)
 		{
-			Status = TEXT("Подключение…");
+			Status = NSLOCTEXT("Maze.Online", "Connecting", "Connecting...");
 
 			if (!Sessions->JoinSession(0, NAME_GameSession, Result))
-				Finish(TEXT("Не удалось подключиться"));
+				Finish(NSLOCTEXT("Maze.Online", "ConnectFailed", "Could not connect."));
 
 			return;
 		}
 	}
 
-	Finish(TEXT("Комната не найдена, заполнена или игра уже началась"));
+	Finish(NSLOCTEXT("Maze.Online", "RoomNotFound", "The room was not found, is full, or has already started."));
 }
 
 void UMazeOnlineGameInstance::OnJoin(FName Name, EOnJoinSessionCompleteResult::Type Result)
@@ -222,13 +222,13 @@ void UMazeOnlineGameInstance::OnJoin(FName Name, EOnJoinSessionCompleteResult::T
 
 	if (Result != EOnJoinSessionCompleteResult::Success || !Sessions->GetResolvedConnectString(Name, Address))
 	{
-		Status = TEXT("Не удалось войти: комната недоступна или заполнена");
+		Status = NSLOCTEXT("Maze.Online", "JoinFailed", "Could not join: the room is unavailable or full.");
 		Leave();
 
 		return;
 	}
 
-	Finish(TEXT(""));
+	Finish(FText::GetEmpty());
 
 	if (auto* PC = GetFirstLocalPlayerController())
 		PC->ClientTravel(Address, TRAVEL_Absolute);
@@ -279,7 +279,7 @@ void UMazeOnlineGameInstance::OnNetworkFailure(UWorld* World,
 	if (World != GetWorld())
 		return;
 
-	Status = TEXT("Соединение потеряно или хост закрыл комнату");
+	Status = NSLOCTEXT("Maze.Online", "ConnectionLost", "Connection lost or the host closed the room.");
 	Leave();
 }
 
@@ -288,6 +288,6 @@ void UMazeOnlineGameInstance::OnTravelFailure(UWorld* World, ETravelFailure::Typ
 	if (World != GetWorld())
 		return;
 
-	Status = TEXT("Не удалось загрузить сетевую карту");
+	Status = NSLOCTEXT("Maze.Online", "TravelFailed", "Could not load the multiplayer map.");
 	Leave();
 }

@@ -115,8 +115,8 @@ void AMazePlayerController::ToggleMinimap()
 
 void AMazePlayerController::RemoveMenuWidget()
 {
-	if (auto* Character = Cast<AMazeCharacter>(GetPawn()))
-		Character->ClearLocalInput();
+	if (auto* MazePawn = Cast<AMazeCharacter>(GetPawn()))
+		MazePawn->ClearLocalInput();
 
 	if (NetworkMenu.IsValid() && GetWorld()->GetGameViewport())
 		GetWorld()->GetGameViewport()->RemoveViewportWidgetContent(NetworkMenu.ToSharedRef());
@@ -275,16 +275,16 @@ void AMazePlayerController::ShowNetworkMenu()
 	const auto Room = ECSSubsystem->ReadRoom();
 	auto* Online = GetGameInstance<UMazeOnlineGameInstance>();
 	TSharedRef<SVerticalBox> Content = SNew(SVerticalBox);
-	auto Label = [&Content](const FString& Value)
+	auto Label = [&Content](const FText& Value)
 	{
-		Content->AddSlot().AutoHeight().Padding(8)[SNew(STextBlock).Text(FText::FromString(Value)).AutoWrapText(true)];
+		Content->AddSlot().AutoHeight().Padding(8)[SNew(STextBlock).Text(Value).AutoWrapText(true)];
 	};
-	auto Button = [&Content](const FString& Value, TFunction<void()> Action)
+	auto Button = [&Content](const FText& Value, TFunction<void()> Action)
 	{
 		Content->AddSlot().AutoHeight().Padding(8)[SNew(SButton)
 		                                               .HAlign(HAlign_Center)
 		                                               .ContentPadding(FMargin(14))
-		                                               .Text(FText::FromString(Value))
+		                                               .Text(Value)
 		                                               .OnClicked_Lambda(
 		                                                   [Action]()
 		                                                   {
@@ -294,7 +294,9 @@ void AMazePlayerController::ShowNetworkMenu()
 		                                                   })];
 	};
 
-	Label(Room.bStarted ? TEXT("ПАУЗА") : Room.bActive ? TEXT("КОМНАТА ОЖИДАНИЯ") : TEXT("LABY • СЕТЕВАЯ ИГРА"));
+	Label(Room.bStarted  ? NSLOCTEXT("Maze.Menu", "GameMenu", "GAME MENU")
+	      : Room.bActive ? NSLOCTEXT("Maze.Menu", "Lobby", "WAITING ROOM")
+	                     : NSLOCTEXT("Maze.Menu", "Title", "LABY - MULTIPLAYER"));
 
 	if (Room.bActive)
 	{
@@ -304,45 +306,53 @@ void AMazePlayerController::ShowNetworkMenu()
 		               [this]()
 		               {
 			               const auto Current = ECSSubsystem->ReadRoom();
-			               FString List = FString::Printf(TEXT("Игроки: %d / 4\n\n"), Current.Members.Num());
+			               TArray<FText> Lines;
+			               Lines.Add(FText::Format(NSLOCTEXT("Maze.Menu", "PlayerCount", "Players: {Count} / 4\n"),
+			                                       FFormatNamedArguments{{TEXT("Count"), Current.Members.Num()}}));
 
 			               for (const auto& Member : Current.Members)
-				               List += FString::Printf(TEXT("%s%s\n"),
-				                                       *Member.Name,
-				                                       Member.Id == Current.HostId ? TEXT("  [ХОСТ]") : TEXT(""));
+			               {
+				               const FText Name = FText::AsCultureInvariant(Member.Name);
+				               Lines.Add(Member.Id == Current.HostId
+				                             ? FText::Format(NSLOCTEXT("Maze.Menu", "HostPlayer", "{Name}  [HOST]"),
+				                                             FFormatNamedArguments{{TEXT("Name"), Name}})
+				                             : Name);
+			               }
 
-			               return FText::FromString(List);
+			               return FText::Join(FText::AsCultureInvariant(TEXT("\n")), Lines);
 		               })];
 
 		if (HasAuthority() && !Room.bStarted)
 		{
-			Label(TEXT("Код комнаты: ") + (Online ? Online->RoomCode : FString()));
-			Button(TEXT("Скопировать код"),
+			Label(FText::Format(NSLOCTEXT("Maze.Menu", "RoomCode", "Room code: {Code}"),
+			                    FFormatNamedArguments{
+			                        {TEXT("Code"), FText::AsCultureInvariant(Online ? Online->RoomCode : FString())}}));
+			Button(NSLOCTEXT("Maze.Menu", "CopyCode", "Copy code"),
 			       [Online]()
 			       {
 				       if (Online)
 				       {
 					       FPlatformApplicationMisc::ClipboardCopy(*Online->RoomCode);
-					       Online->Status = TEXT("Код скопирован");
+					       Online->Status = NSLOCTEXT("Maze.Menu", "CodeCopied", "Code copied.");
 				       }
 			       });
-			Button(TEXT("Начать игру"),
+			Button(NSLOCTEXT("Maze.Menu", "StartGame", "Start game"),
 			       [this]()
 			       {
 				       ServerStartRoom();
 			       });
 		}
 		else if (!Room.bStarted)
-			Label(TEXT("Ожидаем, пока хост начнёт игру…"));
+			Label(NSLOCTEXT("Maze.Menu", "Waiting", "Waiting for the host to start the game..."));
 
 		if (Room.bStarted)
-			Button(TEXT("Продолжить"),
+			Button(NSLOCTEXT("Maze.Menu", "Resume", "Resume"),
 			       [this]()
 			       {
 				       CloseMenu();
 			       });
 
-		Button(TEXT("Выйти из комнаты"),
+		Button(NSLOCTEXT("Maze.Menu", "LeaveRoom", "Leave room"),
 		       [Online]()
 		       {
 			       if (Online)
@@ -351,17 +361,18 @@ void AMazePlayerController::ShowNetworkMenu()
 	}
 	else
 	{
-		Button(TEXT("Создать комнату"),
+		Button(NSLOCTEXT("Maze.Menu", "CreateRoom", "Create room"),
 		       [Online]()
 		       {
 			       if (Online)
 				       Online->Host();
 		       });
 
-		TSharedRef<SEditableTextBox> Code = SNew(SEditableTextBox).HintText(FText::FromString(TEXT("Код комнаты")));
+		TSharedRef<SEditableTextBox> Code =
+		    SNew(SEditableTextBox).HintText(NSLOCTEXT("Maze.Menu", "RoomCodeHint", "Room code"));
 
 		Content->AddSlot().AutoHeight().Padding(8)[Code];
-		Button(TEXT("Присоединиться"),
+		Button(NSLOCTEXT("Maze.Menu", "JoinRoom", "Join room"),
 		       [Online, Code]()
 		       {
 			       if (Online)
@@ -369,14 +380,14 @@ void AMazePlayerController::ShowNetworkMenu()
 		       });
 	}
 
-	Button(TEXT("Настройки"),
+	Button(NSLOCTEXT("Maze.Menu", "Settings", "Settings"),
 	       [this]()
 	       {
 		       ShowMenu(true);
 	       });
 
 	if (!Room.bActive)
-		Button(TEXT("Выйти из игры"),
+		Button(NSLOCTEXT("Maze.Menu", "Quit", "Quit game"),
 		       [this]()
 		       {
 			       ConsoleCommand(TEXT("quit"));
@@ -387,7 +398,7 @@ void AMazePlayerController::ShowNetworkMenu()
 	                                               .Text_Lambda(
 	                                                   [Online]()
 	                                                   {
-		                                                   return FText::FromString(Online ? Online->Status : TEXT(""));
+		                                                   return Online ? Online->Status : FText::GetEmpty();
 	                                                   })];
 
 	TSharedRef<SWidget> Panel = SNew(SBorder)

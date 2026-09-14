@@ -1,0 +1,504 @@
+# Game English translation.
+# Fill out your copyright notice in the Description page of Project Settings.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Game\n"
+"POT-Creation-Date: 2026-09-14 19:40\n"
+"PO-Revision-Date: 2026-09-14 19:40\n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Key:	GameMenu
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(297)
+#: Source/laby/Private/Player/MazePlayerController.cpp(297)
+msgctxt "Maze.Menu,GameMenu"
+msgid "GAME MENU"
+msgstr "GAME MENU"
+
+#. Key:	Lobby
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(298)
+#: Source/laby/Private/Player/MazePlayerController.cpp(298)
+msgctxt "Maze.Menu,Lobby"
+msgid "WAITING ROOM"
+msgstr "WAITING ROOM"
+
+#. Key:	Title
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(299)
+#: Source/laby/Private/Player/MazePlayerController.cpp(299)
+msgctxt "Maze.Menu,Title"
+msgid "LABY - MULTIPLAYER"
+msgstr "LABY - MULTIPLAYER"
+
+#. Key:	PlayerCount
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(310)
+#: Source/laby/Private/Player/MazePlayerController.cpp(310)
+msgctxt "Maze.Menu,PlayerCount"
+msgid "Players: {Count} / 4\n"
+msgstr "Players: {Count} / 4\n"
+
+#. Key:	HostPlayer
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(317)
+#: Source/laby/Private/Player/MazePlayerController.cpp(317)
+msgctxt "Maze.Menu,HostPlayer"
+msgid "{Name}  [HOST]"
+msgstr "{Name}  [HOST]"
+
+#. Key:	RoomCode
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(327)
+#: Source/laby/Private/Player/MazePlayerController.cpp(327)
+msgctxt "Maze.Menu,RoomCode"
+msgid "Room code: {Code}"
+msgstr "Room code: {Code}"
+
+#. Key:	CopyCode
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(330)
+#: Source/laby/Private/Player/MazePlayerController.cpp(330)
+msgctxt "Maze.Menu,CopyCode"
+msgid "Copy code"
+msgstr "Copy code"
+
+#. Key:	CodeCopied
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(336)
+#: Source/laby/Private/Player/MazePlayerController.cpp(336)
+msgctxt "Maze.Menu,CodeCopied"
+msgid "Code copied."
+msgstr "Code copied."
+
+#. Key:	StartGame
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(339)
+#: Source/laby/Private/Player/MazePlayerController.cpp(339)
+msgctxt "Maze.Menu,StartGame"
+msgid "Start game"
+msgstr "Start game"
+
+#. Key:	Waiting
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(346)
+#: Source/laby/Private/Player/MazePlayerController.cpp(346)
+msgctxt "Maze.Menu,Waiting"
+msgid "Waiting for the host to start the game..."
+msgstr "Waiting for the host to start the game..."
+
+#. Key:	Resume
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(349)
+#: Source/laby/Private/Player/MazePlayerController.cpp(349)
+msgctxt "Maze.Menu,Resume"
+msgid "Resume"
+msgstr "Resume"
+
+#. Key:	LeaveRoom
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(355)
+#: Source/laby/Private/Player/MazePlayerController.cpp(355)
+msgctxt "Maze.Menu,LeaveRoom"
+msgid "Leave room"
+msgstr "Leave room"
+
+#. Key:	CreateRoom
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(364)
+#: Source/laby/Private/Player/MazePlayerController.cpp(364)
+msgctxt "Maze.Menu,CreateRoom"
+msgid "Create room"
+msgstr "Create room"
+
+#. Key:	RoomCodeHint
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(372)
+#: Source/laby/Private/Player/MazePlayerController.cpp(372)
+msgctxt "Maze.Menu,RoomCodeHint"
+msgid "Room code"
+msgstr "Room code"
+
+#. Key:	JoinRoom
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(375)
+#: Source/laby/Private/Player/MazePlayerController.cpp(375)
+msgctxt "Maze.Menu,JoinRoom"
+msgid "Join room"
+msgstr "Join room"
+
+#. Key:	Settings
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(383)
+#: Source/laby/Private/Player/MazePlayerController.cpp(383)
+msgctxt "Maze.Menu,Settings"
+msgid "Settings"
+msgstr "Settings"
+
+#. Key:	Quit
+#. SourceLocation:	Source/laby/Private/Player/MazePlayerController.cpp(390)
+#: Source/laby/Private/Player/MazePlayerController.cpp(390)
+msgctxt "Maze.Menu,Quit"
+msgid "Quit game"
+msgstr "Quit game"
+
+#. Key:	Version
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(177)
+#: Source/laby/Private/UI/MazeWidgets.cpp(177)
+msgctxt "Maze.HUD,Version"
+msgid "ALPHA {Version}"
+msgstr "ALPHA {Version}"
+
+#. Key:	Health
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(209)
+#: Source/laby/Private/UI/MazeWidgets.cpp(209)
+msgctxt "Maze.HUD,Health"
+msgid "HEALTH  {Value} / 100"
+msgstr "HEALTH  {Value} / 100"
+
+#. Key:	StaminaRecovering
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(214)
+#: Source/laby/Private/UI/MazeWidgets.cpp(214)
+msgctxt "Maze.HUD,StaminaRecovering"
+msgid "STAMINA / RECOVERING  {Value} / 100"
+msgstr "STAMINA / RECOVERING  {Value} / 100"
+
+#. Key:	Stamina
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(215)
+#: Source/laby/Private/UI/MazeWidgets.cpp(215)
+msgctxt "Maze.HUD,Stamina"
+msgid "STAMINA  {Value} / 100"
+msgstr "STAMINA  {Value} / 100"
+
+#. Key:	ExitText
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(230)
+#: Source/laby/Private/UI/MazeWidgets.cpp(230)
+msgctxt "Maze.Widgets,ExitText"
+msgid "EXIT REACHED"
+msgstr "EXIT REACHED"
+
+#. Key:	Session
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(239)
+#: Source/laby/Private/UI/MazeWidgets.cpp(239)
+msgctxt "Maze.HUD,Session"
+msgid "SESSION {Seed} | {Size} x {Size} | START A"
+msgstr "SESSION {Seed} | {Size} x {Size} | START A"
+
+#. Key:	SensitivityValue
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(25)
+#: Source/laby/Private/UI/MazeWidgets.cpp(25)
+msgctxt "Maze.Settings,SensitivityValue"
+msgid "{Value} x"
+msgstr "{Value} x"
+
+#. Key:	RoomClosed
+#. SourceLocation:	Source/laby/Private/World/MazeGameMode.cpp(100)
+#: Source/laby/Private/World/MazeGameMode.cpp(100)
+msgctxt "Maze.Online,RoomClosed"
+msgid "The room is full or has already started."
+msgstr "The room is full or has already started."
+
+#. Key:	CodeLength
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(116)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(116)
+msgctxt "Maze.Online,CodeLength"
+msgid "Enter a 10-character room code."
+msgstr "Enter a 10-character room code."
+
+#. Key:	CodeCharacters
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(124)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(124)
+msgctxt "Maze.Online,CodeCharacters"
+msgid "Room codes contain only 0-9 and A-F."
+msgstr "Room codes contain only 0-9 and A-F."
+
+#. Key:	SignInFailed
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(140)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(140)
+msgctxt "Maze.Online,SignInFailed"
+msgid "Sign-in was cancelled or is unavailable. Please try again."
+msgstr "Sign-in was cancelled or is unavailable. Please try again."
+
+#. Key:	CreatingRoom
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(147)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(147)
+msgctxt "Maze.Online,CreatingRoom"
+msgid "Creating room..."
+msgstr "Creating room..."
+
+#. Key:	CreateFailed
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(162)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(162)
+msgctxt "Maze.Online,CreateFailed"
+msgid "Could not create the room."
+msgstr "Could not create the room."
+
+#. Key:	FindingRoom
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(166)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(166)
+msgctxt "Maze.Online,FindingRoom"
+msgid "Finding room..."
+msgstr "Finding room..."
+
+#. Key:	SearchStartFailed
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(173)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(173)
+msgctxt "Maze.Online,SearchStartFailed"
+msgid "Could not start the room search."
+msgstr "Could not start the room search."
+
+#. Key:	CreateError
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(181)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(181)
+msgctxt "Maze.Online,CreateError"
+msgid "Room creation failed."
+msgstr "Room creation failed."
+
+#. Key:	SearchError
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(194)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(194)
+msgctxt "Maze.Online,SearchError"
+msgid "Room search failed."
+msgstr "Room search failed."
+
+#. Key:	Connecting
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(207)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(207)
+msgctxt "Maze.Online,Connecting"
+msgid "Connecting..."
+msgstr "Connecting..."
+
+#. Key:	ConnectFailed
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(210)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(210)
+msgctxt "Maze.Online,ConnectFailed"
+msgid "Could not connect."
+msgstr "Could not connect."
+
+#. Key:	RoomNotFound
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(216)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(216)
+msgctxt "Maze.Online,RoomNotFound"
+msgid "The room was not found, is full, or has already started."
+msgstr "The room was not found, is full, or has already started."
+
+#. Key:	JoinFailed
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(225)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(225)
+msgctxt "Maze.Online,JoinFailed"
+msgid "Could not join: the room is unavailable or full."
+msgstr "Could not join: the room is unavailable or full."
+
+#. Key:	ConnectionLost
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(282)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(282)
+msgctxt "Maze.Online,ConnectionLost"
+msgid "Connection lost or the host closed the room."
+msgstr "Connection lost or the host closed the room."
+
+#. Key:	TravelFailed
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(291)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(291)
+msgctxt "Maze.Online,TravelFailed"
+msgid "Could not load the multiplayer map."
+msgstr "Could not load the multiplayer map."
+
+#. Key:	EosNotConfigured
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(49)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(49)
+msgctxt "Maze.Online,EosNotConfigured"
+msgid "Online play is not configured yet."
+msgstr "Online play is not configured yet."
+
+#. Key:	EosUnavailable
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(59)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(59)
+msgctxt "Maze.Online,EosUnavailable"
+msgid "Online services are unavailable."
+msgstr "Online services are unavailable."
+
+#. Key:	LeaveCurrentRoom
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(66)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(66)
+msgctxt "Maze.Online,LeaveCurrentRoom"
+msgid "Leave your current room first."
+msgstr "Leave your current room first."
+
+#. Key:	SigningIn
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(93)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(93)
+msgctxt "Maze.Online,SigningIn"
+msgid "Signing in to Epic Games..."
+msgstr "Signing in to Epic Games..."
+
+#. Key:	SignInStartFailed
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(96)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(96)
+msgctxt "Maze.Online,SignInStartFailed"
+msgid "Could not start Epic Games sign-in."
+msgstr "Could not start Epic Games sign-in."
+
+#. Key:	Start
+#. SourceLocation:	Source/laby/Private/World/MazeWorld.cpp(166)
+#: Source/laby/Private/World/MazeWorld.cpp(166)
+msgctxt "Maze.World,Start"
+msgid "A / START"
+msgstr "A / START"
+
+#. Key:	Exit
+#. SourceLocation:	Source/laby/Private/World/MazeWorld.cpp(179)
+#: Source/laby/Private/World/MazeWorld.cpp(179)
+msgctxt "Maze.World,Exit"
+msgid "EXIT"
+msgstr "EXIT"
+
+#. Key:	Title
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(10)
+#: Source/laby/Public/UI/MazeText.h(10)
+msgctxt "Maze.Widgets,Title"
+msgid "L A B Y"
+msgstr "L A B Y"
+
+#. Key:	SensitivityLabel
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(11)
+#: Source/laby/Public/UI/MazeText.h(11)
+msgctxt "Maze.Widgets,SensitivityLabel"
+msgid "Mouse sensitivity"
+msgstr "Mouse sensitivity"
+
+#. Key:	SensitivityText
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(12)
+#: Source/laby/Public/UI/MazeText.h(12)
+msgctxt "Maze.Widgets,SensitivityText"
+msgid "1.00 x"
+msgstr "1.00 x"
+
+#. Key:	SettingsHint
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(13)
+#: Source/laby/Public/UI/MazeText.h(13)
+msgctxt "Maze.Widgets,SettingsHint"
+msgid "0.10 - 3.00 - Saved automatically"
+msgstr "0.10 - 3.00 - Saved automatically"
+
+#. Key:	ResetButtonLabel
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(14)
+#: Source/laby/Public/UI/MazeText.h(14)
+msgctxt "Maze.Widgets,ResetButtonLabel"
+msgid "Reset to defaults"
+msgstr "Reset to defaults"
+
+#. Key:	BackButtonLabel
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(15)
+#: Source/laby/Public/UI/MazeText.h(15)
+msgctxt "Maze.Widgets,BackButtonLabel"
+msgid "Back"
+msgstr "Back"
+
+#. Key:	ResumeButtonLabel
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(16)
+#: Source/laby/Public/UI/MazeText.h(16)
+msgctxt "Maze.Widgets,ResumeButtonLabel"
+msgid "Resume"
+msgstr "Resume"
+
+#. Key:	NewGameButtonLabel
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(17)
+#: Source/laby/Public/UI/MazeText.h(17)
+msgctxt "Maze.Widgets,NewGameButtonLabel"
+msgid "Create room"
+msgstr "Create room"
+
+#. Key:	SettingsButtonLabel
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(18)
+#: Source/laby/Public/UI/MazeText.h(18)
+msgctxt "Maze.Widgets,SettingsButtonLabel"
+msgid "Settings"
+msgstr "Settings"
+
+#. Key:	QuitButtonLabel
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(19)
+#: Source/laby/Public/UI/MazeText.h(19)
+msgctxt "Maze.Widgets,QuitButtonLabel"
+msgid "Quit to desktop"
+msgstr "Quit to desktop"
+
+#. Key:	VersionText
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(20)
+#: Source/laby/Public/UI/MazeText.h(20)
+msgctxt "Maze.Widgets,VersionText"
+msgid "ALPHA 0.0.0.1"
+msgstr "ALPHA 0.0.0.1"
+
+#. Key:	HealthText
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(21)
+#: Source/laby/Public/UI/MazeText.h(21)
+msgctxt "Maze.Widgets,HealthText"
+msgid "HEALTH  100 / 100"
+msgstr "HEALTH  100 / 100"
+
+#. Key:	StaminaText
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(22)
+#: Source/laby/Public/UI/MazeText.h(22)
+msgctxt "Maze.Widgets,StaminaText"
+msgid "STAMINA  100 / 100"
+msgstr "STAMINA  100 / 100"
+
+#. Key:	DeveloperHint
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(23)
+#: Source/laby/Public/UI/MazeText.h(23)
+msgctxt "Maze.Widgets,DeveloperHint"
+msgid "DEV: M  Toggle map"
+msgstr "DEV: M  Toggle map"
+
+#. Key:	SessionText
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(24)
+#: Source/laby/Public/UI/MazeText.h(24)
+msgctxt "Maze.Widgets,SessionText"
+msgid "SESSION 0 - 80 x 80 - START A"
+msgstr "SESSION 0 - 80 x 80 - START A"
+
+#. Key:	MapTitle
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(25)
+#: Source/laby/Public/UI/MazeText.h(25)
+msgctxt "Maze.Widgets,MapTitle"
+msgid "MAP"
+msgstr "MAP"
+
+#. Key:	MapLegend
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(26)
+#: Source/laby/Public/UI/MazeText.h(26)
+msgctxt "Maze.Widgets,MapLegend"
+msgid "YOU        A        EXIT"
+msgstr "YOU        A        EXIT"
+
+#. Key:	DeathText
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(27)
+#: Source/laby/Public/UI/MazeText.h(27)
+msgctxt "Maze.Widgets,DeathText"
+msgid "YOU DIED"
+msgstr "YOU DIED"
+
+#. Key:	DeathHint
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(29)
+#: Source/laby/Public/UI/MazeText.h(29)
+msgctxt "Maze.Widgets,DeathHint"
+msgid "Press Escape to open the game menu"
+msgstr "Press Escape to open the game menu"
+
+#. Key:	ExitHint
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(30)
+#: Source/laby/Public/UI/MazeText.h(30)
+msgctxt "Maze.Widgets,ExitHint"
+msgid "Press Escape to open the game menu"
+msgstr "Press Escape to open the game menu"
+
+#. Key:	SettingsSubtitle
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(45)
+#: Source/laby/Public/UI/MazeText.h(45)
+msgctxt "Maze.Widgets,SettingsSubtitle"
+msgid "Settings / Controls"
+msgstr "Settings / Controls"
+
+#. Key:	PauseSubtitle
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(46)
+#: Source/laby/Public/UI/MazeText.h(46)
+msgctxt "Maze.Widgets,PauseSubtitle"
+msgid "Game menu"
+msgstr "Game menu"
+
+#. Key:	MainSubtitle
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(47)
+#: Source/laby/Public/UI/MazeText.h(47)
+msgctxt "Maze.Widgets,MainSubtitle"
+msgid "One maze. One exit."
+msgstr "One maze. One exit."

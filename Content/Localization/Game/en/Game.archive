@@ -1,0 +1,671 @@
+{
+	"FormatVersion": 2,
+	"Namespace": "",
+	"Subnamespaces": [
+		{
+			"Namespace": "Maze",
+			"Subnamespaces": [
+				{
+					"Namespace": "HUD",
+					"Children": [
+						{
+							"Source": {
+								"Text": "ALPHA {Version}"
+							},
+							"Translation": {
+								"Text": "ALPHA {Version}"
+							},
+							"Key": "Version"
+						},
+						{
+							"Source": {
+								"Text": "HEALTH  {Value} / 100"
+							},
+							"Translation": {
+								"Text": "HEALTH  {Value} / 100"
+							},
+							"Key": "Health"
+						},
+						{
+							"Source": {
+								"Text": "SESSION {Seed} | {Size} x {Size} | START A"
+							},
+							"Translation": {
+								"Text": "SESSION {Seed} | {Size} x {Size} | START A"
+							},
+							"Key": "Session"
+						},
+						{
+							"Source": {
+								"Text": "STAMINA  {Value} / 100"
+							},
+							"Translation": {
+								"Text": "STAMINA  {Value} / 100"
+							},
+							"Key": "Stamina"
+						},
+						{
+							"Source": {
+								"Text": "STAMINA / RECOVERING  {Value} / 100"
+							},
+							"Translation": {
+								"Text": "STAMINA / RECOVERING  {Value} / 100"
+							},
+							"Key": "StaminaRecovering"
+						}
+					]
+				},
+				{
+					"Namespace": "Menu",
+					"Children": [
+						{
+							"Source": {
+								"Text": "Code copied."
+							},
+							"Translation": {
+								"Text": "Code copied."
+							},
+							"Key": "CodeCopied"
+						},
+						{
+							"Source": {
+								"Text": "Copy code"
+							},
+							"Translation": {
+								"Text": "Copy code"
+							},
+							"Key": "CopyCode"
+						},
+						{
+							"Source": {
+								"Text": "Create room"
+							},
+							"Translation": {
+								"Text": "Create room"
+							},
+							"Key": "CreateRoom"
+						},
+						{
+							"Source": {
+								"Text": "GAME MENU"
+							},
+							"Translation": {
+								"Text": "GAME MENU"
+							},
+							"Key": "GameMenu"
+						},
+						{
+							"Source": {
+								"Text": "Join room"
+							},
+							"Translation": {
+								"Text": "Join room"
+							},
+							"Key": "JoinRoom"
+						},
+						{
+							"Source": {
+								"Text": "LABY - MULTIPLAYER"
+							},
+							"Translation": {
+								"Text": "LABY - MULTIPLAYER"
+							},
+							"Key": "Title"
+						},
+						{
+							"Source": {
+								"Text": "Leave room"
+							},
+							"Translation": {
+								"Text": "Leave room"
+							},
+							"Key": "LeaveRoom"
+						},
+						{
+							"Source": {
+								"Text": "Players: {Count} / 4\n"
+							},
+							"Translation": {
+								"Text": "Players: {Count} / 4\n"
+							},
+							"Key": "PlayerCount"
+						},
+						{
+							"Source": {
+								"Text": "Quit game"
+							},
+							"Translation": {
+								"Text": "Quit game"
+							},
+							"Key": "Quit"
+						},
+						{
+							"Source": {
+								"Text": "Resume"
+							},
+							"Translation": {
+								"Text": "Resume"
+							},
+							"Key": "Resume"
+						},
+						{
+							"Source": {
+								"Text": "Room code"
+							},
+							"Translation": {
+								"Text": "Room code"
+							},
+							"Key": "RoomCodeHint"
+						},
+						{
+							"Source": {
+								"Text": "Room code: {Code}"
+							},
+							"Translation": {
+								"Text": "Room code: {Code}"
+							},
+							"Key": "RoomCode"
+						},
+						{
+							"Source": {
+								"Text": "Settings"
+							},
+							"Translation": {
+								"Text": "Settings"
+							},
+							"Key": "Settings"
+						},
+						{
+							"Source": {
+								"Text": "Start game"
+							},
+							"Translation": {
+								"Text": "Start game"
+							},
+							"Key": "StartGame"
+						},
+						{
+							"Source": {
+								"Text": "WAITING ROOM"
+							},
+							"Translation": {
+								"Text": "WAITING ROOM"
+							},
+							"Key": "Lobby"
+						},
+						{
+							"Source": {
+								"Text": "Waiting for the host to start the game..."
+							},
+							"Translation": {
+								"Text": "Waiting for the host to start the game..."
+							},
+							"Key": "Waiting"
+						},
+						{
+							"Source": {
+								"Text": "{Name}  [HOST]"
+							},
+							"Translation": {
+								"Text": "{Name}  [HOST]"
+							},
+							"Key": "HostPlayer"
+						}
+					]
+				},
+				{
+					"Namespace": "Online",
+					"Children": [
+						{
+							"Source": {
+								"Text": "Connecting..."
+							},
+							"Translation": {
+								"Text": "Connecting..."
+							},
+							"Key": "Connecting"
+						},
+						{
+							"Source": {
+								"Text": "Connection lost or the host closed the room."
+							},
+							"Translation": {
+								"Text": "Connection lost or the host closed the room."
+							},
+							"Key": "ConnectionLost"
+						},
+						{
+							"Source": {
+								"Text": "Could not connect."
+							},
+							"Translation": {
+								"Text": "Could not connect."
+							},
+							"Key": "ConnectFailed"
+						},
+						{
+							"Source": {
+								"Text": "Could not create the room."
+							},
+							"Translation": {
+								"Text": "Could not create the room."
+							},
+							"Key": "CreateFailed"
+						},
+						{
+							"Source": {
+								"Text": "Could not join: the room is unavailable or full."
+							},
+							"Translation": {
+								"Text": "Could not join: the room is unavailable or full."
+							},
+							"Key": "JoinFailed"
+						},
+						{
+							"Source": {
+								"Text": "Could not load the multiplayer map."
+							},
+							"Translation": {
+								"Text": "Could not load the multiplayer map."
+							},
+							"Key": "TravelFailed"
+						},
+						{
+							"Source": {
+								"Text": "Could not start Epic Games sign-in."
+							},
+							"Translation": {
+								"Text": "Could not start Epic Games sign-in."
+							},
+							"Key": "SignInStartFailed"
+						},
+						{
+							"Source": {
+								"Text": "Could not start the room search."
+							},
+							"Translation": {
+								"Text": "Could not start the room search."
+							},
+							"Key": "SearchStartFailed"
+						},
+						{
+							"Source": {
+								"Text": "Creating room..."
+							},
+							"Translation": {
+								"Text": "Creating room..."
+							},
+							"Key": "CreatingRoom"
+						},
+						{
+							"Source": {
+								"Text": "Enter a 10-character room code."
+							},
+							"Translation": {
+								"Text": "Enter a 10-character room code."
+							},
+							"Key": "CodeLength"
+						},
+						{
+							"Source": {
+								"Text": "Finding room..."
+							},
+							"Translation": {
+								"Text": "Finding room..."
+							},
+							"Key": "FindingRoom"
+						},
+						{
+							"Source": {
+								"Text": "Leave your current room first."
+							},
+							"Translation": {
+								"Text": "Leave your current room first."
+							},
+							"Key": "LeaveCurrentRoom"
+						},
+						{
+							"Source": {
+								"Text": "Online play is not configured yet."
+							},
+							"Translation": {
+								"Text": "Online play is not configured yet."
+							},
+							"Key": "EosNotConfigured"
+						},
+						{
+							"Source": {
+								"Text": "Online services are unavailable."
+							},
+							"Translation": {
+								"Text": "Online services are unavailable."
+							},
+							"Key": "EosUnavailable"
+						},
+						{
+							"Source": {
+								"Text": "Room codes contain only 0-9 and A-F."
+							},
+							"Translation": {
+								"Text": "Room codes contain only 0-9 and A-F."
+							},
+							"Key": "CodeCharacters"
+						},
+						{
+							"Source": {
+								"Text": "Room creation failed."
+							},
+							"Translation": {
+								"Text": "Room creation failed."
+							},
+							"Key": "CreateError"
+						},
+						{
+							"Source": {
+								"Text": "Room search failed."
+							},
+							"Translation": {
+								"Text": "Room search failed."
+							},
+							"Key": "SearchError"
+						},
+						{
+							"Source": {
+								"Text": "Sign-in was cancelled or is unavailable. Please try again."
+							},
+							"Translation": {
+								"Text": "Sign-in was cancelled or is unavailable. Please try again."
+							},
+							"Key": "SignInFailed"
+						},
+						{
+							"Source": {
+								"Text": "Signing in to Epic Games..."
+							},
+							"Translation": {
+								"Text": "Signing in to Epic Games..."
+							},
+							"Key": "SigningIn"
+						},
+						{
+							"Source": {
+								"Text": "The room is full or has already started."
+							},
+							"Translation": {
+								"Text": "The room is full or has already started."
+							},
+							"Key": "RoomClosed"
+						},
+						{
+							"Source": {
+								"Text": "The room was not found, is full, or has already started."
+							},
+							"Translation": {
+								"Text": "The room was not found, is full, or has already started."
+							},
+							"Key": "RoomNotFound"
+						}
+					]
+				},
+				{
+					"Namespace": "Settings",
+					"Children": [
+						{
+							"Source": {
+								"Text": "{Value} x"
+							},
+							"Translation": {
+								"Text": "{Value} x"
+							},
+							"Key": "SensitivityValue"
+						}
+					]
+				},
+				{
+					"Namespace": "Widgets",
+					"Children": [
+						{
+							"Source": {
+								"Text": "0.10 - 3.00 - Saved automatically"
+							},
+							"Translation": {
+								"Text": "0.10 - 3.00 - Saved automatically"
+							},
+							"Key": "SettingsHint"
+						},
+						{
+							"Source": {
+								"Text": "1.00 x"
+							},
+							"Translation": {
+								"Text": "1.00 x"
+							},
+							"Key": "SensitivityText"
+						},
+						{
+							"Source": {
+								"Text": "ALPHA 0.0.0.1"
+							},
+							"Translation": {
+								"Text": "ALPHA 0.0.0.1"
+							},
+							"Key": "VersionText"
+						},
+						{
+							"Source": {
+								"Text": "Back"
+							},
+							"Translation": {
+								"Text": "Back"
+							},
+							"Key": "BackButtonLabel"
+						},
+						{
+							"Source": {
+								"Text": "Create room"
+							},
+							"Translation": {
+								"Text": "Create room"
+							},
+							"Key": "NewGameButtonLabel"
+						},
+						{
+							"Source": {
+								"Text": "DEV: M  Toggle map"
+							},
+							"Translation": {
+								"Text": "DEV: M  Toggle map"
+							},
+							"Key": "DeveloperHint"
+						},
+						{
+							"Source": {
+								"Text": "EXIT REACHED"
+							},
+							"Translation": {
+								"Text": "EXIT REACHED"
+							},
+							"Key": "ExitText"
+						},
+						{
+							"Source": {
+								"Text": "Game menu"
+							},
+							"Translation": {
+								"Text": "Game menu"
+							},
+							"Key": "PauseSubtitle"
+						},
+						{
+							"Source": {
+								"Text": "HEALTH  100 / 100"
+							},
+							"Translation": {
+								"Text": "HEALTH  100 / 100"
+							},
+							"Key": "HealthText"
+						},
+						{
+							"Source": {
+								"Text": "L A B Y"
+							},
+							"Translation": {
+								"Text": "L A B Y"
+							},
+							"Key": "Title"
+						},
+						{
+							"Source": {
+								"Text": "MAP"
+							},
+							"Translation": {
+								"Text": "MAP"
+							},
+							"Key": "MapTitle"
+						},
+						{
+							"Source": {
+								"Text": "Mouse sensitivity"
+							},
+							"Translation": {
+								"Text": "Mouse sensitivity"
+							},
+							"Key": "SensitivityLabel"
+						},
+						{
+							"Source": {
+								"Text": "One maze. One exit."
+							},
+							"Translation": {
+								"Text": "One maze. One exit."
+							},
+							"Key": "MainSubtitle"
+						},
+						{
+							"Source": {
+								"Text": "Press Escape to open the game menu"
+							},
+							"Translation": {
+								"Text": "Press Escape to open the game menu"
+							},
+							"Key": "DeathHint"
+						},
+						{
+							"Source": {
+								"Text": "Press Escape to open the game menu"
+							},
+							"Translation": {
+								"Text": "Press Escape to open the game menu"
+							},
+							"Key": "ExitHint"
+						},
+						{
+							"Source": {
+								"Text": "Quit to desktop"
+							},
+							"Translation": {
+								"Text": "Quit to desktop"
+							},
+							"Key": "QuitButtonLabel"
+						},
+						{
+							"Source": {
+								"Text": "Reset to defaults"
+							},
+							"Translation": {
+								"Text": "Reset to defaults"
+							},
+							"Key": "ResetButtonLabel"
+						},
+						{
+							"Source": {
+								"Text": "Resume"
+							},
+							"Translation": {
+								"Text": "Resume"
+							},
+							"Key": "ResumeButtonLabel"
+						},
+						{
+							"Source": {
+								"Text": "SESSION 0 - 80 x 80 - START A"
+							},
+							"Translation": {
+								"Text": "SESSION 0 - 80 x 80 - START A"
+							},
+							"Key": "SessionText"
+						},
+						{
+							"Source": {
+								"Text": "STAMINA  100 / 100"
+							},
+							"Translation": {
+								"Text": "STAMINA  100 / 100"
+							},
+							"Key": "StaminaText"
+						},
+						{
+							"Source": {
+								"Text": "Settings"
+							},
+							"Translation": {
+								"Text": "Settings"
+							},
+							"Key": "SettingsButtonLabel"
+						},
+						{
+							"Source": {
+								"Text": "Settings / Controls"
+							},
+							"Translation": {
+								"Text": "Settings / Controls"
+							},
+							"Key": "SettingsSubtitle"
+						},
+						{
+							"Source": {
+								"Text": "YOU        A        EXIT"
+							},
+							"Translation": {
+								"Text": "YOU        A        EXIT"
+							},
+							"Key": "MapLegend"
+						},
+						{
+							"Source": {
+								"Text": "YOU DIED"
+							},
+							"Translation": {
+								"Text": "YOU DIED"
+							},
+							"Key": "DeathText"
+						}
+					]
+				},
+				{
+					"Namespace": "World",
+					"Children": [
+						{
+							"Source": {
+								"Text": "A / START"
+							},
+							"Translation": {
+								"Text": "A / START"
+							},
+							"Key": "Start"
+						},
+						{
+							"Source": {
+								"Text": "EXIT"
+							},
+							"Translation": {
+								"Text": "EXIT"
+							},
+							"Key": "Exit"
+						}
+					]
+				}
+			]
+		}
+	]
+}

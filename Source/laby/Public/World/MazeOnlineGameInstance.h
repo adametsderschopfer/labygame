@@ -20,13 +20,13 @@ public:
 	void CloseAdmission();
 
 	FString RoomCode;
-	FString Status;
+	FText Status;
 	bool bBusy = false;
 
 private:
 	bool Prepare(bool bHost, const FString& Code);
 	void ContinueOperation();
-	void Finish(const FString& Message);
+	void Finish(const FText& Message);
 	void OnLogin(int32 User, bool bSuccess, const FUniqueNetId& Id, const FString& Error);
 	void OnCreate(FName Name, bool bSuccess);
 	void OnFind(bool bSuccess);

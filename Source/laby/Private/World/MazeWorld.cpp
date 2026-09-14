@@ -163,7 +163,7 @@ void AMazeWorld::Build()
 	StartLabel->SetupAttachment(RootComponent);
 	StartLabel->SetRelativeLocation(StartLocation() - GetActorLocation() + FVector(0, 0, -95));
 	StartLabel->SetRelativeRotation(FRotator(90, 0, 0));
-	StartLabel->SetText(FText::FromString(TEXT("A / START")));
+	StartLabel->SetText(NSLOCTEXT("Maze.World", "Start", "A / START"));
 	StartLabel->SetTextRenderColor(FColor(50, 160, 255));
 	StartLabel->SetHorizontalAlignment(EHTA_Center);
 	StartLabel->SetWorldSize(60);
@@ -176,7 +176,7 @@ void AMazeWorld::Build()
 		Label->SetupAttachment(RootComponent);
 		Label->SetRelativeLocation(Data->ExitPositions[I]);
 		Label->SetRelativeRotation(Data->ExitRotations[I]);
-		Label->SetText(FText::FromString(FString::Printf(TEXT("EXIT %d"), I + 1)));
+		Label->SetText(NSLOCTEXT("Maze.World", "Exit", "EXIT"));
 		Label->SetTextRenderColor(FColor(60, 230, 120));
 		Label->SetHorizontalAlignment(EHTA_Center);
 		Label->SetWorldSize(65);

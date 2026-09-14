@@ -1,6 +1,7 @@
 #include "LiveCoding/MazeAutoLiveCoding.h"
 #include "Modules/ModuleManager.h"
 #include "UI/MazeWidgets.h"
+#include "UI/MazeText.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
@@ -17,6 +18,7 @@
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Containers/Ticker.h"
+#include "HAL/IConsoleManager.h"
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Misc/PackageName.h"
 #include "Styling/CoreStyle.h"
@@ -40,14 +42,20 @@ namespace
 
 	UTextBlock* Label(UWidgetTree* Tree,
 	                  const TCHAR* Name,
-	                  const TCHAR* Value,
+	                  const FText& Value,
 	                  int32 Size = 18,
 	                  FLinearColor Color = FLinearColor::White)
 	{
 		auto* Text = Make<UTextBlock>(Tree, Name);
 
-		Text->SetText(FText::FromString(Value));
-		Text->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", Size));
+		Text->SetText(Value);
+
+		// Keep UMG's asset-backed font: Slate's shared composite font is not serialized.
+		FSlateFontInfo Font = Text->GetFont();
+
+		Font.Size = Size;
+		Font.TypefaceFontName = FName("Regular");
+		Text->SetFont(Font);
 		Text->SetColorAndOpacity(FSlateColor(Color));
 
 		return Text;
@@ -92,7 +100,7 @@ namespace
 		return Border;
 	}
 
-	void Button(UWidgetTree* Tree, UVerticalBox* Box, const TCHAR* Name, const TCHAR* Value)
+	void Button(UWidgetTree* Tree, UVerticalBox* Box, const TCHAR* Name, const FText& Value)
 	{
 		auto* Widget = Make<UButton>(Tree, Name);
 
@@ -129,13 +137,13 @@ namespace
 		auto* Items = Make<UVerticalBox>(Tree, TEXT("MenuItems"));
 
 		Size->SetContent(Items);
-		Row(Items, Label(Tree, TEXT("Title"), TEXT("L A B Y"), 44, FLinearColor(0.75f, 0.9f, 1)));
+		Row(Items, Label(Tree, TEXT("Title"), MazeText::Widget(TEXT("Title")), 44, FLinearColor(0.75f, 0.9f, 1)));
 
 		if (bSettings)
 		{
-			Row(Items, Label(Tree, TEXT("Subtitle"), TEXT("Настройки / Управление"), 24));
-			Row(Items, Label(Tree, TEXT("SensitivityLabel"), TEXT("Чувствительность мыши")));
-			Row(Items, Label(Tree, TEXT("SensitivityText"), TEXT("1.00 ×"), 22));
+			Row(Items, Label(Tree, TEXT("Subtitle"), MazeText::Subtitle(true, false), 24));
+			Row(Items, Label(Tree, TEXT("SensitivityLabel"), MazeText::Widget(TEXT("SensitivityLabel"))));
+			Row(Items, Label(Tree, TEXT("SensitivityText"), MazeText::Widget(TEXT("SensitivityText")), 22));
 
 			auto* Slider = Make<USlider>(Tree, TEXT("SensitivitySlider"));
 
@@ -143,22 +151,20 @@ namespace
 			Slider->SetMaxValue(3.f);
 			Slider->SetValue(1.f);
 			Row(Items, Slider, FMargin(0, 8, 0, 24));
-			Row(Items, Label(Tree, TEXT("SettingsHint"), TEXT("0.10 — 3.00  •  Сохраняется автоматически"), 14));
-			Button(Tree, Items, TEXT("ResetButton"), TEXT("По умолчанию"));
-			Button(Tree, Items, TEXT("BackButton"), TEXT("Назад"));
+			Row(Items, Label(Tree, TEXT("SettingsHint"), MazeText::Widget(TEXT("SettingsHint")), 14));
+			Button(Tree, Items, TEXT("ResetButton"), MazeText::Widget(TEXT("ResetButtonLabel")));
+			Button(Tree, Items, TEXT("BackButton"), MazeText::Widget(TEXT("BackButtonLabel")));
 		}
 		else
 		{
-			Row(Items,
-			    Label(
-			        Tree, TEXT("Subtitle"), bPause ? TEXT("Игра приостановлена") : TEXT("Один лабиринт. Три выхода.")));
+			Row(Items, Label(Tree, TEXT("Subtitle"), MazeText::Subtitle(false, bPause)));
 
 			if (bPause)
-				Button(Tree, Items, TEXT("ResumeButton"), TEXT("Продолжить"));
+				Button(Tree, Items, TEXT("ResumeButton"), MazeText::Widget(TEXT("ResumeButtonLabel")));
 
-			Button(Tree, Items, TEXT("NewGameButton"), TEXT("Новая игра"));
-			Button(Tree, Items, TEXT("SettingsButton"), TEXT("Настройки"));
-			Button(Tree, Items, TEXT("QuitButton"), TEXT("Выйти на рабочий стол"));
+			Button(Tree, Items, TEXT("NewGameButton"), MazeText::Widget(TEXT("NewGameButtonLabel")));
+			Button(Tree, Items, TEXT("SettingsButton"), MazeText::Widget(TEXT("SettingsButtonLabel")));
+			Button(Tree, Items, TEXT("QuitButton"), MazeText::Widget(TEXT("QuitButtonLabel")));
 		}
 	}
 
@@ -172,7 +178,8 @@ namespace
 		auto* Content = Make<UCanvasPanel>(Tree, TEXT("HUDContent"));
 
 		Fill(Root, Content);
-		Place(Content, Label(Tree, TEXT("VersionText"), TEXT("ALPHA 0.0.0.1"), 14), {20, 20}, {260, 24});
+		Place(
+		    Content, Label(Tree, TEXT("VersionText"), MazeText::Widget(TEXT("VersionText")), 14), {20, 20}, {260, 24});
 
 		auto* Crosshair = Make<UImage>(Tree, TEXT("Crosshair"));
 
@@ -186,24 +193,27 @@ namespace
 		auto* Bars = Make<UVerticalBox>(Tree, TEXT("VitalsItems"));
 
 		Vitals->SetContent(Bars);
-		Row(Bars, Label(Tree, TEXT("HealthText"), TEXT("HEALTH  100 / 100"), 14), FMargin(0, 0, 0, 6));
+		Row(Bars, Label(Tree, TEXT("HealthText"), MazeText::Widget(TEXT("HealthText")), 14), FMargin(0, 0, 0, 6));
 
 		auto* Health = Make<UProgressBar>(Tree, TEXT("HealthBar"));
 
 		Health->SetPercent(1.f);
 		Health->SetFillColorAndOpacity(FLinearColor(0.9f, 0.22f, 0.25f));
 		Row(Bars, Health, FMargin(0, 0, 0, 14));
-		Row(Bars, Label(Tree, TEXT("StaminaText"), TEXT("STAMINA  100 / 100"), 14), FMargin(0, 0, 0, 6));
+		Row(Bars, Label(Tree, TEXT("StaminaText"), MazeText::Widget(TEXT("StaminaText")), 14), FMargin(0, 0, 0, 6));
 
 		auto* Stamina = Make<UProgressBar>(Tree, TEXT("StaminaBar"));
 
 		Stamina->SetPercent(1.f);
 		Stamina->SetFillColorAndOpacity(FLinearColor(0.2f, 0.85f, 0.65f));
 		Row(Bars, Stamina, FMargin(0));
-		Place(
-		    Content, Label(Tree, TEXT("DeveloperHint"), TEXT("DEV: M  Toggle map"), 14), {24, -62}, {400, 22}, {0, 1});
 		Place(Content,
-		      Label(Tree, TEXT("SessionText"), TEXT("SESSION 0 | 20 x 20 | START A"), 14),
+		      Label(Tree, TEXT("DeveloperHint"), MazeText::Widget(TEXT("DeveloperHint")), 14),
+		      {24, -62},
+		      {400, 22},
+		      {0, 1});
+		Place(Content,
+		      Label(Tree, TEXT("SessionText"), MazeText::Widget(TEXT("SessionText")), 14),
 		      {24, -40},
 		      {600, 24},
 		      {0, 1});
@@ -215,14 +225,14 @@ namespace
 		auto* MapItems = Make<UVerticalBox>(Tree, TEXT("MinimapItems"));
 
 		Map->SetContent(MapItems);
-		Row(MapItems, Label(Tree, TEXT("MapTitle"), TEXT("MAP"), 14), FMargin(0, 0, 0, 8));
+		Row(MapItems, Label(Tree, TEXT("MapTitle"), MazeText::Widget(TEXT("MapTitle")), 14), FMargin(0, 0, 0, 8));
 
 		auto* MapSize = Make<USizeBox>(Tree, TEXT("MapSize"));
 
 		MapSize->SetHeightOverride(292);
 		MapSize->SetContent(Make<UMazeMinimapWidget>(Tree, TEXT("Minimap")));
 		Row(MapItems, MapSize, FMargin(0, 0, 0, 10));
-		Row(MapItems, Label(Tree, TEXT("MapLegend"), TEXT("YOU        A        EXITS"), 14), FMargin(0));
+		Row(MapItems, Label(Tree, TEXT("MapLegend"), MazeText::Widget(TEXT("MapLegend")), 14), FMargin(0));
 
 		for (bool bDeath : {true, false})
 		{
@@ -239,15 +249,114 @@ namespace
 			Row(Items,
 			    Label(Tree,
 			          bDeath ? TEXT("DeathText") : TEXT("ExitText"),
-			          bDeath ? TEXT("YOU DIED") : TEXT("EXIT 1 REACHED"),
+			          bDeath ? MazeText::Widget(TEXT("DeathText")) : MazeText::Widget(TEXT("ExitText")),
 			          28,
 			          bDeath ? FLinearColor(1, 0.3f, 0.3f) : FLinearColor(0.3f, 1, 0.6f)));
 			Row(Items,
-			    Label(Tree, bDeath ? TEXT("DeathHint") : TEXT("ExitHint"), TEXT("Press R to start a new maze"), 16),
+			    Label(Tree, bDeath ? TEXT("DeathHint") : TEXT("ExitHint"), MazeText::Widget(TEXT("DeathHint")), 16),
 			    FMargin(0));
 			Message->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
+
+	void RepairFonts(const FString& PackageName)
+	{
+		auto* Blueprint = LoadObject<UWidgetBlueprint>(nullptr, *PackageName);
+
+		if (!Blueprint || !Blueprint->WidgetTree)
+			return;
+
+		const FSlateFontInfo DefaultFont = GetDefault<UTextBlock>()->GetFont();
+
+		if (!DefaultFont.FontObject)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Laby UI font repair: default UMG font is unavailable."));
+
+			return;
+		}
+
+		int32 Repaired = 0;
+
+		Blueprint->WidgetTree->ForEachWidget(
+		    [&](UWidget* Widget)
+		    {
+			    auto* Text = Cast<UTextBlock>(Widget);
+
+			    if (!Text)
+				    return;
+
+			    const FText Localized = Text->GetFName() == FName(TEXT("Subtitle"))
+			                                ? MazeText::Subtitle(PackageName.EndsWith(TEXT("WBP_Settings")),
+			                                                     PackageName.EndsWith(TEXT("WBP_PauseMenu")))
+			                                : MazeText::Widget(Text->GetFName());
+			    const bool bUpdateText = !Localized.IsEmpty() && !Text->GetText().IdenticalTo(Localized);
+			    const bool bRepairFont = !Text->GetFont().FontObject;
+
+			    if (!bUpdateText && !bRepairFont)
+				    return;
+
+			    if (Repaired == 0)
+				    Blueprint->Modify();
+
+			    Text->Modify();
+
+			    if (bUpdateText)
+				    Text->SetText(Localized);
+
+			    if (bRepairFont)
+			    {
+				    FSlateFontInfo Font = Text->GetFont();
+				    Font.FontObject = DefaultFont.FontObject;
+				    Font.CompositeFont.Reset();
+				    Text->SetFont(Font);
+			    }
+
+			    ++Repaired;
+		    });
+
+		if (Repaired == 0)
+			return;
+
+		FKismetEditorUtilities::CompileBlueprint(Blueprint);
+
+		if (Blueprint->Status == BS_Error)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Laby UI font repair compilation failed: %s"), *PackageName);
+
+			return;
+		}
+
+		UPackage* Package = Blueprint->GetOutermost();
+
+		Package->MarkPackageDirty();
+
+		FSavePackageArgs Args;
+
+		Args.TopLevelFlags = RF_Public | RF_Standalone;
+
+		const FString Filename =
+		    FPackageName::LongPackageNameToFilename(PackageName, FPackageName::GetAssetPackageExtension());
+
+		if (UPackage::SavePackage(Package, Blueprint, *Filename, Args))
+		{
+			UE_LOG(LogTemp, Display, TEXT("Laby UI fonts repaired: %s (%d labels)"), *PackageName, Repaired);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to save repaired Laby UI fonts: %s"), *PackageName);
+		}
+	}
+
+	FAutoConsoleCommand RepairFontsCommand(
+	    TEXT("laby.UI.RepairFonts"),
+	    TEXT("Repair missing font assets in Laby Widget Blueprints, preserving layout and custom fonts."),
+	    FConsoleCommandDelegate::CreateLambda(
+	        []()
+	        {
+		        for (const TCHAR* Name :
+		             {TEXT("WBP_HUD"), TEXT("WBP_MainMenu"), TEXT("WBP_PauseMenu"), TEXT("WBP_Settings")})
+			        RepairFonts(FString(TEXT("/Game/UI/")) + Name);
+	        }));
 
 	void CreateAsset(const TCHAR* Name, bool bHUD, bool bPause = false, bool bSettings = false)
 	{
@@ -255,7 +364,11 @@ namespace
 
 		// Never rebuild an existing asset: its layout belongs to the designer.
 		if (FPackageName::DoesPackageExist(PackageName) || FindPackage(nullptr, *PackageName))
+		{
+			RepairFonts(PackageName);
+
 			return;
+		}
 
 		UPackage* Package = CreatePackage(*PackageName);
 		auto* Blueprint = CastChecked<UWidgetBlueprint>(FKismetEditorUtilities::CreateBlueprint(

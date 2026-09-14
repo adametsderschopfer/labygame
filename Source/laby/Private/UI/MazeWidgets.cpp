@@ -1,4 +1,5 @@
 #include "UI/MazeWidgets.h"
+#include "UI/MazeText.h"
 #include "Player/MazeCharacter.h"
 #include "Player/MazePlayerController.h"
 #include "ECS/MazeVitalsSystem.h"
@@ -14,10 +15,21 @@
 
 namespace
 {
-	void Text(UUserWidget* Owner, const TCHAR* Name, const FString& Value)
+	FText SensitivityText(float Value)
+	{
+		FNumberFormattingOptions Options;
+
+		Options.MinimumFractionalDigits = 2;
+		Options.MaximumFractionalDigits = 2;
+
+		return FText::Format(NSLOCTEXT("Maze.Settings", "SensitivityValue", "{Value} x"),
+		                     FFormatNamedArguments{{TEXT("Value"), FText::AsNumber(Value, &Options)}});
+	}
+
+	void Text(UUserWidget* Owner, const TCHAR* Name, const FText& Value)
 	{
 		if (auto* Widget = Cast<UTextBlock>(Owner->GetWidgetFromName(Name)))
-			Widget->SetText(FText::FromString(Value));
+			Widget->SetText(Value);
 	}
 
 	void Visible(UUserWidget* Owner, const TCHAR* Name, bool bVisible)
@@ -31,6 +43,14 @@ void UMazeMenuWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	SetIsFocusable(true);
+
+	for (const auto& Entry : MazeText::WidgetLabels())
+		Text(this, *Entry.Key.ToString(), Entry.Value);
+
+	Text(this,
+	     TEXT("Subtitle"),
+	     MazeText::Subtitle(GetWidgetFromName(TEXT("SensitivitySlider")) != nullptr,
+	                        GetWidgetFromName(TEXT("ResumeButton")) != nullptr));
 
 	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("ResumeButton"))))
 		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::Resume);
@@ -63,7 +83,7 @@ void UMazeMenuWidget::NativeConstruct()
 		Slider->OnControllerCaptureEnd.AddUniqueDynamic(this, &UMazeMenuWidget::SaveSensitivity);
 	}
 
-	Text(this, TEXT("SensitivityText"), FString::Printf(TEXT("%.2f ×"), Sensitivity));
+	Text(this, TEXT("SensitivityText"), SensitivityText(Sensitivity));
 }
 
 FReply UMazeMenuWidget::NativeOnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent& Event)
@@ -113,9 +133,7 @@ void UMazeMenuWidget::Quit()
 void UMazeMenuWidget::ChangeSensitivity(float Value)
 {
 	GetMutableDefault<UMazePreferences>()->MouseSensitivity = FMath::Clamp(Value, 0.1f, 3.f);
-	Text(this,
-	     TEXT("SensitivityText"),
-	     FString::Printf(TEXT("%.2f ×"), GetDefault<UMazePreferences>()->GetSensitivity()));
+	Text(this, TEXT("SensitivityText"), SensitivityText(GetDefault<UMazePreferences>()->GetSensitivity()));
 }
 
 void UMazeMenuWidget::SaveSensitivity()
@@ -139,6 +157,9 @@ void UMazeHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	for (const auto& Entry : MazeText::WidgetLabels())
+		Text(this, *Entry.Key.ToString(), Entry.Value);
+
 	const TCHAR* Section = TEXT("/Script/EngineSettings.GeneralProjectSettings");
 	FString Version;
 
@@ -151,7 +172,10 @@ void UMazeHUDWidget::NativeConstruct()
 		CurrentGameConfig.GetString(Section, TEXT("ProjectVersion"), Version);
 
 #endif
-	Text(this, TEXT("VersionText"), FString::Printf(TEXT("ALPHA %s"), *Version));
+	Text(this,
+	     TEXT("VersionText"),
+	     FText::Format(NSLOCTEXT("Maze.HUD", "Version", "ALPHA {Version}"),
+	                   FFormatNamedArguments{{TEXT("Version"), FText::AsCultureInvariant(Version)}}));
 #if UE_BUILD_SHIPPING || UE_BUILD_TEST
 	Visible(this, TEXT("DeveloperHint"), false);
 #endif
@@ -180,12 +204,16 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 
 		bDead = !FMazeVitalsSystem::IsAlive(Vitals);
 		ReachedExit = Player->GetReachedExit();
-		Text(this, TEXT("HealthText"), FString::Printf(TEXT("HEALTH  %d / 100"), FMath::CeilToInt(Vitals.Health)));
+		Text(this,
+		     TEXT("HealthText"),
+		     FText::Format(NSLOCTEXT("Maze.HUD", "Health", "HEALTH  {Value} / 100"),
+		                   FFormatNamedArguments{{TEXT("Value"), FMath::CeilToInt(Vitals.Health)}}));
 		Text(this,
 		     TEXT("StaminaText"),
-		     FString::Printf(TEXT("%s  %d / 100"),
-		                     Vitals.bExhausted ? TEXT("STAMINA / RECOVERING") : TEXT("STAMINA"),
-		                     FMath::CeilToInt(Vitals.Stamina)));
+		     FText::Format(Vitals.bExhausted
+		                       ? NSLOCTEXT("Maze.HUD", "StaminaRecovering", "STAMINA / RECOVERING  {Value} / 100")
+		                       : NSLOCTEXT("Maze.HUD", "Stamina", "STAMINA  {Value} / 100"),
+		                   FFormatNamedArguments{{TEXT("Value"), FMath::CeilToInt(Vitals.Stamina)}}));
 
 		if (auto* Bar = Cast<UProgressBar>(GetWidgetFromName(TEXT("HealthBar"))))
 			Bar->SetPercent(FMath::Clamp(Vitals.Health / FMazeVitals::Maximum, 0.f, 1.f));
@@ -199,7 +227,7 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 
 	Visible(this, TEXT("DeathPanel"), bDead);
 	Visible(this, TEXT("ExitPanel"), !bDead && ReachedExit != 0);
-	Text(this, TEXT("ExitText"), FString::Printf(TEXT("EXIT %d REACHED"), ReachedExit));
+	Text(this, TEXT("ExitText"), NSLOCTEXT("Maze.Widgets", "ExitText", "EXIT REACHED"));
 	Visible(this, TEXT("MinimapPanel"), !bDead && (!Controller || Controller->IsMinimapVisible()));
 	Visible(this, TEXT("SessionText"), !bDead);
 
@@ -208,8 +236,9 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 		if (const auto Data = It->GetGeneratedData())
 			Text(this,
 			     TEXT("SessionText"),
-			     FString::Printf(
-			         TEXT("SESSION %d | %d x %d | START A"), It->Seed, Data->Layout.Size, Data->Layout.Size));
+			     FText::Format(NSLOCTEXT("Maze.HUD", "Session", "SESSION {Seed} | {Size} x {Size} | START A"),
+			                   FFormatNamedArguments{{TEXT("Seed"), FText::AsCultureInvariant(LexToString(It->Seed))},
+			                                         {TEXT("Size"), Data->Layout.Size}}));
 
 		break;
 	}

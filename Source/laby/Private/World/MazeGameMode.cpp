@@ -96,7 +96,8 @@ void AMazeGameMode::PostLogin(APlayerController* NewPlayer)
 
 	if (!ECS->AddRoomMember(NewPlayer->PlayerState->GetPlayerId(), NewPlayer->PlayerState->GetPlayerName(), bHost))
 	{
-		GameSession->KickPlayer(NewPlayer, FText::FromString(TEXT("Room is full or already started")));
+		GameSession->KickPlayer(NewPlayer,
+		                        NSLOCTEXT("Maze.Online", "RoomClosed", "The room is full or has already started."));
 
 		return;
 	}

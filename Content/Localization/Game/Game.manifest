@@ -1,0 +1,804 @@
+{
+	"FormatVersion": 1,
+	"Namespace": "",
+	"Subnamespaces": [
+		{
+			"Namespace": "Maze",
+			"Subnamespaces": [
+				{
+					"Namespace": "HUD",
+					"Children": [
+						{
+							"Source": {
+								"Text": "ALPHA {Version}"
+							},
+							"Keys": [
+								{
+									"Key": "Version",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(177)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "HEALTH  {Value} / 100"
+							},
+							"Keys": [
+								{
+									"Key": "Health",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(209)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "SESSION {Seed} | {Size} x {Size} | START A"
+							},
+							"Keys": [
+								{
+									"Key": "Session",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(239)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "STAMINA  {Value} / 100"
+							},
+							"Keys": [
+								{
+									"Key": "Stamina",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(215)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "STAMINA / RECOVERING  {Value} / 100"
+							},
+							"Keys": [
+								{
+									"Key": "StaminaRecovering",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(214)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Menu",
+					"Children": [
+						{
+							"Source": {
+								"Text": "Code copied."
+							},
+							"Keys": [
+								{
+									"Key": "CodeCopied",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(336)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Copy code"
+							},
+							"Keys": [
+								{
+									"Key": "CopyCode",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(330)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Create room"
+							},
+							"Keys": [
+								{
+									"Key": "CreateRoom",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(364)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "GAME MENU"
+							},
+							"Keys": [
+								{
+									"Key": "GameMenu",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(297)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Join room"
+							},
+							"Keys": [
+								{
+									"Key": "JoinRoom",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(375)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "LABY - MULTIPLAYER"
+							},
+							"Keys": [
+								{
+									"Key": "Title",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(299)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Leave room"
+							},
+							"Keys": [
+								{
+									"Key": "LeaveRoom",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(355)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Players: {Count} / 4\n"
+							},
+							"Keys": [
+								{
+									"Key": "PlayerCount",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(310)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Quit game"
+							},
+							"Keys": [
+								{
+									"Key": "Quit",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(390)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Resume"
+							},
+							"Keys": [
+								{
+									"Key": "Resume",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(349)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Room code"
+							},
+							"Keys": [
+								{
+									"Key": "RoomCodeHint",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(372)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Room code: {Code}"
+							},
+							"Keys": [
+								{
+									"Key": "RoomCode",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(327)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Settings"
+							},
+							"Keys": [
+								{
+									"Key": "Settings",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(383)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Start game"
+							},
+							"Keys": [
+								{
+									"Key": "StartGame",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(339)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "WAITING ROOM"
+							},
+							"Keys": [
+								{
+									"Key": "Lobby",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(298)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Waiting for the host to start the game..."
+							},
+							"Keys": [
+								{
+									"Key": "Waiting",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(346)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "{Name}  [HOST]"
+							},
+							"Keys": [
+								{
+									"Key": "HostPlayer",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(317)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Online",
+					"Children": [
+						{
+							"Source": {
+								"Text": "Connecting..."
+							},
+							"Keys": [
+								{
+									"Key": "Connecting",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(207)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Connection lost or the host closed the room."
+							},
+							"Keys": [
+								{
+									"Key": "ConnectionLost",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(282)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Could not connect."
+							},
+							"Keys": [
+								{
+									"Key": "ConnectFailed",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(210)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Could not create the room."
+							},
+							"Keys": [
+								{
+									"Key": "CreateFailed",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(162)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Could not join: the room is unavailable or full."
+							},
+							"Keys": [
+								{
+									"Key": "JoinFailed",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(225)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Could not load the multiplayer map."
+							},
+							"Keys": [
+								{
+									"Key": "TravelFailed",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(291)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Could not start Epic Games sign-in."
+							},
+							"Keys": [
+								{
+									"Key": "SignInStartFailed",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(96)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Could not start the room search."
+							},
+							"Keys": [
+								{
+									"Key": "SearchStartFailed",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(173)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Creating room..."
+							},
+							"Keys": [
+								{
+									"Key": "CreatingRoom",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(147)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Enter a 10-character room code."
+							},
+							"Keys": [
+								{
+									"Key": "CodeLength",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(116)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Finding room..."
+							},
+							"Keys": [
+								{
+									"Key": "FindingRoom",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(166)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Leave your current room first."
+							},
+							"Keys": [
+								{
+									"Key": "LeaveCurrentRoom",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(66)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Online play is not configured yet."
+							},
+							"Keys": [
+								{
+									"Key": "EosNotConfigured",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(49)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Online services are unavailable."
+							},
+							"Keys": [
+								{
+									"Key": "EosUnavailable",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(59)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Room codes contain only 0-9 and A-F."
+							},
+							"Keys": [
+								{
+									"Key": "CodeCharacters",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(124)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Room creation failed."
+							},
+							"Keys": [
+								{
+									"Key": "CreateError",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(181)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Room search failed."
+							},
+							"Keys": [
+								{
+									"Key": "SearchError",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(194)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Sign-in was cancelled or is unavailable. Please try again."
+							},
+							"Keys": [
+								{
+									"Key": "SignInFailed",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(140)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Signing in to Epic Games..."
+							},
+							"Keys": [
+								{
+									"Key": "SigningIn",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(93)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "The room is full or has already started."
+							},
+							"Keys": [
+								{
+									"Key": "RoomClosed",
+									"Path": "Source/laby/Private/World/MazeGameMode.cpp(100)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "The room was not found, is full, or has already started."
+							},
+							"Keys": [
+								{
+									"Key": "RoomNotFound",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(216)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Settings",
+					"Children": [
+						{
+							"Source": {
+								"Text": "{Value} x"
+							},
+							"Keys": [
+								{
+									"Key": "SensitivityValue",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(25)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Widgets",
+					"Children": [
+						{
+							"Source": {
+								"Text": "0.10 - 3.00 - Saved automatically"
+							},
+							"Keys": [
+								{
+									"Key": "SettingsHint",
+									"Path": "Source/laby/Public/UI/MazeText.h(13)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "1.00 x"
+							},
+							"Keys": [
+								{
+									"Key": "SensitivityText",
+									"Path": "Source/laby/Public/UI/MazeText.h(12)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ALPHA 0.0.0.1"
+							},
+							"Keys": [
+								{
+									"Key": "VersionText",
+									"Path": "Source/laby/Public/UI/MazeText.h(20)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Back"
+							},
+							"Keys": [
+								{
+									"Key": "BackButtonLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(15)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Create room"
+							},
+							"Keys": [
+								{
+									"Key": "NewGameButtonLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(17)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "DEV: M  Toggle map"
+							},
+							"Keys": [
+								{
+									"Key": "DeveloperHint",
+									"Path": "Source/laby/Public/UI/MazeText.h(23)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "EXIT REACHED"
+							},
+							"Keys": [
+								{
+									"Key": "ExitText",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(230)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Game menu"
+							},
+							"Keys": [
+								{
+									"Key": "PauseSubtitle",
+									"Path": "Source/laby/Public/UI/MazeText.h(46)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "HEALTH  100 / 100"
+							},
+							"Keys": [
+								{
+									"Key": "HealthText",
+									"Path": "Source/laby/Public/UI/MazeText.h(21)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "L A B Y"
+							},
+							"Keys": [
+								{
+									"Key": "Title",
+									"Path": "Source/laby/Public/UI/MazeText.h(10)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "MAP"
+							},
+							"Keys": [
+								{
+									"Key": "MapTitle",
+									"Path": "Source/laby/Public/UI/MazeText.h(25)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Mouse sensitivity"
+							},
+							"Keys": [
+								{
+									"Key": "SensitivityLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(11)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "One maze. One exit."
+							},
+							"Keys": [
+								{
+									"Key": "MainSubtitle",
+									"Path": "Source/laby/Public/UI/MazeText.h(47)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Press Escape to open the game menu"
+							},
+							"Keys": [
+								{
+									"Key": "DeathHint",
+									"Path": "Source/laby/Public/UI/MazeText.h(29)"
+								},
+								{
+									"Key": "ExitHint",
+									"Path": "Source/laby/Public/UI/MazeText.h(30)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Quit to desktop"
+							},
+							"Keys": [
+								{
+									"Key": "QuitButtonLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(19)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Reset to defaults"
+							},
+							"Keys": [
+								{
+									"Key": "ResetButtonLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(14)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Resume"
+							},
+							"Keys": [
+								{
+									"Key": "ResumeButtonLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(16)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "SESSION 0 - 80 x 80 - START A"
+							},
+							"Keys": [
+								{
+									"Key": "SessionText",
+									"Path": "Source/laby/Public/UI/MazeText.h(24)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "STAMINA  100 / 100"
+							},
+							"Keys": [
+								{
+									"Key": "StaminaText",
+									"Path": "Source/laby/Public/UI/MazeText.h(22)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Settings"
+							},
+							"Keys": [
+								{
+									"Key": "SettingsButtonLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(18)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Settings / Controls"
+							},
+							"Keys": [
+								{
+									"Key": "SettingsSubtitle",
+									"Path": "Source/laby/Public/UI/MazeText.h(45)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "YOU        A        EXIT"
+							},
+							"Keys": [
+								{
+									"Key": "MapLegend",
+									"Path": "Source/laby/Public/UI/MazeText.h(26)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "YOU DIED"
+							},
+							"Keys": [
+								{
+									"Key": "DeathText",
+									"Path": "Source/laby/Public/UI/MazeText.h(27)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "World",
+					"Children": [
+						{
+							"Source": {
+								"Text": "A / START"
+							},
+							"Keys": [
+								{
+									"Key": "Start",
+									"Path": "Source/laby/Private/World/MazeWorld.cpp(166)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "EXIT"
+							},
+							"Keys": [
+								{
+									"Key": "Exit",
+									"Path": "Source/laby/Private/World/MazeWorld.cpp(179)"
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	]
+}
