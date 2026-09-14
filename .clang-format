@@ -1,0 +1,40 @@
+# Pinned clang-format 21.1.8; Unreal C++ and C# build rules.
+BasedOnStyle: Microsoft
+UseTab: ForIndentation
+IndentWidth: 4
+TabWidth: 4
+ColumnLimit: 120
+BreakBeforeBraces: Allman
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortLambdasOnASingleLine: None
+BinPackArguments: false
+BinPackParameters: OnePerLine
+PointerAlignment: Left
+ReferenceAlignment: Left
+AccessModifierOffset: -4
+NamespaceIndentation: All
+# Unreal requires .generated.h to remain the last include.
+SortIncludes: Never
+IncludeBlocks: Preserve
+ReflowComments: Never
+FixNamespaceComments: false
+MaxEmptyLinesToKeep: 1
+# Keep Unreal reflection macros attached to their class/struct definitions.
+SeparateDefinitionBlocks: Leave
+StatementMacros:
+  - UCLASS
+  - USTRUCT
+  - UENUM
+  - UINTERFACE
+  - UPROPERTY
+  - UFUNCTION
+  - UMETA
+  - GENERATED_BODY
+  - GENERATED_UCLASS_BODY
+  - GENERATED_USTRUCT_BODY
+  - SLATE_DEFAULT_SLOT
+  - SLATE_END_ARGS

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 public class labyEditorTarget : TargetRules
 {
-	public labyEditorTarget( TargetInfo Target) : base(Target)
+	public labyEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V7;

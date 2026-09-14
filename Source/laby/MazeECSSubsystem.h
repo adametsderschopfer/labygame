@@ -7,8 +7,18 @@
 #include "MazeECSFragments.h"
 #include "MazeECSSubsystem.generated.h"
 
-enum class EMazeInputAxis { Forward, Right, Yaw, Pitch };
-enum class EMazeInputAction { Sprint, Jump };
+enum class EMazeInputAxis
+{
+	Forward,
+	Right,
+	Yaw,
+	Pitch
+};
+enum class EMazeInputAction
+{
+	Sprint,
+	Jump
+};
 
 // Game-thread ECS scheduling, lifecycle and engine bridge API for this world.
 UCLASS()
@@ -39,18 +49,22 @@ public:
 	void SetSessionStarted(bool bStarted);
 	void SetMenu(bool bOpen, bool bSettings = false);
 	void ToggleMinimap();
+
 protected:
 	virtual bool DoesSupportWorldType(EWorldType::Type WorldType) const override;
+
 private:
-	UPROPERTY() TObjectPtr<class UMassEntitySubsystem> MassSubsystem;
+	UPROPERTY()
+	TObjectPtr<class UMassEntitySubsystem> MassSubsystem;
 	TUniquePtr<FMassEntityQuery> VitalsQuery;
 	TUniquePtr<FMassEntityQuery> GenerationQuery;
 	TUniquePtr<FMassEntityQuery> InputQuery;
 	FMassArchetypeHandle PlayerArchetype;
 	FMassArchetypeHandle MazeArchetype;
 	FMassEntityHandle SessionEntity;
+
 	FMazeVitals* FindVitals(FMassEntityHandle Entity) const;
 	void GeneratePending();
 	void UpdateProgress(FMassEntityHandle Entity);
-	template<typename T> T* FindFragment(FMassEntityHandle Entity) const;
+	template <typename T> T* FindFragment(FMassEntityHandle Entity) const;
 };

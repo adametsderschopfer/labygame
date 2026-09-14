@@ -2,10 +2,13 @@
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FMazeVitalsTest, "Laby.Character.Vitals", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FMazeVitalsTest,
+                                 "Laby.Character.Vitals",
+                                 EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FMazeVitalsTest::RunTest(const FString& Parameters)
 {
 	FMazeVitals V;
+
 	FMazeVitalsSystem::Update(V, 2.f, true);
 	TestEqual(TEXT("Two seconds of sprint"), V.Stamina, 60.f);
 	FMazeVitalsSystem::Update(V, 1.f, false);
@@ -33,7 +36,9 @@ bool FMazeVitalsTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Dead player takes no further damage"), FMazeVitalsSystem::Damage(V, 10.f), 0.f);
 	FMazeVitalsSystem::Update(V, 5.f, true);
 	TestEqual(TEXT("Dead player does not consume stamina"), V.Stamina, 100.f);
+
 	FMazeVitals FreshLife;
+
 	TestEqual(TEXT("New life health"), FreshLife.Health, 100.f);
 	TestEqual(TEXT("New life stamina"), FreshLife.Stamina, 100.f);
 	TestTrue(TEXT("Jump spends stamina"), FMazeVitalsSystem::SpendJumpStamina(FreshLife));
@@ -53,6 +58,8 @@ bool FMazeVitalsTest::RunTest(const FString& Parameters)
 	FMazeVitalsSystem::Damage(FreshLife, 100.f);
 	FreshLife.Stamina = 100.f;
 	TestFalse(TEXT("Dead player cannot jump"), FMazeVitalsSystem::CanJump(FreshLife));
+
 	return true;
 }
+
 #endif

@@ -19,6 +19,7 @@ class LABY_API AMazeHUD : public AHUD
 	GENERATED_BODY()
 public:
 	virtual void DrawHUD() override;
+
 private:
 	void DrawMinimap(const class AMazeWorld& Maze);
 };

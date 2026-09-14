@@ -14,3 +14,12 @@
 - Generate topology, mesh data, spawn positions and exit checks in ECS. AMazeWorld consumes immutable generation data; HUD only reads progress and never decides whether an exit was reached.
 - Preserve per-world entity lifecycle and validate handles. Clear input when menus/focus change. New gameplay mechanics should extend fragments/systems rather than grow Actor logic.
 - Do not run tests or Play unless the user requests it; the user is handling gameplay testing.
+
+# Automatic code formatting
+
+- After every batch of source-code edits, and always before the final response for a code-changing task, run `powershell -NoProfile -ExecutionPolicy Bypass -File Scripts/Format-Code.ps1` from the project root. Do this without asking the user. Repeat if you edit source again afterward.
+- This command normalizes source with pinned clang-format 21.1.8 (`.clang-format`), inserts structural blank lines with Uncrustify 0.83.0 (`.uncrustify.cfg`), then applies clang-format for the final layout. It covers project C/C++ headers, implementations and C# build rules under `Source`. Missing tools are installed into ignored `.tools` automatically. Explicit installers are `Scripts/Install-Uncrustify.ps1` and `Scripts/Install-Formatter.ps1`.
+- Let the formatters handle whitespace, line wrapping and structural blank lines. Uncrustify separates variable declaration groups, control-flow statements, returns and function bodies; clang-format handles the final layout. Do not manually approximate these rules or pack functions, conditions or switch branches onto one line.
+- Preserve Unreal include order, especially `.generated.h` last. Never format engine, third-party or generated build files.
+- Formatting is a write step, not gameplay testing. No build, Play session or additional manual formatting review is required just for formatting. Optional read-only verification: `powershell -NoProfile -ExecutionPolicy Bypass -File Scripts/Format-Code.ps1 -Check`.
+- This is an agent workflow instruction, not an operating-system hook after every shell command. Commands that do not change source do not require formatting.

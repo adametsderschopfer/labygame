@@ -12,20 +12,28 @@ USTRUCT()
 struct FMazeVitalsFragment : public FMassFragment
 {
 	GENERATED_BODY()
-	UPROPERTY() FMazeVitals Value;
+	UPROPERTY()
+	FMazeVitals Value;
 };
 
 USTRUCT()
 struct FMazePlayerInputFragment : public FMassFragment
 {
 	GENERATED_BODY()
-	UPROPERTY() float Forward = 0.f;
-	UPROPERTY() float Right = 0.f;
-	UPROPERTY() float Yaw = 0.f;
-	UPROPERTY() float Pitch = 0.f;
-	UPROPERTY() bool bSprintHeld = false;
-	UPROPERTY() bool bJumpHeld = false;
-	UPROPERTY() bool bJumpPressed = false;
+	UPROPERTY()
+	float Forward = 0.f;
+	UPROPERTY()
+	float Right = 0.f;
+	UPROPERTY()
+	float Yaw = 0.f;
+	UPROPERTY()
+	float Pitch = 0.f;
+	UPROPERTY()
+	bool bSprintHeld = false;
+	UPROPERTY()
+	bool bJumpHeld = false;
+	UPROPERTY()
+	bool bJumpPressed = false;
 };
 
 // Observations from Unreal physics/input focus, consumed by gameplay systems.
@@ -33,22 +41,32 @@ USTRUCT()
 struct FMazePlayerPoseFragment : public FMassFragment
 {
 	GENERATED_BODY()
-	UPROPERTY() FVector Location = FVector::ZeroVector;
-	UPROPERTY() FVector Forward = FVector::ForwardVector;
-	UPROPERTY() FVector Right = FVector::RightVector;
-	UPROPERTY() FVector Velocity = FVector::ZeroVector;
-	UPROPERTY() FVector Acceleration = FVector::ZeroVector;
-	UPROPERTY() bool bOnGround = false;
-	UPROPERTY() bool bInputEnabled = true;
-	UPROPERTY() float Sensitivity = 1.f;
+	UPROPERTY()
+	FVector Location = FVector::ZeroVector;
+	UPROPERTY()
+	FVector Forward = FVector::ForwardVector;
+	UPROPERTY()
+	FVector Right = FVector::RightVector;
+	UPROPERTY()
+	FVector Velocity = FVector::ZeroVector;
+	UPROPERTY()
+	FVector Acceleration = FVector::ZeroVector;
+	UPROPERTY()
+	bool bOnGround = false;
+	UPROPERTY()
+	bool bInputEnabled = true;
+	UPROPERTY()
+	float Sensitivity = 1.f;
 };
 
 USTRUCT()
 struct FMazeLocomotionFragment : public FMassFragment
 {
 	GENERATED_BODY()
-	UPROPERTY() bool bRunning = false;
-	UPROPERTY() bool bOnGround = false;
+	UPROPERTY()
+	bool bRunning = false;
+	UPROPERTY()
+	bool bOnGround = false;
 };
 
 // Commands for the engine bridge; no gameplay decisions in the bridge.
@@ -56,22 +74,32 @@ USTRUCT()
 struct FMazePlayerCommandFragment : public FMassFragment
 {
 	GENERATED_BODY()
-	UPROPERTY() FVector Movement = FVector::ZeroVector;
-	UPROPERTY() float Speed = 450.f;
-	UPROPERTY() float Yaw = 0.f;
-	UPROPERTY() float Pitch = 0.f;
-	UPROPERTY() bool bJumpHeld = false;
-	UPROPERTY() bool bStartJump = false;
-	UPROPERTY() bool bDead = false;
+	UPROPERTY()
+	FVector Movement = FVector::ZeroVector;
+	UPROPERTY()
+	float Speed = 450.f;
+	UPROPERTY()
+	float Yaw = 0.f;
+	UPROPERTY()
+	float Pitch = 0.f;
+	UPROPERTY()
+	bool bJumpHeld = false;
+	UPROPERTY()
+	bool bStartJump = false;
+	UPROPERTY()
+	bool bDead = false;
 };
 
 USTRUCT()
 struct FMazeProgressFragment : public FMassFragment
 {
 	GENERATED_BODY()
-	UPROPERTY() FMassEntityHandle Maze;
-	UPROPERTY() int32 ReachedExit = 0;
-	UPROPERTY() uint32 MazeRevision = 0;
+	UPROPERTY()
+	FMassEntityHandle Maze;
+	UPROPERTY()
+	int32 ReachedExit = 0;
+	UPROPERTY()
+	uint32 MazeRevision = 0;
 };
 
 // Immutable generated payload; the fragment owns its shared lifetime, never an Actor.
@@ -89,29 +117,45 @@ USTRUCT()
 struct FMazeGenerationFragment : public FMassFragment
 {
 	GENERATED_BODY()
-	UPROPERTY() int32 Seed = 0;
-	UPROPERTY() int32 Size = FMazeLayout::DefaultSize;
-	UPROPERTY() float Cell = 875.f;
-	UPROPERTY() float WallThickness = 50.f;
-	UPROPERTY() float WallHeight = 1000.f;
-	UPROPERTY() FVector Origin = FVector::ZeroVector;
-	UPROPERTY() bool bNeedsGeneration = true;
-	UPROPERTY() uint32 Revision = 0;
+	UPROPERTY()
+	int32 Seed = 0;
+	UPROPERTY()
+	int32 Size = FMazeLayout::DefaultSize;
+	UPROPERTY()
+	float Cell = 875.f;
+	UPROPERTY()
+	float WallThickness = 50.f;
+	UPROPERTY()
+	float WallHeight = 1000.f;
+	UPROPERTY()
+	FVector Origin = FVector::ZeroVector;
+	UPROPERTY()
+	bool bNeedsGeneration = true;
+	UPROPERTY()
+	uint32 Revision = 0;
 	TSharedPtr<const FMazeGeneratedData> Data;
 };
 
-template<> struct TMassFragmentTraits<FMazeGenerationFragment> final
+template <> struct TMassFragmentTraits<FMazeGenerationFragment> final
 {
-	enum { AuthorAcceptsItsNotTriviallyCopyable = true };
+	enum
+	{
+		AuthorAcceptsItsNotTriviallyCopyable = true
+	};
 };
 
 USTRUCT()
 struct FMazeSessionFragment : public FMassFragment
 {
 	GENERATED_BODY()
-	UPROPERTY() FMassEntityHandle Maze;
-	UPROPERTY() bool bMenuOpen = false;
-	UPROPERTY() bool bSettingsOpen = false;
-	UPROPERTY() bool bSessionStarted = false;
-	UPROPERTY() bool bMinimapVisible = true;
+	UPROPERTY()
+	FMassEntityHandle Maze;
+	UPROPERTY()
+	bool bMenuOpen = false;
+	UPROPERTY()
+	bool bSettingsOpen = false;
+	UPROPERTY()
+	bool bSessionStarted = false;
+	UPROPERTY()
+	bool bMinimapVisible = true;
 };

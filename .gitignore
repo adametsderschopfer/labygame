@@ -24,5 +24,6 @@
 /.agents/
 __pycache__/
 *.pyc
+/.tools/
 .env
 .env.*

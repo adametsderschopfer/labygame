@@ -18,15 +18,28 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	void InitializeMaze();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	UPROPERTY(ReplicatedUsing=OnRep_Seed, VisibleAnywhere, Category="Maze") int32 Seed = 0;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Seed, VisibleAnywhere, Category = "Maze")
+	int32 Seed = 0;
+
 	FVector StartLocation() const;
 	TSharedPtr<const FMazeGeneratedData> GetGeneratedData() const;
 	float GetCellSize() const;
+
 private:
-	UFUNCTION() void OnRep_Seed();
+	UFUNCTION()
+	void OnRep_Seed();
 	void Build();
-	UPROPERTY() TObjectPtr<UProceduralMeshComponent> Walls;
-	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Floor;
-	UPROPERTY(Transient) FMassEntityHandle MazeEntity;
-	UPROPERTY(Transient) TObjectPtr<class UMazeECSSubsystem> ECSSubsystem;
+
+	UPROPERTY()
+	TObjectPtr<UProceduralMeshComponent> Walls;
+
+	UPROPERTY()
+	TObjectPtr<UInstancedStaticMeshComponent> Floor;
+
+	UPROPERTY(Transient)
+	FMassEntityHandle MazeEntity;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UMazeECSSubsystem> ECSSubsystem;
 };

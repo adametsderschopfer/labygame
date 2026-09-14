@@ -3,4 +3,4 @@
 #include "laby.h"
 #include "Modules/ModuleManager.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, laby, "laby" );
+IMPLEMENT_PRIMARY_GAME_MODULE(FDefaultGameModuleImpl, laby, "laby");

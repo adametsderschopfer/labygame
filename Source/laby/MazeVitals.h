@@ -14,9 +14,12 @@ struct FMazeVitals
 	static constexpr float ResumeThreshold = 25.f;
 	static constexpr float JumpCost = 15.f;
 
-	UPROPERTY() float Health = Maximum;
-	UPROPERTY() float Stamina = Maximum;
-	UPROPERTY() float RecoveryWait = 0.f;
-	UPROPERTY() bool bExhausted = false;
-
+	UPROPERTY()
+	float Health = Maximum;
+	UPROPERTY()
+	float Stamina = Maximum;
+	UPROPERTY()
+	float RecoveryWait = 0.f;
+	UPROPERTY()
+	bool bExhausted = false;
 };

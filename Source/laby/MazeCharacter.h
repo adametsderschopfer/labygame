@@ -17,13 +17,21 @@ public:
 	virtual bool CanJumpInternal_Implementation() const override;
 	virtual void OnJumped_Implementation() override;
 	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode = 0) override;
-	virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	virtual float TakeDamage(float DamageAmount,
+	                         const FDamageEvent& DamageEvent,
+	                         AController* EventInstigator,
+	                         AActor* DamageCauser) override;
 	FMazeVitals GetVitals() const;
 	int32 GetReachedExit() const;
 	virtual void SetupPlayerInputComponent(UInputComponent* Input) override;
+
 private:
-	UPROPERTY(Transient) FMassEntityHandle PlayerEntity;
-	UPROPERTY(Transient) TObjectPtr<class UMazeECSSubsystem> ECSSubsystem;
+	UPROPERTY(Transient)
+	FMassEntityHandle PlayerEntity;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UMazeECSSubsystem> ECSSubsystem;
+
 	void Forward(float Value);
 	void Right(float Value);
 	void LookUp(float Value);
