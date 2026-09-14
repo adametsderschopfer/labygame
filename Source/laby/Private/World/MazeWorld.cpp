@@ -1,9 +1,10 @@
 #include "World/MazeWorld.h"
-#include "Engine/DirectionalLight.h"
-#include "Engine/SkyLight.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/SkyLightComponent.h"
-#include "Components/SkyAtmosphereComponent.h"
+#include "Components/ExponentialHeightFogComponent.h"
+#include "Components/PostProcessComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/TextureCube.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "ProceduralMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -40,23 +41,83 @@ void AMazeWorld::BeginPlay()
 {
 	Super::BeginPlay();
 
-	auto* Sun = GetWorld()->SpawnActor<ADirectionalLight>(FVector(0, 0, 2000), FRotator(-55, -35, 0));
+	// Presentation only: owned components follow this world's maze lifetime.
+	// Loading here also applies the material to existing CDOs after Live Coding.
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		if (auto* Ground = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Materials/M_MazeGround.M_MazeGround")))
+			Floor->SetMaterial(0, Ground);
+		else
+			UE_LOG(LogTemp, Error, TEXT("Missing maze ground material. Run Scripts/create_night_environment.py."));
 
-	Sun->GetLightComponent()->SetMobility(EComponentMobility::Movable);
-	Sun->GetLightComponent()->SetIntensity(5.f);
-	CastChecked<UDirectionalLightComponent>(Sun->GetLightComponent())->SetAtmosphereSunLight(true);
+		auto* Moon = NewObject<UDirectionalLightComponent>(this, TEXT("MoonLight"));
 
-	auto* Sky = GetWorld()->SpawnActor<ASkyLight>();
+		Moon->SetupAttachment(RootComponent);
+		Moon->SetMobility(EComponentMobility::Movable);
+		// Direction of the brightest HDRI pixel, converted from long-lat to UE axes.
+		Moon->SetWorldRotation((-FVector(0.291328, -0.393440, 0.871971)).Rotation());
+		Moon->SetIntensity(0.35f);
+		Moon->SetLightColor(FLinearColor(0.68f, 0.78f, 1.f));
+		Moon->LightSourceAngle = 0.55f;
+		Moon->RegisterComponent();
 
-	Sky->GetLightComponent()->SetMobility(EComponentMobility::Movable);
-	Sky->GetLightComponent()->SetIntensity(1.2f);
-	Sky->GetLightComponent()->SetRealTimeCaptureEnabled(true);
+		auto* NightMaterial =
+		    LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Environment/M_MoonNight.M_MoonNight"));
+		auto* NightCubemap = LoadObject<UTextureCube>(nullptr, TEXT("/Game/Environment/T_MoonNight.T_MoonNight"));
 
-	auto* AtmosphereActor = GetWorld()->SpawnActor<AActor>();
-	auto* Atmosphere = NewObject<USkyAtmosphereComponent>(AtmosphereActor);
+		if (NightMaterial && NightCubemap)
+		{
+			auto* Dome = NewObject<UStaticMeshComponent>(this, TEXT("NightSky"));
 
-	AtmosphereActor->SetRootComponent(Atmosphere);
-	Atmosphere->RegisterComponent();
+			Dome->SetupAttachment(RootComponent);
+			Dome->SetStaticMesh(Floor->GetStaticMesh());
+			Dome->SetMaterial(0, NightMaterial);
+			Dome->SetRelativeScale3D(FVector(20000.f));
+			Dome->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Dome->SetCastShadow(false);
+			Dome->SetVisibleInRayTracing(false);
+			Dome->SetCanEverAffectNavigation(false);
+			Dome->bAffectDistanceFieldLighting = false;
+			Dome->RegisterComponent();
+
+			auto* Sky = NewObject<USkyLightComponent>(this, TEXT("NightSkyLight"));
+
+			Sky->SetupAttachment(RootComponent);
+			Sky->SetMobility(EComponentMobility::Movable);
+			Sky->SourceType = SLS_SpecifiedCubemap;
+			Sky->SetCubemap(NightCubemap);
+			Sky->SetIntensity(0.08f);
+			Sky->SetLightColor(FLinearColor(0.65f, 0.76f, 1.f));
+			Sky->SetLowerHemisphereColor(FLinearColor::Black);
+			Sky->RegisterComponent();
+		}
+		else
+			UE_LOG(LogTemp, Error, TEXT("Missing night sky assets. Run Scripts/create_night_environment.py."));
+
+		auto* Fog = NewObject<UExponentialHeightFogComponent>(this, TEXT("NightHaze"));
+
+		Fog->SetupAttachment(RootComponent);
+		Fog->SetFogDensity(0.008f);
+		Fog->SetFogHeightFalloff(0.3f);
+		Fog->SetFogInscatteringColor(FLinearColor(0.003f, 0.005f, 0.01f));
+		Fog->SetFogMaxOpacity(0.35f);
+		Fog->RegisterComponent();
+
+		auto* Exposure = NewObject<UPostProcessComponent>(this, TEXT("NightExposure"));
+
+		Exposure->SetupAttachment(RootComponent);
+		Exposure->bUnbound = true;
+		Exposure->Priority = 10.f;
+		// Extended luminance range is enabled: equal EV100 bounds keep night dark.
+		Exposure->Settings.bOverride_AutoExposureMinBrightness = true;
+		Exposure->Settings.bOverride_AutoExposureMaxBrightness = true;
+		Exposure->Settings.AutoExposureMinBrightness = -2.f;
+		Exposure->Settings.AutoExposureMaxBrightness = -2.f;
+		Exposure->Settings.bOverride_AutoExposureBias = true;
+		Exposure->Settings.AutoExposureBias = 0.f;
+		Exposure->RegisterComponent();
+	}
+
 	InitializeMaze();
 }
 
