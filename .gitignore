@@ -1,0 +1,28 @@
+# Unreal generated files and local state
+/Binaries/
+/DerivedDataCache/
+/Intermediate/
+/Saved/
+/Backup/
+/Build/**/FileOpenOrder/
+
+# IDE generated files
+/.vs/
+/.idea/
+/.vscode/
+/*.sln
+/*.slnx
+/*.suo
+/*.opensdf
+/*.sdf
+/*.VC.db
+/UpgradeLog*.htm
+
+# Archives and local agent state
+/*.zip
+/.codex/
+/.agents/
+__pycache__/
+*.pyc
+.env
+.env.*
