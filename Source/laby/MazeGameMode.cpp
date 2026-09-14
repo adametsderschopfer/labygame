@@ -50,8 +50,12 @@ void AMazeHUD::DrawHUD()
 	DrawRect(FLinearColor::White, Canvas->ClipX / 2 - 2, Canvas->ClipY / 2 - 2, 4, 4);
 	for (TActorIterator<AMazeWorld> It(GetWorld()); It; ++It)
 	{
-		DrawMinimap(**It);
-		DrawText(FString::Printf(TEXT("SESSION %d | 40 x 40 | START A"), It->Seed), FLinearColor(0.7f,0.8f,0.85f), 24, Canvas->ClipY - 40);
+		const auto* PC = Cast<AMazePlayerController>(PlayerOwner);
+		if (!PC || PC->IsMinimapVisible()) DrawMinimap(**It);
+		DrawText(FString::Printf(TEXT("SESSION %d | %d x %d | START A"), It->Seed, It->GetLayout().Size, It->GetLayout().Size), FLinearColor(0.7f,0.8f,0.85f), 24, Canvas->ClipY - 40);
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+		DrawText(TEXT("DEV: M  Toggle map"), FLinearColor(0.7f,0.8f,0.85f), 24, Canvas->ClipY - 62);
+#endif
 		if (PlayerOwner && PlayerOwner->GetPawn() && ReachedExit == 0) ReachedExit = It->ExitAt(PlayerOwner->GetPawn()->GetActorLocation());
 		break;
 	}

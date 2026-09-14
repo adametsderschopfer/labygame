@@ -9,6 +9,8 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 	{
 		FMazeLayout Maze, Copy;
 		Maze.Generate(Seed);
+		TestEqual(TEXT("Default maze is 80 by 80"), Maze.Size, 80);
+		TestEqual(TEXT("Default maze has 6400 cells"), Maze.Walls.Num(), 6400);
 		Copy.Generate(Seed);
 		TestTrue(TEXT("Same seed reproduces topology"), Maze.Walls == Copy.Walls && Maze.Exits == Copy.Exits);
 		TSet<int32> Seen;

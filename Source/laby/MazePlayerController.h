@@ -24,7 +24,19 @@ public:
 	void ToggleMenu();
 	void StartNewGame();
 	bool IsMenuOpen() const { return bMenuOpen; }
+	bool IsMinimapVisible() const
+	{
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+		return bMinimapVisible;
+#else
+		return true;
+#endif
+	}
 private:
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	void ToggleMinimap();
+	bool bMinimapVisible = true;
+#endif
 	void ShowMenu(bool Settings = false);
 	void CloseMenu();
 	void RemoveMenuWidget();

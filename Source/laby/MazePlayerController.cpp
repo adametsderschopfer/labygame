@@ -48,7 +48,17 @@ void AMazePlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 	InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &AMazePlayerController::ToggleMenu).bExecuteWhenPaused = true;
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	InputComponent->BindKey(EKeys::M, IE_Pressed, this, &AMazePlayerController::ToggleMinimap);
+#endif
 }
+
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+void AMazePlayerController::ToggleMinimap()
+{
+	if (!bMenuOpen) bMinimapVisible = !bMinimapVisible;
+}
+#endif
 
 void AMazePlayerController::RemoveMenuWidget()
 {

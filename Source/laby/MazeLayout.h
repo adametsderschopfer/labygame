@@ -5,11 +5,12 @@
 // Pure deterministic topology, shared by authority, clients and automation tests.
 struct FMazeLayout
 {
-	int32 Size = 40;
+	static constexpr int32 DefaultSize = 80;
+	int32 Size = DefaultSize;
 	TArray<uint8> Walls;
 	TArray<int32> Exits;
 	int32 Start() const { return (Size / 2) * Size + Size / 2; }
-	void Generate(int32 Seed, int32 InSize = 40)
+	void Generate(int32 Seed, int32 InSize = DefaultSize)
 	{
 		Size = FMath::Clamp(InSize, 8, 100);
 		FRandomStream Random(Seed);
