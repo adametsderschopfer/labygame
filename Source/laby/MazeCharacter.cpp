@@ -8,6 +8,7 @@
 
 AMazeCharacter::AMazeCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
 	GetCapsuleComponent()->InitCapsuleSize(34, 90);
 	auto* Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	Camera->SetupAttachment(GetCapsuleComponent());
@@ -18,6 +19,35 @@ AMazeCharacter::AMazeCharacter()
 	GetCharacterMovement()->MaxWalkSpeed = 450;
 	GetCharacterMovement()->JumpZVelocity = 420;
 	GetCharacterMovement()->AirControl = 0.25f;
+}
+
+void AMazeCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	auto* Movement = GetCharacterMovement();
+	// Also clear a held sprint when focus/input is flushed by the pause menu.
+	if (const auto* PC = Cast<AMazePlayerController>(Controller))
+		if (PC->IsMenuOpen() || !PC->IsInputKeyDown(EKeys::LeftShift)) bSprintRequested = false;
+	const bool bCanRun = bSprintRequested && Vitals.CanSprint();
+	const bool bRunning = bCanRun && Movement->IsMovingOnGround()
+		&& Movement->Velocity.SizeSquared2D() > 1.f
+		&& !Movement->GetCurrentAcceleration().IsNearlyZero();
+	Vitals.Update(DeltaSeconds, bRunning);
+	Movement->MaxWalkSpeed = bSprintRequested && Vitals.CanSprint() ? 750.f : 450.f;
+}
+
+float AMazeCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (!Vitals.IsAlive() || !FMath::IsFinite(DamageAmount) || DamageAmount <= 0.f || !CanBeDamaged()) return 0.f;
+	const float Applied = Vitals.Damage(Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser));
+	if (!Vitals.IsAlive())
+	{
+		bSprintRequested = false;
+		StopJumping();
+		GetCharacterMovement()->StopMovementImmediately();
+		GetCharacterMovement()->DisableMovement();
+	}
+	return Applied;
 }
 
 void AMazeCharacter::SetupPlayerInputComponent(UInputComponent* Input)
@@ -37,8 +67,8 @@ void AMazeCharacter::Forward(float Value) { AddMovementInput(GetActorForwardVect
 void AMazeCharacter::Right(float Value) { AddMovementInput(GetActorRightVector(), Value); }
 void AMazeCharacter::Turn(float Value) { AddControllerYawInput(Value * GetDefault<UMazePreferences>()->GetSensitivity()); }
 void AMazeCharacter::LookUp(float Value) { AddControllerPitchInput(Value * GetDefault<UMazePreferences>()->GetSensitivity()); }
-void AMazeCharacter::SprintStart() { GetCharacterMovement()->MaxWalkSpeed = 750; }
-void AMazeCharacter::SprintStop() { GetCharacterMovement()->MaxWalkSpeed = 450; }
+void AMazeCharacter::SprintStart() { bSprintRequested = Vitals.CanSprint(); }
+void AMazeCharacter::SprintStop() { bSprintRequested = false; GetCharacterMovement()->MaxWalkSpeed = 450; }
 void AMazeCharacter::RestartMaze()
 {
 	if (GetNetMode() == NM_Standalone)

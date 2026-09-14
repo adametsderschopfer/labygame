@@ -48,6 +48,28 @@ void AMazeHUD::DrawHUD()
 	DrawText(TEXT("WASD  Move    Mouse  Look    Space  Jump"), FLinearColor(0.8f,0.85f,0.9f), 36, 60);
 	DrawText(TEXT("Shift  Run    R  New maze    Esc  Menu"), FLinearColor(0.8f,0.85f,0.9f), 36, 82);
 	DrawRect(FLinearColor::White, Canvas->ClipX / 2 - 2, Canvas->ClipY / 2 - 2, 4, 4);
+	if (const auto* Character = PlayerOwner ? Cast<AMazeCharacter>(PlayerOwner->GetPawn()) : nullptr)
+	{
+		const FMazeVitals& Vitals = Character->GetVitals();
+		const float Top = Canvas->ClipY - 190.f;
+		DrawRect(FLinearColor(0.015f, 0.025f, 0.04f, 0.85f), 20, Top, 300, 116);
+		auto Bar = [&](const TCHAR* Label, float Value, float Y, FLinearColor Color)
+		{
+			DrawText(FString::Printf(TEXT("%s  %d / 100"), Label, FMath::CeilToInt(Value)), FLinearColor::White, 36, Y);
+			DrawRect(FLinearColor(0.12f, 0.15f, 0.18f), 36, Y + 22, 268, 12);
+			DrawRect(Color, 36, Y + 22, 268 * FMath::Clamp(Value / FMazeVitals::Maximum, 0.f, 1.f), 12);
+		};
+		Bar(TEXT("HEALTH"), Vitals.Health, Top + 12, FLinearColor(0.9f, 0.22f, 0.25f));
+		Bar(Vitals.bExhausted ? TEXT("STAMINA / RECOVERING") : TEXT("STAMINA"), Vitals.Stamina, Top + 62,
+			Vitals.bExhausted ? FLinearColor(1.f, 0.55f, 0.12f) : FLinearColor(0.2f, 0.85f, 0.65f));
+		if (!Vitals.IsAlive())
+		{
+			DrawRect(FLinearColor(0.08f, 0.01f, 0.02f, 0.94f), Canvas->ClipX / 2 - 230, Canvas->ClipY / 2 - 70, 460, 110);
+			DrawText(TEXT("YOU DIED"), FLinearColor(1.f, 0.3f, 0.3f), Canvas->ClipX / 2 - 180, Canvas->ClipY / 2 - 50, nullptr, 2);
+			DrawText(TEXT("Press R to start a new maze"), FLinearColor::White, Canvas->ClipX / 2 - 180, Canvas->ClipY / 2 + 4);
+			return;
+		}
+	}
 	for (TActorIterator<AMazeWorld> It(GetWorld()); It; ++It)
 	{
 		const auto* PC = Cast<AMazePlayerController>(PlayerOwner);
