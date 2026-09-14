@@ -198,7 +198,7 @@ void AMazeWorld::Build()
 
 	Walls->ClearAllMeshSections();
 	Floor->ClearInstances();
-	Floor->AddInstance(Data->FloorTransform);
+	Floor->AddInstances(Data->FloorTransforms, false);
 
 	const FMazeSurface& Surface = Data->Surface;
 
@@ -246,8 +246,10 @@ void AMazeWorld::Build()
 
 	UE_LOG(LogTemp,
 	       Display,
-	       TEXT("Maze generated: seed=%d cells=%d exits=1 wall triangles=%d"),
+	       TEXT("Maze generated: seed=%d cells=%d exits=1 rooms=%d holes=%d wall triangles=%d"),
 	       Seed,
 	       Layout.Walls.Num(),
+	       Layout.Rooms.Num(),
+	       Layout.NumHoles(),
 	       Surface.Triangles.Num() / 3);
 }

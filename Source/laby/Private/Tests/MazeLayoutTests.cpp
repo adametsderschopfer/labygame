@@ -15,7 +15,9 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 		TestEqual(TEXT("Default maze is 80 by 80"), Maze.Size, 80);
 		TestEqual(TEXT("Default maze has 6400 cells"), Maze.Walls.Num(), 6400);
 		Copy.Generate(Seed);
-		TestTrue(TEXT("Same seed reproduces topology"), Maze.Walls == Copy.Walls && Maze.Exits == Copy.Exits);
+		TestTrue(TEXT("Same seed reproduces topology, rooms and holes"),
+		         Maze.Walls == Copy.Walls && Maze.Exits == Copy.Exits && Maze.Rooms == Copy.Rooms &&
+		             Maze.Holes == Copy.Holes);
 
 		TSet<int32> Seen;
 		TArray<int32> Queue;

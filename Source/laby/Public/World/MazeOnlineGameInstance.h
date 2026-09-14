@@ -16,6 +16,15 @@ public:
 	virtual void Shutdown() override;
 	void Host();
 	void Join(const FString& Code);
+	void HostLocal();
+	void JoinLocal(const FString& Address);
+	void LocalRoomReady();
+	bool IsLocalRoom() const
+	{
+		return bLocalTransport;
+	}
+
+	FString LocalAddress() const;
 	void Leave();
 	void CloseAdmission();
 
@@ -42,4 +51,5 @@ private:
 	FDelegateHandle NetworkHandle, TravelHandle;
 	bool bHosting = false;
 	bool bLeaving = false;
+	bool bLocalTransport = false;
 };

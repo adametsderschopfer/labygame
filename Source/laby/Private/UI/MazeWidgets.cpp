@@ -12,6 +12,10 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/ConfigCacheIni.h"
 #include "Rendering/DrawElements.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Fonts/FontMeasure.h"
+#include "Rendering/SlateRenderer.h"
+#include "Styling/CoreStyle.h"
 
 namespace
 {
@@ -244,6 +248,117 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 	}
 }
 
+int32 UMazeHUDWidget::NativePaint(const FPaintArgs& Args,
+                                  const FGeometry& Geometry,
+                                  const FSlateRect& CullingRect,
+                                  FSlateWindowElementList& Elements,
+                                  int32 Layer,
+                                  const FWidgetStyle& Style,
+                                  bool bParentEnabled) const
+{
+	Layer = Super::NativePaint(Args, Geometry, CullingRect, Elements, Layer, Style, bParentEnabled);
+
+	const auto* Controller = GetOwningPlayer<AMazePlayerController>();
+	const auto* Player = Controller ? Cast<AMazeCharacter>(Controller->GetPawn()) : nullptr;
+
+	if (IsDesignTime() || !Player || Controller->IsMenuOpen() || !FMazeVitalsSystem::IsAlive(Player->GetVitals()))
+		return Layer;
+
+	const float Width = FMath::Min(560.f, Geometry.GetLocalSize().X - 80.f);
+
+	if (Width <= 0.f)
+		return Layer;
+
+	const float Center = Geometry.GetLocalSize().X * 0.5f;
+	const float Top = 24.f;
+	const float HalfArc = 90.f;
+	// The minimap projects +X right and -Y up, so north is world -Y.
+	const float Heading = FRotator::ClampAxis(Controller->GetControlRotation().Yaw + 90.f);
+	const FLinearColor Tint = Style.GetColorAndOpacityTint();
+	const FLinearColor White(0.92f, 0.95f, 1.f);
+	const FLinearColor Accent(1.f, 0.75f, 0.25f);
+	const auto FontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
+	const FSlateFontInfo CardinalFont = FCoreStyle::GetDefaultFontStyle("Bold", 18);
+	const FSlateFontInfo IntermediateFont = FCoreStyle::GetDefaultFontStyle("Regular", 13);
+	const TCHAR* Directions[] = {
+	    TEXT("N"), TEXT("NE"), TEXT("E"), TEXT("SE"), TEXT("S"), TEXT("SW"), TEXT("W"), TEXT("NW")};
+
+	++Layer;
+
+	auto Line = [&](FVector2D A, FVector2D B, FLinearColor Color, float Thickness)
+	{
+		const TArray<FVector2D> ShadowPoints{A + FVector2D(0, 1), B + FVector2D(0, 1)};
+		const TArray<FVector2D> Points{A, B};
+		FSlateDrawElement::MakeLines(Elements,
+		                             Layer,
+		                             Geometry.ToPaintGeometry(),
+		                             ShadowPoints,
+		                             ESlateDrawEffect::None,
+		                             FLinearColor(0.f, 0.f, 0.f, Color.A * 0.7f) * Tint,
+		                             true,
+		                             Thickness + 2.f);
+		FSlateDrawElement::MakeLines(Elements,
+		                             Layer + 1,
+		                             Geometry.ToPaintGeometry(),
+		                             Points,
+		                             ESlateDrawEffect::None,
+		                             Color * Tint,
+		                             true,
+		                             Thickness);
+	};
+
+	// Wrap each tick relative to the camera to keep the tape continuous across north.
+	for (int32 Tick = 0; Tick < 72; ++Tick)
+	{
+		const float Delta = FMath::FindDeltaAngleDegrees(Heading, Tick * 5.f);
+
+		if (FMath::Abs(Delta) >= HalfArc)
+			continue;
+
+		const float X = Center + Delta / HalfArc * Width * 0.5f;
+		const float Alpha = FMath::Clamp((HalfArc - FMath::Abs(Delta)) / 20.f, 0.f, 1.f);
+		const bool bDirection = Tick % 9 == 0;
+		const float Height = bDirection ? 12.f : (Tick % 3 == 0 ? 8.f : 4.f);
+		FLinearColor Color = Tick == 0 ? Accent : White;
+
+		Color.A = Alpha;
+		Line({X, Top + 32.f}, {X, Top + 32.f + Height}, Color, bDirection ? 1.5f : 1.f);
+
+		if (bDirection)
+		{
+			const FString Label(Directions[Tick / 9]);
+			const auto& Font = Tick % 18 == 0 ? CardinalFont : IntermediateFont;
+			const FVector2D Size = FontMeasure->Measure(Label, Font);
+			const FVector2D Position(X - Size.X * 0.5f, Top + 17.f - Size.Y * 0.5f);
+
+			FSlateDrawElement::MakeText(
+			    Elements,
+			    Layer,
+			    Geometry.ToPaintGeometry(Size, FSlateLayoutTransform(Position + FVector2D(1, 1))),
+			    Label,
+			    Font,
+			    ESlateDrawEffect::None,
+			    FLinearColor(0.f, 0.f, 0.f, Alpha * 0.8f) * Tint);
+			FSlateDrawElement::MakeText(Elements,
+			                            Layer + 1,
+			                            Geometry.ToPaintGeometry(Size, FSlateLayoutTransform(Position)),
+			                            Label,
+			                            Font,
+			                            ESlateDrawEffect::None,
+			                            Color * Tint);
+		}
+	}
+
+	// Fixed opposing chevrons frame the current look direction without degree numbers.
+	Layer += 2;
+	Line({Center - 5.f, Top - 5.f}, {Center, Top}, Accent, 2.f);
+	Line({Center, Top}, {Center + 5.f, Top - 5.f}, Accent, 2.f);
+	Line({Center - 4.f, Top + 53.f}, {Center, Top + 48.f}, Accent, 2.f);
+	Line({Center, Top + 48.f}, {Center + 4.f, Top + 53.f}, Accent, 2.f);
+
+	return Layer + 1;
+}
+
 int32 UMazeMinimapWidget::NativePaint(const FPaintArgs& Args,
                                       const FGeometry& Geometry,
                                       const FSlateRect& CullingRect,
@@ -294,6 +409,13 @@ int32 UMazeMinimapWidget::NativePaint(const FPaintArgs& Args,
 			{
 				const uint8 W = Layout.Walls[Y * Layout.Size + X];
 				const float PX = X * Step, PY = Y * Step;
+
+				if (!Layout.HasFloor(Y * Layout.Size + X))
+				{
+					const FLinearColor HoleColor(1.f, 0.3f, 0.1f);
+					Line({PX + Step * 0.2f, PY + Step * 0.2f}, {PX + Step * 0.8f, PY + Step * 0.8f}, HoleColor);
+					Line({PX + Step * 0.8f, PY + Step * 0.2f}, {PX + Step * 0.2f, PY + Step * 0.8f}, HoleColor);
+				}
 
 				if (W & 1)
 					Line({PX, PY}, {PX + Step, PY}, WallColor);

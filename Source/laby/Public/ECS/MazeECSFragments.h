@@ -107,7 +107,7 @@ struct FMazeGeneratedData
 {
 	FMazeLayout Layout;
 	FMazeSurface Surface;
-	FTransform FloorTransform;
+	TArray<FTransform> FloorTransforms;
 	FVector Start = FVector::ZeroVector;
 	TArray<FVector> PlayerStarts;
 	TArray<FVector> ExitPositions;

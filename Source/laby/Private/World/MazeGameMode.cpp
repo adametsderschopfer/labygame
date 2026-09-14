@@ -77,7 +77,8 @@ void AMazeGameMode::PreLogin(const FString& Options,
                              const FUniqueNetIdRepl& UniqueId,
                              FString& ErrorMessage)
 {
-	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+	Super::PreLogin(
+	    Options, Address, GetWorld()->URL.HasOption(TEXT("Local=1")) ? FUniqueNetIdRepl() : UniqueId, ErrorMessage);
 
 	if (ErrorMessage.IsEmpty())
 		ErrorMessage = GetWorld()->GetSubsystem<UMazeECSSubsystem>()->RoomAdmissionError();

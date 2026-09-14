@@ -66,8 +66,156 @@
 					]
 				},
 				{
+					"Namespace": "Local",
+					"Children": [
+						{
+							"Source": {
+								"Text": "Address copied."
+							},
+							"Keys": [
+								{
+									"Key": "AddressCopied",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(390)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Connecting to local server..."
+							},
+							"Keys": [
+								{
+									"Key": "Connecting",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(401)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Copy address"
+							},
+							"Keys": [
+								{
+									"Key": "CopyAddress",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(382)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Create local room"
+							},
+							"Keys": [
+								{
+									"Key": "Create",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(457)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Enter an IPv4 address, such as 127.0.0.1:7777."
+							},
+							"Keys": [
+								{
+									"Key": "InvalidAddress",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(389)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Host IPv4:port"
+							},
+							"Keys": [
+								{
+									"Key": "AddressHint",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(434)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "JOIN LOCAL SERVER"
+							},
+							"Keys": [
+								{
+									"Key": "JoinTitle",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(274)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Join local room"
+							},
+							"Keys": [
+								{
+									"Key": "Join",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(463)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "On this PC, connect to 127.0.0.1 using the port above. On another PC, use this PC's LAN IPv4 address."
+							},
+							"Keys": [
+								{
+									"Key": "HostHint",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(377)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Server address: {Code}"
+							},
+							"Keys": [
+								{
+									"Key": "Address",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(369)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Starting local server..."
+							},
+							"Keys": [
+								{
+									"Key": "Starting",
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(329)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Use 127.0.0.1:7777 on the same PC, or the host LAN IPv4 address on another PC."
+							},
+							"Keys": [
+								{
+									"Key": "JoinHint",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(419)"
+								}
+							]
+						}
+					]
+				},
+				{
 					"Namespace": "Menu",
 					"Children": [
+						{
+							"Source": {
+								"Text": "Back"
+							},
+							"Keys": [
+								{
+									"Key": "Back",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(334)"
+								}
+							]
+						},
 						{
 							"Source": {
 								"Text": "Code copied."
@@ -75,7 +223,7 @@
 							"Keys": [
 								{
 									"Key": "CodeCopied",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(336)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(391)"
 								}
 							]
 						},
@@ -86,7 +234,7 @@
 							"Keys": [
 								{
 									"Key": "CopyCode",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(330)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(383)"
 								}
 							]
 						},
@@ -97,7 +245,18 @@
 							"Keys": [
 								{
 									"Key": "CreateRoom",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(364)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(471)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Enter the 10-character code shared by the host."
+							},
+							"Keys": [
+								{
+									"Key": "JoinInstructions",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(422)"
 								}
 							]
 						},
@@ -108,7 +267,18 @@
 							"Keys": [
 								{
 									"Key": "GameMenu",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(297)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(276)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "JOIN A ROOM"
+							},
+							"Keys": [
+								{
+									"Key": "JoinTitle",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(275)"
 								}
 							]
 						},
@@ -119,7 +289,7 @@
 							"Keys": [
 								{
 									"Key": "JoinRoom",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(375)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(438)"
 								}
 							]
 						},
@@ -130,7 +300,7 @@
 							"Keys": [
 								{
 									"Key": "Title",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(299)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(278)"
 								}
 							]
 						},
@@ -141,7 +311,7 @@
 							"Keys": [
 								{
 									"Key": "LeaveRoom",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(355)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(409)"
 								}
 							]
 						},
@@ -152,7 +322,7 @@
 							"Keys": [
 								{
 									"Key": "PlayerCount",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(310)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(350)"
 								}
 							]
 						},
@@ -163,7 +333,7 @@
 							"Keys": [
 								{
 									"Key": "Quit",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(390)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(495)"
 								}
 							]
 						},
@@ -174,7 +344,7 @@
 							"Keys": [
 								{
 									"Key": "Resume",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(349)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(403)"
 								}
 							]
 						},
@@ -185,7 +355,7 @@
 							"Keys": [
 								{
 									"Key": "RoomCodeHint",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(372)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(435)"
 								}
 							]
 						},
@@ -196,7 +366,18 @@
 							"Keys": [
 								{
 									"Key": "RoomCode",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(327)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(370)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "SETTINGS"
+							},
+							"Keys": [
+								{
+									"Key": "SettingsTitle",
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(273)"
 								}
 							]
 						},
@@ -207,7 +388,7 @@
 							"Keys": [
 								{
 									"Key": "Settings",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(383)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(488)"
 								}
 							]
 						},
@@ -218,7 +399,7 @@
 							"Keys": [
 								{
 									"Key": "StartGame",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(339)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(393)"
 								}
 							]
 						},
@@ -229,7 +410,7 @@
 							"Keys": [
 								{
 									"Key": "Lobby",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(298)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(277)"
 								}
 							]
 						},
@@ -240,7 +421,7 @@
 							"Keys": [
 								{
 									"Key": "Waiting",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(346)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(400)"
 								}
 							]
 						},
@@ -251,7 +432,7 @@
 							"Keys": [
 								{
 									"Key": "HostPlayer",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(317)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(357)"
 								}
 							]
 						}
@@ -267,7 +448,7 @@
 							"Keys": [
 								{
 									"Key": "Connecting",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(207)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(215)"
 								}
 							]
 						},
@@ -278,7 +459,7 @@
 							"Keys": [
 								{
 									"Key": "ConnectionLost",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(282)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(301)"
 								}
 							]
 						},
@@ -289,7 +470,7 @@
 							"Keys": [
 								{
 									"Key": "ConnectFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(210)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(218)"
 								}
 							]
 						},
@@ -300,7 +481,7 @@
 							"Keys": [
 								{
 									"Key": "CreateFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(162)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(170)"
 								}
 							]
 						},
@@ -311,7 +492,7 @@
 							"Keys": [
 								{
 									"Key": "JoinFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(225)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(233)"
 								}
 							]
 						},
@@ -322,7 +503,7 @@
 							"Keys": [
 								{
 									"Key": "TravelFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(291)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(310)"
 								}
 							]
 						},
@@ -333,7 +514,7 @@
 							"Keys": [
 								{
 									"Key": "SignInStartFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(96)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(104)"
 								}
 							]
 						},
@@ -344,7 +525,7 @@
 							"Keys": [
 								{
 									"Key": "SearchStartFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(173)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(181)"
 								}
 							]
 						},
@@ -355,7 +536,7 @@
 							"Keys": [
 								{
 									"Key": "CreatingRoom",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(147)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(155)"
 								}
 							]
 						},
@@ -366,7 +547,7 @@
 							"Keys": [
 								{
 									"Key": "CodeLength",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(116)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(124)"
 								}
 							]
 						},
@@ -377,7 +558,7 @@
 							"Keys": [
 								{
 									"Key": "FindingRoom",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(166)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(174)"
 								}
 							]
 						},
@@ -388,7 +569,7 @@
 							"Keys": [
 								{
 									"Key": "LeaveCurrentRoom",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(66)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(74)"
 								}
 							]
 						},
@@ -399,7 +580,7 @@
 							"Keys": [
 								{
 									"Key": "EosNotConfigured",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(49)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(57)"
 								}
 							]
 						},
@@ -410,7 +591,7 @@
 							"Keys": [
 								{
 									"Key": "EosUnavailable",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(59)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(67)"
 								}
 							]
 						},
@@ -421,7 +602,7 @@
 							"Keys": [
 								{
 									"Key": "CodeCharacters",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(124)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(132)"
 								}
 							]
 						},
@@ -432,7 +613,7 @@
 							"Keys": [
 								{
 									"Key": "CreateError",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(181)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(189)"
 								}
 							]
 						},
@@ -443,7 +624,7 @@
 							"Keys": [
 								{
 									"Key": "SearchError",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(194)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(202)"
 								}
 							]
 						},
@@ -454,7 +635,7 @@
 							"Keys": [
 								{
 									"Key": "SignInFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(140)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(148)"
 								}
 							]
 						},
@@ -465,7 +646,7 @@
 							"Keys": [
 								{
 									"Key": "SigningIn",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(93)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(101)"
 								}
 							]
 						},
@@ -476,7 +657,7 @@
 							"Keys": [
 								{
 									"Key": "RoomClosed",
-									"Path": "Source/laby/Private/World/MazeGameMode.cpp(100)"
+									"Path": "Source/laby/Private/World/MazeGameMode.cpp(101)"
 								}
 							]
 						},
@@ -487,7 +668,7 @@
 							"Keys": [
 								{
 									"Key": "RoomNotFound",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(216)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(224)"
 								}
 							]
 						}
@@ -503,7 +684,7 @@
 							"Keys": [
 								{
 									"Key": "SensitivityValue",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(25)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(294)"
 								}
 							]
 						}
@@ -519,7 +700,7 @@
 							"Keys": [
 								{
 									"Key": "SettingsHint",
-									"Path": "Source/laby/Public/UI/MazeText.h(13)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(328)"
 								}
 							]
 						},
@@ -640,7 +821,7 @@
 							"Keys": [
 								{
 									"Key": "SensitivityLabel",
-									"Path": "Source/laby/Public/UI/MazeText.h(11)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(282)"
 								}
 							]
 						},
@@ -688,7 +869,7 @@
 							"Keys": [
 								{
 									"Key": "ResetButtonLabel",
-									"Path": "Source/laby/Public/UI/MazeText.h(14)"
+									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(329)"
 								}
 							]
 						},

@@ -5,6 +5,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Engine.h"
 #include "GameFramework/PlayerController.h"
+#include "SocketSubsystem.h"
+#include "IPAddress.h"
+#include "Engine/NetDriver.h"
 
 void UMazeOnlineGameInstance::Init()
 {
@@ -41,6 +44,11 @@ bool UMazeOnlineGameInstance::Prepare(bool bHost, const FString& Code)
 {
 	if (bBusy)
 		return false;
+
+	if (GetWorld()->GetNetMode() != NM_Standalone)
+		return false;
+
+	bLocalTransport = false;
 
 	auto* OSS = Online::GetSubsystem(GetWorld(), FName(TEXT("EOS")));
 
@@ -236,6 +244,9 @@ void UMazeOnlineGameInstance::OnJoin(FName Name, EOnJoinSessionCompleteResult::T
 
 void UMazeOnlineGameInstance::CloseAdmission()
 {
+	if (bLocalTransport)
+		return;
+
 	if (!Sessions.IsValid())
 		return;
 
@@ -258,6 +269,13 @@ void UMazeOnlineGameInstance::Leave()
 	bLeaving = true;
 	bBusy = true;
 
+	if (bLocalTransport)
+	{
+		OnDestroy(NAME_GameSession, true);
+
+		return;
+	}
+
 	if (!Sessions.IsValid() || !Sessions->GetNamedSession(NAME_GameSession) ||
 	    !Sessions->DestroySession(NAME_GameSession))
 		OnDestroy(NAME_GameSession, true);
@@ -268,6 +286,7 @@ void UMazeOnlineGameInstance::OnDestroy(FName Name, bool bSuccess)
 	bLeaving = false;
 	bBusy = false;
 	RoomCode.Empty();
+	bLocalTransport = false;
 	UGameplayStatics::OpenLevel(this, TEXT("/Game/Maps/Maze"), true);
 }
 
@@ -290,4 +309,126 @@ void UMazeOnlineGameInstance::OnTravelFailure(UWorld* World, ETravelFailure::Typ
 
 	Status = NSLOCTEXT("Maze.Online", "TravelFailed", "Could not load the multiplayer map.");
 	Leave();
+}
+
+void UMazeOnlineGameInstance::HostLocal()
+{
+	if (bBusy || GetWorld()->GetNetMode() != NM_Standalone)
+		return;
+
+	if (Sessions.IsValid() && Sessions->GetNamedSession(NAME_GameSession))
+	{
+		Finish(NSLOCTEXT("Maze.Online", "LeaveCurrentRoom", "Leave your current room first."));
+
+		return;
+	}
+
+	bLocalTransport = true;
+	bBusy = true;
+	RoomCode.Empty();
+	Status = NSLOCTEXT("Maze.Local", "Starting", "Starting local server...");
+	// UE's EOS driver explicitly passes through to IP sockets for this URL option.
+	UGameplayStatics::OpenLevel(
+	    this, TEXT("/Game/Maps/Maze"), true, TEXT("listen?Room=1?Local=1?bUseIPSockets?Port=7777"));
+}
+
+void UMazeOnlineGameInstance::JoinLocal(const FString& Address)
+{
+	if (bBusy || GetWorld()->GetNetMode() != NM_Standalone)
+		return;
+
+	if (Sessions.IsValid() && Sessions->GetNamedSession(NAME_GameSession))
+	{
+		Finish(NSLOCTEXT("Maze.Online", "LeaveCurrentRoom", "Leave your current room first."));
+
+		return;
+	}
+
+	FString Host = Address.TrimStartAndEnd();
+	FString PortString;
+	int32 Port = 7777;
+
+	if (Host.Contains(TEXT(":")))
+	{
+		FString HostOnly;
+
+		Host.Split(TEXT(":"), &HostOnly, &PortString);
+		Host = HostOnly;
+
+		if (PortString.IsEmpty() || PortString.Len() > 5)
+			Host.Empty();
+
+		for (TCHAR C : PortString)
+			if (C < '0' || C > '9')
+				Host.Empty();
+
+		Port = FCString::Atoi(*PortString);
+	}
+
+	if (Host.Equals(TEXT("localhost"), ESearchCase::IgnoreCase))
+		Host = TEXT("127.0.0.1");
+
+	TArray<FString> Octets;
+
+	Host.ParseIntoArray(Octets, TEXT("."), false);
+
+	bool bValid = Octets.Num() == 4 && Port > 0 && Port <= 65535;
+
+	for (const FString& Octet : Octets)
+	{
+		bValid &= !Octet.IsEmpty() && Octet.Len() <= 3;
+
+		for (TCHAR C : Octet)
+			bValid &= C >= '0' && C <= '9';
+
+		bValid &= FCString::Atoi(*Octet) <= 255;
+	}
+
+	if (!bValid)
+	{
+		Finish(NSLOCTEXT("Maze.Local", "InvalidAddress", "Enter an IPv4 address, such as 127.0.0.1:7777."));
+
+		return;
+	}
+
+	auto* PC = GetFirstLocalPlayerController();
+
+	if (!PC)
+		return;
+
+	bLocalTransport = true;
+	bBusy = true;
+	Status = NSLOCTEXT("Maze.Local", "Connecting", "Connecting to local server...");
+	PC->ClientTravel(FString::Printf(TEXT("%s:%d?Local=1?bUseIPSockets"), *Host, Port), TRAVEL_Absolute);
+}
+
+void UMazeOnlineGameInstance::LocalRoomReady()
+{
+	if (bLocalTransport && GetWorld()->GetNetMode() != NM_Standalone)
+		Finish(FText::GetEmpty());
+}
+
+FString UMazeOnlineGameInstance::LocalAddress() const
+{
+	FString Host = TEXT("127.0.0.1");
+	int32 Port = GetWorld()->URL.Port;
+
+	if (auto* Driver = GetWorld()->GetNetDriver())
+	{
+		const TSharedPtr<const FInternetAddr> Address = Driver->GetLocalAddr();
+
+		if (Address.IsValid())
+			Port = Address->GetPort();
+	}
+
+	if (auto* SocketSubsystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM))
+	{
+		bool bCanBindAll = false;
+		const auto Address = SocketSubsystem->GetLocalHostAddr(*GLog, bCanBindAll);
+
+		if (Address->IsValid() && !Address->ToString(false).Contains(TEXT(":")))
+			Host = Address->ToString(false);
+	}
+
+	return FString::Printf(TEXT("%s:%d"), *Host, Port);
 }

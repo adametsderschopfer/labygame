@@ -38,6 +38,13 @@ class LABY_API UMazeHUDWidget : public UUserWidget
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& Geometry, float DeltaSeconds) override;
+	virtual int32 NativePaint(const FPaintArgs& Args,
+	                          const FGeometry& Geometry,
+	                          const FSlateRect& CullingRect,
+	                          FSlateWindowElementList& Elements,
+	                          int32 Layer,
+	                          const FWidgetStyle& Style,
+	                          bool bParentEnabled) const override;
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Maze|Style")

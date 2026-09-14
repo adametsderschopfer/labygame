@@ -56,8 +56,130 @@
 					]
 				},
 				{
+					"Namespace": "Local",
+					"Children": [
+						{
+							"Source": {
+								"Text": "Address copied."
+							},
+							"Translation": {
+								"Text": "Address copied."
+							},
+							"Key": "AddressCopied"
+						},
+						{
+							"Source": {
+								"Text": "Connecting to local server..."
+							},
+							"Translation": {
+								"Text": "Connecting to local server..."
+							},
+							"Key": "Connecting"
+						},
+						{
+							"Source": {
+								"Text": "Copy address"
+							},
+							"Translation": {
+								"Text": "Copy address"
+							},
+							"Key": "CopyAddress"
+						},
+						{
+							"Source": {
+								"Text": "Create local room"
+							},
+							"Translation": {
+								"Text": "Create local room"
+							},
+							"Key": "Create"
+						},
+						{
+							"Source": {
+								"Text": "Enter an IPv4 address, such as 127.0.0.1:7777."
+							},
+							"Translation": {
+								"Text": "Enter an IPv4 address, such as 127.0.0.1:7777."
+							},
+							"Key": "InvalidAddress"
+						},
+						{
+							"Source": {
+								"Text": "Host IPv4:port"
+							},
+							"Translation": {
+								"Text": "Host IPv4:port"
+							},
+							"Key": "AddressHint"
+						},
+						{
+							"Source": {
+								"Text": "JOIN LOCAL SERVER"
+							},
+							"Translation": {
+								"Text": "JOIN LOCAL SERVER"
+							},
+							"Key": "JoinTitle"
+						},
+						{
+							"Source": {
+								"Text": "Join local room"
+							},
+							"Translation": {
+								"Text": "Join local room"
+							},
+							"Key": "Join"
+						},
+						{
+							"Source": {
+								"Text": "On this PC, connect to 127.0.0.1 using the port above. On another PC, use this PC's LAN IPv4 address."
+							},
+							"Translation": {
+								"Text": "On this PC, connect to 127.0.0.1 using the port above. On another PC, use this PC's LAN IPv4 address."
+							},
+							"Key": "HostHint"
+						},
+						{
+							"Source": {
+								"Text": "Server address: {Code}"
+							},
+							"Translation": {
+								"Text": "Server address: {Code}"
+							},
+							"Key": "Address"
+						},
+						{
+							"Source": {
+								"Text": "Starting local server..."
+							},
+							"Translation": {
+								"Text": "Starting local server..."
+							},
+							"Key": "Starting"
+						},
+						{
+							"Source": {
+								"Text": "Use 127.0.0.1:7777 on the same PC, or the host LAN IPv4 address on another PC."
+							},
+							"Translation": {
+								"Text": "Use 127.0.0.1:7777 on the same PC, or the host LAN IPv4 address on another PC."
+							},
+							"Key": "JoinHint"
+						}
+					]
+				},
+				{
 					"Namespace": "Menu",
 					"Children": [
+						{
+							"Source": {
+								"Text": "Back"
+							},
+							"Translation": {
+								"Text": "Back"
+							},
+							"Key": "Back"
+						},
 						{
 							"Source": {
 								"Text": "Code copied."
@@ -87,12 +209,30 @@
 						},
 						{
 							"Source": {
+								"Text": "Enter the 10-character code shared by the host."
+							},
+							"Translation": {
+								"Text": "Enter the 10-character code shared by the host."
+							},
+							"Key": "JoinInstructions"
+						},
+						{
+							"Source": {
 								"Text": "GAME MENU"
 							},
 							"Translation": {
 								"Text": "GAME MENU"
 							},
 							"Key": "GameMenu"
+						},
+						{
+							"Source": {
+								"Text": "JOIN A ROOM"
+							},
+							"Translation": {
+								"Text": "JOIN A ROOM"
+							},
+							"Key": "JoinTitle"
 						},
 						{
 							"Source": {
@@ -165,6 +305,15 @@
 								"Text": "Room code: {Code}"
 							},
 							"Key": "RoomCode"
+						},
+						{
+							"Source": {
+								"Text": "SETTINGS"
+							},
+							"Translation": {
+								"Text": "SETTINGS"
+							},
+							"Key": "SettingsTitle"
 						},
 						{
 							"Source": {

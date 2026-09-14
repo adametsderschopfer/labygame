@@ -12,8 +12,11 @@
 #include "Widgets/SWeakWidget.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
+#include "Widgets/Layout/SScaleBox.h"
+#include "Styling/CoreStyle.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Input/SButton.h"
+#include "Widgets/Input/SSlider.h"
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "HAL/PlatformApplicationMisc.h"
@@ -72,6 +75,9 @@ void AMazePlayerController::BeginPlay()
 
 	ECSSubsystem = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
 	check(ECSSubsystem);
+
+	if (auto* Online = GetGameInstance<UMazeOnlineGameInstance>())
+		Online->LocalRoomReady();
 
 	if (const auto* State = GetWorld()->GetGameState<AMazeGameState>(); State && !HasAuthority())
 		ECSSubsystem->ReceiveRoom(State->Room);
@@ -179,54 +185,7 @@ void AMazePlayerController::StartNewGame()
 
 void AMazePlayerController::ShowMenu(bool Settings)
 {
-	if (!GetWorld()->GetGameViewport())
-		return;
-
-	if (!Settings)
-	{
-		ShowNetworkMenu();
-
-		return;
-	}
-
-	const TCHAR* Path = Settings                        ? TEXT("/Game/UI/WBP_Settings.WBP_Settings_C")
-	                    : ReadSession().bSessionStarted ? TEXT("/Game/UI/WBP_PauseMenu.WBP_PauseMenu_C")
-	                                                    : TEXT("/Game/UI/WBP_MainMenu.WBP_MainMenu_C");
-	UClass* WidgetClass = LoadClass<UMazeMenuWidget>(nullptr, Path);
-
-	if (!WidgetClass)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Missing maze menu: %s. Open the editor to create UI assets."), Path);
-
-		return;
-	}
-
-	auto* NewWidget = CreateWidget<UMazeMenuWidget>(this, WidgetClass);
-
-	if (!NewWidget)
-		return;
-
-	RemoveMenuWidget();
-
-	if (ECSSubsystem)
-		ECSSubsystem->SetMenu(true, Settings);
-
-	SetPause(false);
-	ResetIgnoreMoveInput();
-	ResetIgnoreLookInput();
-	SetIgnoreMoveInput(true);
-	SetIgnoreLookInput(true);
-	FlushPressedKeys();
-	bShowMouseCursor = true;
-
-	MenuWidget = NewWidget;
-	MenuWidget->AddToViewport(100);
-
-	FInputModeUIOnly Mode;
-
-	Mode.SetWidgetToFocus(MenuWidget->TakeWidget());
-	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	SetInputMode(Mode);
+	ShowNetworkMenu(false, Settings);
 }
 
 void AMazePlayerController::PlayerTick(float DeltaTime)
@@ -256,7 +215,7 @@ void AMazePlayerController::ServerStartRoom_Implementation()
 		Mode->StartRoom(this);
 }
 
-void AMazePlayerController::ShowNetworkMenu()
+void AMazePlayerController::ShowNetworkMenu(bool bJoinScreen, bool bSettingsScreen, bool bLocalJoin)
 {
 	auto* Viewport = GetWorld()->GetGameViewport();
 
@@ -264,7 +223,7 @@ void AMazePlayerController::ShowNetworkMenu()
 		return;
 
 	RemoveMenuWidget();
-	ECSSubsystem->SetMenu(true);
+	ECSSubsystem->SetMenu(true, bSettingsScreen);
 	ResetIgnoreMoveInput();
 	ResetIgnoreLookInput();
 	SetIgnoreMoveInput(true);
@@ -273,35 +232,116 @@ void AMazePlayerController::ShowNetworkMenu()
 	bShowMouseCursor = true;
 
 	const auto Room = ECSSubsystem->ReadRoom();
+
+	bJoinScreen &= !Room.bActive;
+
 	auto* Online = GetGameInstance<UMazeOnlineGameInstance>();
 	TSharedRef<SVerticalBox> Content = SNew(SVerticalBox);
 	auto Label = [&Content](const FText& Value)
 	{
-		Content->AddSlot().AutoHeight().Padding(8)[SNew(STextBlock).Text(Value).AutoWrapText(true)];
+		Content->AddSlot().AutoHeight().Padding(
+		    10)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular", 20)).Text(Value).AutoWrapText(true)];
 	};
-	auto Button = [&Content](const FText& Value, TFunction<void()> Action)
+	auto Button = [&Content, Online](const FText& Value, TFunction<void()> Action)
 	{
-		Content->AddSlot().AutoHeight().Padding(8)[SNew(SButton)
-		                                               .HAlign(HAlign_Center)
-		                                               .ContentPadding(FMargin(14))
-		                                               .Text(Value)
-		                                               .OnClicked_Lambda(
-		                                                   [Action]()
-		                                                   {
-			                                                   Action();
+		Content->AddSlot().AutoHeight().Padding(
+		    10)[SNew(SButton)
+		            .HAlign(HAlign_Center)
+		            .ContentPadding(FMargin(20))
+		            .TextStyle(&FCoreStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
+		            .IsEnabled_Lambda(
+		                [Online]()
+		                {
+			                return !Online || !Online->bBusy;
+		                })
+		            .OnClicked_Lambda(
+		                [Action]()
+		                {
+			                Action();
 
-			                                                   return FReply::Handled();
-		                                                   })];
+			                return FReply::Handled();
+		                })[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular", 22)).Text(Value)]];
 	};
 
-	Label(Room.bStarted  ? NSLOCTEXT("Maze.Menu", "GameMenu", "GAME MENU")
-	      : Room.bActive ? NSLOCTEXT("Maze.Menu", "Lobby", "WAITING ROOM")
-	                     : NSLOCTEXT("Maze.Menu", "Title", "LABY - MULTIPLAYER"));
+	Content->AddSlot().AutoHeight().Padding(
+	    10,
+	    10,
+	    10,
+	    22)[SNew(STextBlock)
+	            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 28))
+	            .AutoWrapText(true)
+	            .Text(bSettingsScreen ? NSLOCTEXT("Maze.Menu", "SettingsTitle", "SETTINGS")
+	                  : bJoinScreen   ? (bLocalJoin ? NSLOCTEXT("Maze.Local", "JoinTitle", "JOIN LOCAL SERVER")
+	                                                : NSLOCTEXT("Maze.Menu", "JoinTitle", "JOIN A ROOM"))
+	                  : Room.bStarted ? NSLOCTEXT("Maze.Menu", "GameMenu", "GAME MENU")
+	                  : Room.bActive  ? NSLOCTEXT("Maze.Menu", "Lobby", "WAITING ROOM")
+	                                  : NSLOCTEXT("Maze.Menu", "Title", "LABY - MULTIPLAYER"))];
 
-	if (Room.bActive)
+	if (bSettingsScreen)
+	{
+		Label(NSLOCTEXT("Maze.Widgets", "SensitivityLabel", "Mouse sensitivity"));
+		Content->AddSlot().AutoHeight().Padding(
+		    10)[SNew(STextBlock)
+		            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 22))
+		            .Text_Lambda(
+		                []()
+		                {
+			                FNumberFormattingOptions Options;
+			                Options.MinimumFractionalDigits = 2;
+			                Options.MaximumFractionalDigits = 2;
+
+			                return FText::Format(
+			                    NSLOCTEXT("Maze.Settings", "SensitivityValue", "{Value} x"),
+			                    FFormatNamedArguments{
+			                        {TEXT("Value"),
+			                         FText::AsNumber(GetDefault<UMazePreferences>()->GetSensitivity(), &Options)}});
+		                })];
+		Content->AddSlot().AutoHeight().Padding(
+		    10,
+		    18)[SNew(SBox).HeightOverride(36)[SNew(SSlider)
+		                                          .MinValue(0.1f)
+		                                          .MaxValue(3.f)
+		                                          .StepSize(0.05f)
+		                                          .Value_Lambda(
+		                                              []()
+		                                              {
+			                                              return GetDefault<UMazePreferences>()->GetSensitivity();
+		                                              })
+		                                          .OnValueChanged_Lambda(
+		                                              [](float Value)
+		                                              {
+			                                              GetMutableDefault<UMazePreferences>()->MouseSensitivity =
+			                                                  FMath::Clamp(Value, 0.1f, 3.f);
+		                                              })
+		                                          .OnMouseCaptureEnd_Lambda(
+		                                              []()
+		                                              {
+			                                              auto* Preferences = GetMutableDefault<UMazePreferences>();
+			                                              Preferences->SetSensitivity(Preferences->GetSensitivity());
+		                                              })
+		                                          .OnControllerCaptureEnd_Lambda(
+		                                              []()
+		                                              {
+			                                              auto* Preferences = GetMutableDefault<UMazePreferences>();
+			                                              Preferences->SetSensitivity(Preferences->GetSensitivity());
+		                                              })]];
+		Label(NSLOCTEXT("Maze.Widgets", "SettingsHint", "0.10 - 3.00 - Saved automatically"));
+		Button(NSLOCTEXT("Maze.Widgets", "ResetButtonLabel", "Reset to defaults"),
+		       []()
+		       {
+			       GetMutableDefault<UMazePreferences>()->SetSensitivity(1.f);
+		       });
+		Button(NSLOCTEXT("Maze.Menu", "Back", "Back"),
+		       [this]()
+		       {
+			       ShowNetworkMenu();
+		       });
+	}
+	else if (Room.bActive)
 	{
 		Content->AddSlot().AutoHeight().Padding(
 		    8)[SNew(STextBlock)
+		           .Font(FCoreStyle::GetDefaultFontStyle("Regular", 20))
 		           .Text_Lambda(
 		               [this]()
 		               {
@@ -324,17 +364,31 @@ void AMazePlayerController::ShowNetworkMenu()
 
 		if (HasAuthority() && !Room.bStarted)
 		{
-			Label(FText::Format(NSLOCTEXT("Maze.Menu", "RoomCode", "Room code: {Code}"),
+			const bool bLocal = Online && Online->IsLocalRoom();
+
+			Label(FText::Format(bLocal ? NSLOCTEXT("Maze.Local", "Address", "Server address: {Code}")
+			                           : NSLOCTEXT("Maze.Menu", "RoomCode", "Room code: {Code}"),
 			                    FFormatNamedArguments{
-			                        {TEXT("Code"), FText::AsCultureInvariant(Online ? Online->RoomCode : FString())}}));
-			Button(NSLOCTEXT("Maze.Menu", "CopyCode", "Copy code"),
-			       [Online]()
+			                        {TEXT("Code"),
+			                         FText::AsCultureInvariant(
+			                             Online ? (bLocal ? Online->LocalAddress() : Online->RoomCode) : FString())}}));
+
+			if (bLocal)
+				Label(NSLOCTEXT("Maze.Local",
+				                "HostHint",
+				                "On this PC, connect to 127.0.0.1 using the port above. On another PC, use this PC's "
+				                "LAN IPv4 address."));
+
+			Button(bLocal ? NSLOCTEXT("Maze.Local", "CopyAddress", "Copy address")
+			              : NSLOCTEXT("Maze.Menu", "CopyCode", "Copy code"),
+			       [Online, bLocal]()
 			       {
-				       if (Online)
-				       {
-					       FPlatformApplicationMisc::ClipboardCopy(*Online->RoomCode);
-					       Online->Status = NSLOCTEXT("Maze.Menu", "CodeCopied", "Code copied.");
-				       }
+				       if (!Online)
+					       return;
+
+				       FPlatformApplicationMisc::ClipboardCopy(*(bLocal ? Online->LocalAddress() : Online->RoomCode));
+				       Online->Status = bLocal ? NSLOCTEXT("Maze.Local", "AddressCopied", "Address copied.")
+				                               : NSLOCTEXT("Maze.Menu", "CodeCopied", "Code copied.");
 			       });
 			Button(NSLOCTEXT("Maze.Menu", "StartGame", "Start game"),
 			       [this]()
@@ -359,34 +413,85 @@ void AMazePlayerController::ShowNetworkMenu()
 				       Online->Leave();
 		       });
 	}
+	else if (bJoinScreen)
+	{
+		Label(bLocalJoin
+		          ? NSLOCTEXT("Maze.Local",
+		                      "JoinHint",
+		                      "Use 127.0.0.1:7777 on the same PC, or the host LAN IPv4 address on another PC.")
+		          : NSLOCTEXT("Maze.Menu", "JoinInstructions", "Enter the 10-character code shared by the host."));
+
+		TSharedRef<SEditableTextBox> Code =
+		    SNew(SEditableTextBox)
+		        .Font(FCoreStyle::GetDefaultFontStyle("Regular", 24))
+		        .Padding(FMargin(16))
+		        .IsEnabled_Lambda(
+		            [Online]()
+		            {
+			            return !Online || !Online->bBusy;
+		            })
+		        .Text(bLocalJoin ? FText::AsCultureInvariant(TEXT("127.0.0.1:7777")) : FText::GetEmpty())
+		        .HintText(bLocalJoin ? NSLOCTEXT("Maze.Local", "AddressHint", "Host IPv4:port")
+		                             : NSLOCTEXT("Maze.Menu", "RoomCodeHint", "Room code"));
+
+		Content->AddSlot().AutoHeight().Padding(8)[Code];
+		Button(NSLOCTEXT("Maze.Menu", "JoinRoom", "Join room"),
+		       [Online, Code, bLocalJoin]()
+		       {
+			       if (Online)
+			       {
+				       if (bLocalJoin)
+					       Online->JoinLocal(Code->GetText().ToString());
+				       else
+					       Online->Join(Code->GetText().ToString());
+			       }
+		       });
+		Button(NSLOCTEXT("Maze.Menu", "Back", "Back"),
+		       [this]()
+		       {
+			       ShowNetworkMenu();
+		       });
+	}
 	else
 	{
+		Button(NSLOCTEXT("Maze.Local", "Create", "Create local room"),
+		       [Online]()
+		       {
+			       if (Online)
+				       Online->HostLocal();
+		       });
+		Button(NSLOCTEXT("Maze.Local", "Join", "Join local room"),
+		       [this, Online]()
+		       {
+			       if (Online)
+				       Online->Status = FText::GetEmpty();
+
+			       ShowNetworkMenu(true, false, true);
+		       });
 		Button(NSLOCTEXT("Maze.Menu", "CreateRoom", "Create room"),
 		       [Online]()
 		       {
 			       if (Online)
 				       Online->Host();
 		       });
-
-		TSharedRef<SEditableTextBox> Code =
-		    SNew(SEditableTextBox).HintText(NSLOCTEXT("Maze.Menu", "RoomCodeHint", "Room code"));
-
-		Content->AddSlot().AutoHeight().Padding(8)[Code];
 		Button(NSLOCTEXT("Maze.Menu", "JoinRoom", "Join room"),
-		       [Online, Code]()
+		       [this, Online]()
 		       {
 			       if (Online)
-				       Online->Join(Code->GetText().ToString());
+				       Online->Status = FText::GetEmpty();
+
+			       ShowNetworkMenu(true);
 		       });
 	}
 
-	Button(NSLOCTEXT("Maze.Menu", "Settings", "Settings"),
-	       [this]()
-	       {
-		       ShowMenu(true);
-	       });
+	if (!bJoinScreen && !bSettingsScreen)
+		Button(NSLOCTEXT("Maze.Menu", "Settings", "Settings"),
+		       [this]()
+		       {
+			       ShowMenu(true);
+		       });
 
-	if (!Room.bActive)
+	if (!Room.bActive && !bJoinScreen && !bSettingsScreen)
 		Button(NSLOCTEXT("Maze.Menu", "Quit", "Quit game"),
 		       [this]()
 		       {
@@ -394,6 +499,7 @@ void AMazePlayerController::ShowNetworkMenu()
 		       });
 
 	Content->AddSlot().AutoHeight().Padding(8)[SNew(STextBlock)
+	                                               .Font(FCoreStyle::GetDefaultFontStyle("Regular", 18))
 	                                               .AutoWrapText(true)
 	                                               .Text_Lambda(
 	                                                   [Online]()
@@ -401,13 +507,27 @@ void AMazePlayerController::ShowNetworkMenu()
 		                                                   return Online ? Online->Status : FText::GetEmpty();
 	                                                   })];
 
-	TSharedRef<SWidget> Panel = SNew(SBorder)
-	                                .BorderBackgroundColor(FLinearColor(0.015f, 0.025f, 0.04f, 1.f))
-	                                .HAlign(HAlign_Center)
-	                                .VAlign(VAlign_Center)[SNew(SBox).WidthOverride(520)[Content]];
+	TSharedRef<SWidget> Panel =
+	    SNew(SBorder)
+	        .BorderBackgroundColor(FLinearColor(0.015f, 0.025f, 0.04f, 1.f))
+	        .HAlign(HAlign_Center)
+	        .VAlign(VAlign_Center)[SNew(SScaleBox)
+	                                   .Stretch(EStretch::ScaleToFit)
+	                                   .StretchDirection(
+	                                       EStretchDirection::DownOnly)[SNew(SBox).WidthOverride(640)[Content]]];
 
-	TSharedRef<SWidget> Root =
-	    SNew(SMazeMenuRoot).OnEscape(FSimpleDelegate::CreateUObject(this, &ThisClass::ToggleMenu))[Panel];
+	TSharedRef<SWidget> Root = SNew(SMazeMenuRoot)
+	                               .OnEscape(FSimpleDelegate::CreateLambda(
+	                                   [this, bJoinScreen, bSettingsScreen, Online]()
+	                                   {
+		                                   if (bJoinScreen || bSettingsScreen)
+		                                   {
+			                                   if (!Online || !Online->bBusy)
+				                                   ShowNetworkMenu();
+		                                   }
+		                                   else
+			                                   ToggleMenu();
+	                                   }))[Panel];
 
 	NetworkMenu = Root;
 	Viewport->AddViewportWidgetContent(Root, 100);

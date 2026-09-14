@@ -248,6 +248,11 @@ FMazePlayerCommandFragment UMazeECSSubsystem::ResolvePlayer(FMassEntityHandle En
 
 	*StoredPose = Pose;
 	StoredPose->bInputEnabled &= !ReadRoom().bActive || ReadRoom().bStarted;
+
+	if (GetWorld()->GetNetMode() != NM_Client)
+		if (const auto* Maze = FindFragment<FMazeGenerationFragment>(ReadSession().Maze))
+			FMazeHazardSystem::Apply(*Maze, *StoredPose, *Vitals);
+
 	*Command = FMazePlayerControlSystem::Resolve(*Input, *StoredPose, *Vitals, *Locomotion);
 
 	if (GetWorld()->GetNetMode() != NM_Client)

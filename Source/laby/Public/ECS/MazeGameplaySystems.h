@@ -13,9 +13,41 @@ struct FMazeGenerationSystem
 		Data->Layout.Generate(Maze.Seed, Maze.Size);
 		Data->Surface.Build(Data->Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight);
 		const float Span = Data->Layout.Size * Maze.Cell;
-		Data->FloorTransform = FTransform(FRotator::ZeroRotator,
-		                                  FVector(Span / 2, Span / 2, -25),
-		                                  FVector((Span + 2400) / 100, (Span + 2400) / 100, 0.5f));
+		auto FloorRect = [&Data](float X, float Y, float Width, float Height)
+		{
+			Data->FloorTransforms.Add(FTransform(FRotator::ZeroRotator,
+			                                     FVector(X + Width / 2, Y + Height / 2, -25),
+			                                     FVector(Width / 100, Height / 100, 0.5f)));
+		};
+
+		// Merge intact row runs, leaving actual gaps in both rendering and collision.
+		for (int32 Y = 0; Y < Data->Layout.Size; ++Y)
+		{
+			int32 X = 0;
+
+			while (X < Data->Layout.Size)
+			{
+				if (!Data->Layout.HasFloor(Y * Data->Layout.Size + X))
+				{
+					++X;
+					continue;
+				}
+
+				const int32 Begin = X;
+
+				while (X < Data->Layout.Size && Data->Layout.HasFloor(Y * Data->Layout.Size + X))
+					++X;
+
+				FloorRect(Begin * Maze.Cell, Y * Maze.Cell, (X - Begin) * Maze.Cell, Maze.Cell);
+			}
+		}
+
+		// Preserve the exterior landing beyond the exit, without bridging any holes.
+		constexpr float Apron = 1200.f;
+		FloorRect(-Apron, -Apron, Span + 2 * Apron, Apron);
+		FloorRect(-Apron, Span, Span + 2 * Apron, Apron);
+		FloorRect(-Apron, 0, Apron, Span);
+		FloorRect(Span, 0, Apron, Span);
 		Data->Start =
 		    FVector((Data->Layout.Size / 2 + 0.5f) * Maze.Cell, (Data->Layout.Size / 2 + 0.5f) * Maze.Cell, 100.f);
 		const FVector Outward[] = {FVector(0, -1, 0), FVector(1, 0, 0), FVector(0, 1, 0)};
@@ -44,6 +76,10 @@ struct FMazeGenerationSystem
 
 		const auto& Layout = Maze.Data->Layout;
 		const FVector P = Location - Maze.Origin;
+
+		if (P.Z < 0 || P.Z > 300.f)
+			return 0;
+
 		const float Span = Layout.Size * Maze.Cell;
 
 		for (int32 I = 0; I < Layout.Exits.Num(); ++I)
@@ -114,6 +150,15 @@ struct FMazeRoomSystem
 		Room.bStarted = true;
 
 		return true;
+	}
+};
+
+struct FMazeHazardSystem
+{
+	static void Apply(const FMazeGenerationFragment& Maze, const FMazePlayerPoseFragment& Pose, FMazeVitals& Vitals)
+	{
+		if (Maze.Data && Pose.Location.Z < Maze.Origin.Z - 500.f)
+			FMazeVitalsSystem::Damage(Vitals, Vitals.Health);
 	}
 };
 
