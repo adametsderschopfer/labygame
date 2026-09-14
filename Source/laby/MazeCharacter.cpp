@@ -1,5 +1,7 @@
 #include "MazeCharacter.h"
 #include "MazePlayerController.h"
+#include "MazeVitalsSubsystem.h"
+#include "MazeVitalsSystem.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -21,6 +23,30 @@ AMazeCharacter::AMazeCharacter()
 	GetCharacterMovement()->AirControl = 0.25f;
 }
 
+void AMazeCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	VitalsSubsystem = GetWorld()->GetSubsystem<UMazeVitalsSubsystem>();
+	check(VitalsSubsystem);
+	VitalsEntity = VitalsSubsystem->CreatePlayer();
+}
+
+void AMazeCharacter::EndPlay(const EEndPlayReason::Type Reason)
+{
+	if (VitalsSubsystem) VitalsSubsystem->DestroyPlayer(VitalsEntity);
+	VitalsEntity = FMassEntityHandle();
+	VitalsSubsystem = nullptr;
+	Super::EndPlay(Reason);
+}
+
+FMazeVitals AMazeCharacter::GetVitals() const
+{
+	if (VitalsSubsystem) return VitalsSubsystem->ReadVitals(VitalsEntity);
+	FMazeVitals Missing;
+	Missing.Health = Missing.Stamina = 0.f;
+	return Missing;
+}
+
 void AMazeCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -28,19 +54,39 @@ void AMazeCharacter::Tick(float DeltaSeconds)
 	// Also clear a held sprint when focus/input is flushed by the pause menu.
 	if (const auto* PC = Cast<AMazePlayerController>(Controller))
 		if (PC->IsMenuOpen() || !PC->IsInputKeyDown(EKeys::LeftShift)) bSprintRequested = false;
-	const bool bCanRun = bSprintRequested && Vitals.CanSprint();
+	const FMazeVitals Vitals = GetVitals();
+	const bool bCanRun = bSprintRequested && FMazeVitalsSystem::CanSprint(Vitals);
 	const bool bRunning = bCanRun && Movement->IsMovingOnGround()
 		&& Movement->Velocity.SizeSquared2D() > 1.f
 		&& !Movement->GetCurrentAcceleration().IsNearlyZero();
-	Vitals.Update(DeltaSeconds, bRunning);
-	Movement->MaxWalkSpeed = bSprintRequested && Vitals.CanSprint() ? 750.f : 450.f;
+	if (VitalsSubsystem) VitalsSubsystem->SetLocomotion(VitalsEntity, bRunning, Movement->IsMovingOnGround());
+	Movement->MaxWalkSpeed = bCanRun ? 750.f : 450.f;
+}
+
+bool AMazeCharacter::CanJumpInternal_Implementation() const
+{
+	const FMazeVitals Vitals = GetVitals();
+	return FMazeVitalsSystem::IsAlive(Vitals) && (bWasJumping || FMazeVitalsSystem::CanJump(Vitals))
+		&& Super::CanJumpInternal_Implementation();
+}
+
+void AMazeCharacter::OnJumped_Implementation()
+{
+	// Charge only when CharacterMovement actually starts a jump, not on key presses.
+	if (VitalsSubsystem)
+	{
+		VitalsSubsystem->SpendJumpStamina(VitalsEntity);
+		VitalsSubsystem->SetLocomotion(VitalsEntity, false, false);
+	}
+	Super::OnJumped_Implementation();
 }
 
 float AMazeCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!Vitals.IsAlive() || !FMath::IsFinite(DamageAmount) || DamageAmount <= 0.f || !CanBeDamaged()) return 0.f;
-	const float Applied = Vitals.Damage(Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser));
-	if (!Vitals.IsAlive())
+	if (!VitalsSubsystem || !FMazeVitalsSystem::IsAlive(GetVitals()) || !FMath::IsFinite(DamageAmount) || DamageAmount <= 0.f || !CanBeDamaged()) return 0.f;
+	const float Accepted = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	const float Applied = VitalsSubsystem ? VitalsSubsystem->ApplyDamage(VitalsEntity, Accepted) : 0.f;
+	if (!FMazeVitalsSystem::IsAlive(GetVitals()))
 	{
 		bSprintRequested = false;
 		StopJumping();
@@ -67,7 +113,7 @@ void AMazeCharacter::Forward(float Value) { AddMovementInput(GetActorForwardVect
 void AMazeCharacter::Right(float Value) { AddMovementInput(GetActorRightVector(), Value); }
 void AMazeCharacter::Turn(float Value) { AddControllerYawInput(Value * GetDefault<UMazePreferences>()->GetSensitivity()); }
 void AMazeCharacter::LookUp(float Value) { AddControllerPitchInput(Value * GetDefault<UMazePreferences>()->GetSensitivity()); }
-void AMazeCharacter::SprintStart() { bSprintRequested = Vitals.CanSprint(); }
+void AMazeCharacter::SprintStart() { bSprintRequested = FMazeVitalsSystem::IsAlive(GetVitals()); }
 void AMazeCharacter::SprintStop() { bSprintRequested = false; GetCharacterMovement()->MaxWalkSpeed = 450; }
 void AMazeCharacter::RestartMaze()
 {
