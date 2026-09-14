@@ -1,5 +1,5 @@
 #pragma once
-#include "MazeLayout.h"
+#include "Maze/MazeLayout.h"
 
 // Union of wall strips on an alternating junction/corridor grid.
 // Only boundary faces are emitted; touching solids have no internal faces.

@@ -4,8 +4,8 @@
 #include "Mass/EntityHandle.h"
 #include "MassEntityTypes.h"
 #include "Mass/ExternalSubsystemTraits.h"
-#include "MazeVitals.h"
-#include "MazeSurface.h"
+#include "ECS/MazeVitals.h"
+#include "Maze/MazeSurface.h"
 #include "MazeECSFragments.generated.h"
 
 USTRUCT()

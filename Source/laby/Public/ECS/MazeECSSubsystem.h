@@ -4,7 +4,7 @@
 #include "Mass/EntityElementTypes.h"
 #include "Mass/EntityHandle.h"
 #include "MassEntityQuery.h"
-#include "MazeECSFragments.h"
+#include "ECS/MazeECSFragments.h"
 #include "MazeECSSubsystem.generated.h"
 
 enum class EMazeInputAxis

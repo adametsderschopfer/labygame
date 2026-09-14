@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "MazeECSFragments.h"
+#include "ECS/MazeECSFragments.h"
 #include "MazeWorld.generated.h"
 
 class UInstancedStaticMeshComponent;

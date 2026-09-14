@@ -1,5 +1,5 @@
 #pragma once
-#include "MazeVitals.h"
+#include "ECS/MazeVitals.h"
 
 // Stateless ECS rules shared by batch updates and immediate jump/damage events.
 struct FMazeVitalsSystem

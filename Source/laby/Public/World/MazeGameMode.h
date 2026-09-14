@@ -18,8 +18,10 @@ class LABY_API AMazeHUD : public AHUD
 {
 	GENERATED_BODY()
 public:
-	virtual void DrawHUD() override;
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 
 private:
-	void DrawMinimap(const class AMazeWorld& Maze);
+	UPROPERTY(Transient)
+	TObjectPtr<class UMazeHUDWidget> HUDWidget;
 };

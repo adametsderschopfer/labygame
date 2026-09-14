@@ -1,5 +1,5 @@
-#include "MazeWorld.h"
-#include "MazeECSSubsystem.h"
+#include "World/MazeWorld.h"
+#include "ECS/MazeECSSubsystem.h"
 #include "ProceduralMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"

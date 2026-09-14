@@ -1,6 +1,6 @@
 #pragma once
-#include "MazeECSFragments.h"
-#include "MazeVitalsSystem.h"
+#include "ECS/MazeECSFragments.h"
+#include "ECS/MazeVitalsSystem.h"
 
 struct FMazeGenerationSystem
 {

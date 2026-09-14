@@ -1,0 +1,327 @@
+#include "UI/MazeWidgets.h"
+#include "Player/MazeCharacter.h"
+#include "Player/MazePlayerController.h"
+#include "ECS/MazeVitalsSystem.h"
+#include "World/MazeWorld.h"
+#include "Components/Button.h"
+#include "Components/ProgressBar.h"
+#include "Components/Slider.h"
+#include "Components/TextBlock.h"
+#include "EngineUtils.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Misc/ConfigCacheIni.h"
+#include "Rendering/DrawElements.h"
+
+namespace
+{
+	void Text(UUserWidget* Owner, const TCHAR* Name, const FString& Value)
+	{
+		if (auto* Widget = Cast<UTextBlock>(Owner->GetWidgetFromName(Name)))
+			Widget->SetText(FText::FromString(Value));
+	}
+
+	void Visible(UUserWidget* Owner, const TCHAR* Name, bool bVisible)
+	{
+		if (auto* Widget = Owner->GetWidgetFromName(Name))
+			Widget->SetVisibility(bVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
+	}
+}
+
+void UMazeMenuWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+	SetIsFocusable(true);
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("ResumeButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::Resume);
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("NewGameButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::NewGame);
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("SettingsButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::Settings);
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("BackButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::Back);
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("QuitButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::Quit);
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("ResetButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ResetSensitivity);
+
+	const float Sensitivity = GetDefault<UMazePreferences>()->GetSensitivity();
+
+	if (auto* Slider = Cast<USlider>(GetWidgetFromName(TEXT("SensitivitySlider"))))
+	{
+		Slider->SetMinValue(0.1f);
+		Slider->SetMaxValue(3.f);
+		Slider->SetStepSize(0.05f);
+		Slider->SetValue(Sensitivity);
+		Slider->OnValueChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeSensitivity);
+		Slider->OnMouseCaptureEnd.AddUniqueDynamic(this, &UMazeMenuWidget::SaveSensitivity);
+		Slider->OnControllerCaptureEnd.AddUniqueDynamic(this, &UMazeMenuWidget::SaveSensitivity);
+	}
+
+	Text(this, TEXT("SensitivityText"), FString::Printf(TEXT("%.2f ×"), Sensitivity));
+}
+
+FReply UMazeMenuWidget::NativeOnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent& Event)
+{
+	if (Event.GetKey() == EKeys::Escape)
+	{
+		if (auto* Controller = GetOwningPlayer<AMazePlayerController>())
+		{
+			Controller->ToggleMenu();
+
+			return FReply::Handled();
+		}
+	}
+
+	return Super::NativeOnPreviewKeyDown(Geometry, Event);
+}
+
+void UMazeMenuWidget::Resume()
+{
+	if (auto* Controller = GetOwningPlayer<AMazePlayerController>())
+		Controller->CloseMenu();
+}
+
+void UMazeMenuWidget::NewGame()
+{
+	if (auto* Controller = GetOwningPlayer<AMazePlayerController>())
+		Controller->StartNewGame();
+}
+
+void UMazeMenuWidget::Settings()
+{
+	if (auto* Controller = GetOwningPlayer<AMazePlayerController>())
+		Controller->ShowMenu(true);
+}
+
+void UMazeMenuWidget::Back()
+{
+	if (auto* Controller = GetOwningPlayer<AMazePlayerController>())
+		Controller->ShowMenu();
+}
+
+void UMazeMenuWidget::Quit()
+{
+	UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, false);
+}
+
+void UMazeMenuWidget::ChangeSensitivity(float Value)
+{
+	GetMutableDefault<UMazePreferences>()->MouseSensitivity = FMath::Clamp(Value, 0.1f, 3.f);
+	Text(this,
+	     TEXT("SensitivityText"),
+	     FString::Printf(TEXT("%.2f ×"), GetDefault<UMazePreferences>()->GetSensitivity()));
+}
+
+void UMazeMenuWidget::SaveSensitivity()
+{
+	auto* Preferences = GetMutableDefault<UMazePreferences>();
+
+	Preferences->SetSensitivity(Preferences->GetSensitivity());
+}
+
+void UMazeMenuWidget::ResetSensitivity()
+{
+	GetMutableDefault<UMazePreferences>()->SetSensitivity(1.f);
+
+	if (auto* Slider = Cast<USlider>(GetWidgetFromName(TEXT("SensitivitySlider"))))
+		Slider->SetValue(1.f);
+
+	ChangeSensitivity(1.f);
+}
+
+void UMazeHUDWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	const TCHAR* Section = TEXT("/Script/EngineSettings.GeneralProjectSettings");
+	FString Version;
+
+	GConfig->GetString(Section, TEXT("ProjectVersion"), Version, GGameIni);
+
+#if WITH_EDITOR
+	FConfigFile CurrentGameConfig;
+
+	if (FConfigCacheIni::LoadLocalIniFile(CurrentGameConfig, TEXT("Game"), true, nullptr, true))
+		CurrentGameConfig.GetString(Section, TEXT("ProjectVersion"), Version);
+
+#endif
+	Text(this, TEXT("VersionText"), FString::Printf(TEXT("ALPHA %s"), *Version));
+#if UE_BUILD_SHIPPING || UE_BUILD_TEST
+	Visible(this, TEXT("DeveloperHint"), false);
+#endif
+	NativeTick(FGeometry(), 0.f);
+}
+
+void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
+{
+	Super::NativeTick(Geometry, DeltaSeconds);
+
+	const auto* Controller = GetOwningPlayer<AMazePlayerController>();
+
+	// Hide the content, not the root: the widget must keep ticking while a menu is open.
+	Visible(this, TEXT("HUDContent"), !Controller || !Controller->IsMenuOpen());
+
+	const auto* Player = Controller ? Cast<AMazeCharacter>(Controller->GetPawn()) : nullptr;
+
+	Visible(this, TEXT("VitalsPanel"), Player != nullptr);
+
+	bool bDead = false;
+	int32 ReachedExit = 0;
+
+	if (Player)
+	{
+		const FMazeVitals Vitals = Player->GetVitals();
+
+		bDead = !FMazeVitalsSystem::IsAlive(Vitals);
+		ReachedExit = Player->GetReachedExit();
+		Text(this, TEXT("HealthText"), FString::Printf(TEXT("HEALTH  %d / 100"), FMath::CeilToInt(Vitals.Health)));
+		Text(this,
+		     TEXT("StaminaText"),
+		     FString::Printf(TEXT("%s  %d / 100"),
+		                     Vitals.bExhausted ? TEXT("STAMINA / RECOVERING") : TEXT("STAMINA"),
+		                     FMath::CeilToInt(Vitals.Stamina)));
+
+		if (auto* Bar = Cast<UProgressBar>(GetWidgetFromName(TEXT("HealthBar"))))
+			Bar->SetPercent(FMath::Clamp(Vitals.Health / FMazeVitals::Maximum, 0.f, 1.f));
+
+		if (auto* Bar = Cast<UProgressBar>(GetWidgetFromName(TEXT("StaminaBar"))))
+		{
+			Bar->SetPercent(FMath::Clamp(Vitals.Stamina / FMazeVitals::Maximum, 0.f, 1.f));
+			Bar->SetFillColorAndOpacity(Vitals.bExhausted ? ExhaustedColor : StaminaColor);
+		}
+	}
+
+	Visible(this, TEXT("DeathPanel"), bDead);
+	Visible(this, TEXT("ExitPanel"), !bDead && ReachedExit != 0);
+	Text(this, TEXT("ExitText"), FString::Printf(TEXT("EXIT %d REACHED"), ReachedExit));
+	Visible(this, TEXT("MinimapPanel"), !bDead && (!Controller || Controller->IsMinimapVisible()));
+	Visible(this, TEXT("SessionText"), !bDead);
+
+	for (TActorIterator<AMazeWorld> It(GetWorld()); It; ++It)
+	{
+		if (const auto Data = It->GetGeneratedData())
+			Text(this,
+			     TEXT("SessionText"),
+			     FString::Printf(
+			         TEXT("SESSION %d | %d x %d | START A"), It->Seed, Data->Layout.Size, Data->Layout.Size));
+
+		break;
+	}
+}
+
+int32 UMazeMinimapWidget::NativePaint(const FPaintArgs& Args,
+                                      const FGeometry& Geometry,
+                                      const FSlateRect& CullingRect,
+                                      FSlateWindowElementList& Elements,
+                                      int32 Layer,
+                                      const FWidgetStyle& Style,
+                                      bool bParentEnabled) const
+{
+	Layer = Super::NativePaint(Args, Geometry, CullingRect, Elements, Layer, Style, bParentEnabled);
+
+	if (!GetWorld() || IsDesignTime())
+		return Layer;
+
+	const auto* Controller = GetOwningPlayer();
+
+	for (TActorIterator<AMazeWorld> It(GetWorld()); It; ++It)
+	{
+		const auto Data = It->GetGeneratedData();
+
+		if (!Data || Data->Layout.Size <= 0 || Data->Layout.Walls.Num() != Data->Layout.Size * Data->Layout.Size)
+			break;
+
+		const FMazeLayout& Layout = Data->Layout;
+		const float Size = FMath::Min(Geometry.GetLocalSize().X, Geometry.GetLocalSize().Y);
+		const float Step = Size / Layout.Size;
+
+		++Layer;
+
+		auto Line = [&](FVector2D A, FVector2D B, FLinearColor Color, float Width = 1.f)
+		{
+			TArray<FVector2D> Points{A, B};
+			FSlateDrawElement::MakeLines(Elements,
+			                             Layer,
+			                             Geometry.ToPaintGeometry(),
+			                             Points,
+			                             ESlateDrawEffect::None,
+			                             Color * Style.GetColorAndOpacityTint(),
+			                             true,
+			                             Width);
+		};
+		auto Marker = [&](FVector2D P, FLinearColor Color)
+		{
+			Line(P - FVector2D(3, 0), P + FVector2D(3, 0), Color, 6.f);
+		};
+
+		for (int32 Y = 0; Y < Layout.Size; ++Y)
+			for (int32 X = 0; X < Layout.Size; ++X)
+			{
+				const uint8 W = Layout.Walls[Y * Layout.Size + X];
+				const float PX = X * Step, PY = Y * Step;
+
+				if (W & 1)
+					Line({PX, PY}, {PX + Step, PY}, WallColor);
+
+				if (W & 8)
+					Line({PX, PY}, {PX, PY + Step}, WallColor);
+
+				if (X == Layout.Size - 1 && (W & 2))
+					Line({PX + Step, PY}, {PX + Step, PY + Step}, WallColor);
+
+				if (Y == Layout.Size - 1 && (W & 4))
+					Line({PX, PY + Step}, {PX + Step, PY + Step}, WallColor);
+			}
+
+		auto Project = [&](FVector World)
+		{
+			const FVector Local = World - It->GetActorLocation();
+
+			return FVector2D(FMath::Clamp(Local.X / It->GetCellSize() * Step, 0.f, Size),
+			                 FMath::Clamp(Local.Y / It->GetCellSize() * Step, 0.f, Size));
+		};
+
+		++Layer;
+		Marker(Project(It->StartLocation()), StartColor);
+
+		for (int32 I = 0; I < Layout.Exits.Num(); ++I)
+		{
+			const int32 Cell = Layout.Exits[I];
+			FVector2D P((Cell % Layout.Size + 0.5f) * Step, (Cell / Layout.Size + 0.5f) * Step);
+
+			if (I == 0)
+				P.Y = 0;
+
+			if (I == 1)
+				P.X = Size;
+
+			if (I == 2)
+				P.Y = Size;
+
+			Marker(P, ExitColor);
+		}
+
+		if (Controller && Controller->GetPawn())
+		{
+			const FVector2D P = Project(Controller->GetPawn()->GetActorLocation());
+			const float Angle = FMath::DegreesToRadians(Controller->GetControlRotation().Yaw);
+			const FVector2D Direction(FMath::Cos(Angle), FMath::Sin(Angle)), Side(-Direction.Y, Direction.X);
+			const FVector2D Tip = P + Direction * 8, A = P - Direction * 5 + Side * 4, B = P - Direction * 5 - Side * 4;
+
+			++Layer;
+			Line(Tip, A, PlayerColor, 2);
+			Line(Tip, B, PlayerColor, 2);
+			Line(A, B, PlayerColor, 2);
+		}
+
+		break;
+	}
+
+	return Layer;
+}

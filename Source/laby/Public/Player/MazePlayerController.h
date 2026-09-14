@@ -1,7 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "MazeECSFragments.h"
+#include "ECS/MazeECSFragments.h"
 #include "MazePlayerController.generated.h"
 
 UCLASS(Config = GameUserSettings)
@@ -48,15 +48,19 @@ public:
 #endif
 	}
 
+	UFUNCTION(BlueprintCallable, Category = "Maze|UI")
+	void ShowMenu(bool Settings = false);
+	UFUNCTION(BlueprintCallable, Category = "Maze|UI")
+	void CloseMenu();
+
 private:
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 	void ToggleMinimap();
 #endif
-	void ShowMenu(bool Settings = false);
-	void CloseMenu();
 	void RemoveMenuWidget();
 
-	TSharedPtr<class SWidget> MenuWidget;
+	UPROPERTY(Transient)
+	TObjectPtr<class UMazeMenuWidget> MenuWidget;
 
 	UPROPERTY(Transient)
 	TObjectPtr<class UMazeECSSubsystem> ECSSubsystem;

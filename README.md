@@ -29,10 +29,26 @@
 
 ## Исходники
 
-- `MazeLayout.h` — топология и параметры размера сетки.
-- `MazeWorld.cpp` — геометрия, выходы и seed.
-- `MazeCharacter.cpp` — камера и управление.
-- `MazeGameMode.cpp` — старт, освещение и HUD.
-- `MazeLayoutTests.cpp` — проверка связности, симметрии стен, трёх выходов и seed на 100 лабиринтах. В редакторе: Session Frontend → Automation → Laby.Maze.ConnectivityAndExits.
+В `Source/laby` заголовки находятся в `Public`, реализации — в `Private`. В обоих каталогах код разделён по назначению:
+
+- `ECS/` — Mass-фрагменты, подсистема и системы управления, генерации, прогресса, здоровья и выносливости.
+- `Maze/` — топология лабиринта и расчёт процедурной поверхности.
+- `Player/` — персонаж и контроллер: адаптеры ввода, камеры и физики.
+- `World/` — актор лабиринта, игровой режим, освещение и подключение HUD.
+- `UI/` — виджеты меню, HUD и миникарты.
+- `Private/Tests/` — автоматические проверки лабиринта, поверхности, здоровья и настроек.
+
+Модуль `Source/labyEditor/Private` содержит `LiveCoding/` для автоматической компиляции и `UI/` для создания редактируемых Widget Blueprint. Правила модулей остаются в корне соответствующего модуля, файлы целей — в `Source`.
+
+Остальные каталоги проекта:
+
+- `Content/Maps`, `Content/Materials`, `Content/UI` — карты, материалы и сохранённые ассеты интерфейса. `Content/UI` создаётся editor-модулем при первом подключении; подробности — [Docs/Editing-UI.md](Docs/Editing-UI.md).
+- `Config/` — настройки Unreal и игры.
+- `Scripts/` — форматирование, установка форматтеров и Python-инструменты для ассетов Unreal.
+- `Docs/` — документация архитектуры, механик и редактирования интерфейса.
+
+Генерируемые каталоги Unreal (`Binaries`, `Intermediate`, `Saved`, `DerivedDataCache`), файлы IDE, локальные инструменты `.tools`, резервные копии и архивы исключены из Git через `.gitignore`.
+
+Проверка связности, симметрии стен, трёх выходов и seed на 100 лабиринтах находится в `Source/laby/Private/Tests/MazeLayoutTests.cpp`. В редакторе: Session Frontend → Automation → Laby.Maze.ConnectivityAndExits.
 
 Карта хранится в `Content/Maps/Maze.umap`; пустая основа намеренно заполняется при Play. Для восстановления основы карты предусмотрен `Scripts/create_maze_map.py` (PythonScriptPlugin, UnrealEditor-Cmd -run=pythonscript).

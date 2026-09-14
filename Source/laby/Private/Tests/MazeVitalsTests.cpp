@@ -1,4 +1,4 @@
-#include "MazeVitalsSystem.h"
+#include "ECS/MazeVitalsSystem.h"
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS

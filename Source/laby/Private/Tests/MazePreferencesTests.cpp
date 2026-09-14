@@ -1,4 +1,4 @@
-#include "MazePlayerController.h"
+#include "Player/MazePlayerController.h"
 #include "Misc/AutomationTest.h"
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"

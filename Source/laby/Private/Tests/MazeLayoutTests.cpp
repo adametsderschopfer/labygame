@@ -1,4 +1,4 @@
-#include "MazeLayout.h"
+#include "Maze/MazeLayout.h"
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS

@@ -12,6 +12,8 @@ public class laby : ModuleRules
 			                                                "CoreUObject",
 			                                                "Engine",
 			                                                "InputCore",
+			                                                "UMG",
+			                                                "SlateCore",
 			                                                "EnhancedInput",
 			                                                "ProceduralMeshComponent",
 			                                                "MassCore",

@@ -10,6 +10,6 @@ public class labyEditorTarget : TargetRules
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V7;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_8;
-		ExtraModuleNames.Add("laby");
+		ExtraModuleNames.AddRange(new string[] { "laby", "labyEditor" });
 	}
 }

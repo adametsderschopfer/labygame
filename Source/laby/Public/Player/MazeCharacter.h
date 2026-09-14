@@ -1,7 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "MazeVitals.h"
+#include "ECS/MazeVitals.h"
 #include "Mass/EntityHandle.h"
 #include "MazeCharacter.generated.h"
 
