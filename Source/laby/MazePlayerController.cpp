@@ -1,4 +1,5 @@
 #include "MazePlayerController.h"
+#include "MazeECSSubsystem.h"
 #include "Engine/GameViewportClient.h"
 #include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
@@ -38,10 +39,17 @@ void AMazePlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	if (!IsLocalController()) return;
+	ECSSubsystem = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
+	check(ECSSubsystem);
 	const auto* Mode = GetWorld()->GetAuthGameMode();
-	bSessionStarted = Mode && UGameplayStatics::HasOption(Mode->OptionsString, TEXT("StartGame"));
-	if (bSessionStarted) CloseMenu(); else ShowMenu();
-	UE_LOG(LogTemp, Display, TEXT("Laby player ready: menu=%d session=%d sensitivity=%.2f"), bMenuOpen, bSessionStarted, GetDefault<UMazePreferences>()->GetSensitivity());
+	ECSSubsystem->SetSessionStarted(Mode && UGameplayStatics::HasOption(Mode->OptionsString, TEXT("StartGame")));
+	if (ReadSession().bSessionStarted) CloseMenu(); else ShowMenu();
+	UE_LOG(LogTemp, Display, TEXT("Laby player ready: menu=%d session=%d sensitivity=%.2f"), IsMenuOpen(), ReadSession().bSessionStarted, GetDefault<UMazePreferences>()->GetSensitivity());
+}
+
+FMazeSessionFragment AMazePlayerController::ReadSession() const
+{
+	return ECSSubsystem ? ECSSubsystem->ReadSession() : FMazeSessionFragment();
 }
 
 void AMazePlayerController::SetupInputComponent()
@@ -56,13 +64,13 @@ void AMazePlayerController::SetupInputComponent()
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 void AMazePlayerController::ToggleMinimap()
 {
-	if (!bMenuOpen) bMinimapVisible = !bMinimapVisible;
+	if (ECSSubsystem) ECSSubsystem->ToggleMinimap();
 }
 #endif
 
 void AMazePlayerController::RemoveMenuWidget()
 {
-	if (bSettingsOpen)
+	if (ReadSession().bSettingsOpen)
 	{
 		auto* Preferences = GetMutableDefault<UMazePreferences>();
 		Preferences->SetSensitivity(Preferences->GetSensitivity());
@@ -75,20 +83,21 @@ void AMazePlayerController::RemoveMenuWidget()
 void AMazePlayerController::EndPlay(const EEndPlayReason::Type Reason)
 {
 	RemoveMenuWidget();
+	ECSSubsystem = nullptr;
 	Super::EndPlay(Reason);
 }
 
 void AMazePlayerController::ToggleMenu()
 {
-	if (bSettingsOpen) ShowMenu();
-	else if (bMenuOpen && bSessionStarted) CloseMenu();
+	if (ReadSession().bSettingsOpen) ShowMenu();
+	else if (IsMenuOpen() && ReadSession().bSessionStarted) CloseMenu();
 	else ShowMenu();
 }
 
 void AMazePlayerController::CloseMenu()
 {
 	RemoveMenuWidget();
-	bMenuOpen = bSettingsOpen = false;
+	if (ECSSubsystem) ECSSubsystem->SetMenu(false);
 	SetPause(false);
 	ResetIgnoreMoveInput();
 	ResetIgnoreLookInput();
@@ -107,8 +116,7 @@ void AMazePlayerController::ShowMenu(bool Settings)
 {
 	if (!GetWorld()->GetGameViewport()) return;
 	RemoveMenuWidget();
-	bMenuOpen = true;
-	bSettingsOpen = Settings;
+	if (ECSSubsystem) ECSSubsystem->SetMenu(true, Settings);
 	SetPause(true);
 	ResetIgnoreMoveInput(); ResetIgnoreLookInput();
 	SetIgnoreMoveInput(true); SetIgnoreLookInput(true);
@@ -146,8 +154,8 @@ void AMazePlayerController::ShowMenu(bool Settings)
 	}
 	else
 	{
-		Text(bSessionStarted ? TEXT("Игра приостановлена") : TEXT("Один лабиринт. Три выхода."), 18, FLinearColor(0.7f, 0.8f, 0.85f));
-		if (bSessionStarted) Button(TEXT("Продолжить"), [this]() { CloseMenu(); });
+		Text(ReadSession().bSessionStarted ? TEXT("Игра приостановлена") : TEXT("Один лабиринт. Три выхода."), 18, FLinearColor(0.7f, 0.8f, 0.85f));
+		if (ReadSession().bSessionStarted) Button(TEXT("Продолжить"), [this]() { CloseMenu(); });
 		Button(TEXT("Новая игра"), [this]() { StartNewGame(); });
 		Button(TEXT("Настройки"), [this]() { ShowMenu(true); });
 		Button(TEXT("Выйти на рабочий стол"), [this]() { UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false); });

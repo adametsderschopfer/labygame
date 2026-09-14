@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "MazeECSFragments.h"
 #include "MazePlayerController.generated.h"
 
 UCLASS(Config=GameUserSettings)
@@ -23,11 +24,11 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	void ToggleMenu();
 	void StartNewGame();
-	bool IsMenuOpen() const { return bMenuOpen; }
+	bool IsMenuOpen() const { return ReadSession().bMenuOpen; }
 	bool IsMinimapVisible() const
 	{
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
-		return bMinimapVisible;
+		return ReadSession().bMinimapVisible;
 #else
 		return true;
 #endif
@@ -35,13 +36,11 @@ public:
 private:
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 	void ToggleMinimap();
-	bool bMinimapVisible = true;
 #endif
 	void ShowMenu(bool Settings = false);
 	void CloseMenu();
 	void RemoveMenuWidget();
 	TSharedPtr<class SWidget> MenuWidget;
-	bool bMenuOpen = false;
-	bool bSettingsOpen = false;
-	bool bSessionStarted = false;
+	UPROPERTY(Transient) TObjectPtr<class UMazeECSSubsystem> ECSSubsystem;
+	FMazeSessionFragment ReadSession() const;
 };

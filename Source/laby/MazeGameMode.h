@@ -21,5 +21,4 @@ public:
 	virtual void DrawHUD() override;
 private:
 	void DrawMinimap(const class AMazeWorld& Maze);
-	int32 ReachedExit = 0;
 };

@@ -24,6 +24,7 @@ void AMazeGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
 	auto* Maze = GetWorld()->SpawnActor<AMazeWorld>();
+	Maze->InitializeMaze();
 	GetWorld()->SpawnActor<APlayerStart>(Maze->StartLocation(), FRotator::ZeroRotator);
 	auto* Sun = GetWorld()->SpawnActor<ADirectionalLight>(FVector(0, 0, 2000), FRotator(-55, -35, 0));
 	Sun->GetLightComponent()->SetMobility(EComponentMobility::Movable);
@@ -75,13 +76,15 @@ void AMazeHUD::DrawHUD()
 	{
 		const auto* PC = Cast<AMazePlayerController>(PlayerOwner);
 		if (!PC || PC->IsMinimapVisible()) DrawMinimap(**It);
-		DrawText(FString::Printf(TEXT("SESSION %d | %d x %d | START A"), It->Seed, It->GetLayout().Size, It->GetLayout().Size), FLinearColor(0.7f,0.8f,0.85f), 24, Canvas->ClipY - 40);
+		if (const auto Data = It->GetGeneratedData())
+			DrawText(FString::Printf(TEXT("SESSION %d | %d x %d | START A"), It->Seed, Data->Layout.Size, Data->Layout.Size), FLinearColor(0.7f,0.8f,0.85f), 24, Canvas->ClipY - 40);
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 		DrawText(TEXT("DEV: M  Toggle map"), FLinearColor(0.7f,0.8f,0.85f), 24, Canvas->ClipY - 62);
 #endif
-		if (PlayerOwner && PlayerOwner->GetPawn() && ReachedExit == 0) ReachedExit = It->ExitAt(PlayerOwner->GetPawn()->GetActorLocation());
 		break;
 	}
+	const auto* Player = PlayerOwner ? Cast<AMazeCharacter>(PlayerOwner->GetPawn()) : nullptr;
+	const int32 ReachedExit = Player ? Player->GetReachedExit() : 0;
 	if (ReachedExit)
 	{
 		DrawRect(FLinearColor(0.01f,0.06f,0.04f,0.9f), Canvas->ClipX / 2 - 230, Canvas->ClipY / 2 - 70, 460, 110);
@@ -92,7 +95,9 @@ void AMazeHUD::DrawHUD()
 
 void AMazeHUD::DrawMinimap(const AMazeWorld& Maze)
 {
-	const FMazeLayout& Layout = Maze.GetLayout();
+	const auto Data = Maze.GetGeneratedData();
+	if (!Data) return;
+	const FMazeLayout& Layout = Data->Layout;
 	if (Layout.Walls.Num() != Layout.Size * Layout.Size) return;
 	const float Size = FMath::Min(300.f, FMath::Min(Canvas->ClipX * 0.30f, Canvas->ClipY * 0.42f));
 	const float Left = Canvas->ClipX - Size - 32.f, Top = 54.f;

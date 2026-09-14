@@ -1,5 +1,5 @@
 #include "MazeWorld.h"
-#include "MazeSurface.h"
+#include "MazeECSSubsystem.h"
 #include "ProceduralMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
@@ -31,16 +31,23 @@ AMazeWorld::AMazeWorld()
 void AMazeWorld::BeginPlay()
 {
 	Super::BeginPlay();
-	if (HasAuthority())
-	{
-		Seed = static_cast<int32>(FPlatformTime::Cycles64() & 0x7fffffff);
-		if (Seed == 0) Seed = 1;
-		Build();
-	}
-	else if (Seed != 0) Build();
+	InitializeMaze();
 }
 
-void AMazeWorld::OnRep_Seed() { if (Seed != 0) Build(); }
+void AMazeWorld::InitializeMaze()
+{
+	if (HasAuthority() || Seed != 0) Build();
+}
+
+void AMazeWorld::EndPlay(const EEndPlayReason::Type Reason)
+{
+	if (ECSSubsystem) ECSSubsystem->DestroyMaze(MazeEntity);
+	MazeEntity = FMassEntityHandle();
+	ECSSubsystem = nullptr;
+	Super::EndPlay(Reason);
+}
+
+void AMazeWorld::OnRep_Seed() { InitializeMaze(); }
 
 void AMazeWorld::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -50,18 +57,40 @@ void AMazeWorld::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 
 FVector AMazeWorld::StartLocation() const
 {
-	return GetActorLocation() + FVector((Layout.Size / 2 + 0.5f) * Cell, (Layout.Size / 2 + 0.5f) * Cell, 100.f);
+	if (ECSSubsystem)
+	{
+		const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
+		if (Maze.Data) return Maze.Origin + Maze.Data->Start;
+	}
+	return GetActorLocation();
+}
+
+TSharedPtr<const FMazeGeneratedData> AMazeWorld::GetGeneratedData() const
+{
+	return ECSSubsystem ? ECSSubsystem->ReadMaze(MazeEntity).Data : nullptr;
+}
+
+float AMazeWorld::GetCellSize() const
+{
+	return ECSSubsystem ? ECSSubsystem->ReadMaze(MazeEntity).Cell : 875.f;
 }
 
 void AMazeWorld::Build()
 {
-	Layout.Generate(Seed);
+	if (!ECSSubsystem) ECSSubsystem = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
+	check(ECSSubsystem);
+	const auto OldData = GetGeneratedData();
+	if (!MazeEntity.IsSet()) MazeEntity = ECSSubsystem->CreateMaze(Seed, GetActorLocation());
+	else ECSSubsystem->RegenerateMaze(MazeEntity, Seed, GetActorLocation());
+	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
+	Seed = Maze.Seed; // Engine replication mirrors the ECS seed.
+	const auto Data = Maze.Data;
+	if (!Data || Data == OldData) return;
+	const auto& Layout = Data->Layout;
 	Walls->ClearAllMeshSections();
 	Floor->ClearInstances();
-	const float Span = Layout.Size * Cell;
-	Floor->AddInstance(FTransform(FRotator::ZeroRotator, FVector(Span / 2, Span / 2, -25), FVector((Span + 2400) / 100, (Span + 2400) / 100, 0.5f)));
-	FMazeSurface Surface;
-	Surface.Build(Layout, Cell, 50.f, 1000.f);
+	Floor->AddInstance(Data->FloorTransform);
+	const FMazeSurface& Surface = Data->Surface;
 	Walls->CreateMeshSection(0, Surface.Vertices, Surface.Triangles, Surface.Normals,
 		TArray<FVector2D>(), TArray<FColor>(), TArray<FProcMeshTangent>(), true);
 	// Labels are local visual components; topology alone is replicated.
@@ -77,16 +106,12 @@ void AMazeWorld::Build()
 	StartLabel->SetHorizontalAlignment(EHTA_Center);
 	StartLabel->SetWorldSize(60);
 	StartLabel->RegisterComponent();
-	for (int32 I = 0; I < 3; ++I)
+	for (int32 I = 0; I < Data->ExitPositions.Num(); ++I)
 	{
-		int32 C = Layout.Exits[I];
-		FVector Position((C % Layout.Size + 0.5f) * Cell, (C / Layout.Size + 0.5f) * Cell, 300);
-		const FVector Outward[] = {FVector(0,-1,0), FVector(1,0,0), FVector(0,1,0)};
-		Position += Outward[I] * (Cell / 2 + 50);
 		auto* Label = NewObject<UTextRenderComponent>(this);
 		Label->SetupAttachment(RootComponent);
-		Label->SetRelativeLocation(Position);
-		Label->SetRelativeRotation((-Outward[I]).Rotation());
+		Label->SetRelativeLocation(Data->ExitPositions[I]);
+		Label->SetRelativeRotation(Data->ExitRotations[I]);
 		Label->SetText(FText::FromString(FString::Printf(TEXT("EXIT %d"), I + 1)));
 		Label->SetTextRenderColor(FColor(60, 230, 120));
 		Label->SetHorizontalAlignment(EHTA_Center);
@@ -94,19 +119,4 @@ void AMazeWorld::Build()
 		Label->RegisterComponent();
 	}
 	UE_LOG(LogTemp, Display, TEXT("Maze generated: seed=%d cells=%d exits=3 wall triangles=%d"), Seed, Layout.Walls.Num(), Surface.Triangles.Num() / 3);
-}
-
-int32 AMazeWorld::ExitAt(const FVector& Location) const
-{
-	FVector P = Location - GetActorLocation();
-	const float Span = Layout.Size * Cell;
-	for (int32 I = 0; I < Layout.Exits.Num(); ++I)
-	{
-		int32 C = Layout.Exits[I];
-		float X = (C % Layout.Size + 0.5f) * Cell, Y = (C / Layout.Size + 0.5f) * Cell;
-		if ((I == 0 && P.Y < -50 && FMath::Abs(P.X - X) < (Cell - 50.f) / 2) ||
-			(I == 1 && P.X > Span + 50 && FMath::Abs(P.Y - Y) < (Cell - 50.f) / 2) ||
-			(I == 2 && P.Y > Span + 50 && FMath::Abs(P.X - X) < (Cell - 50.f) / 2)) return I + 1;
-	}
-	return 0;
 }

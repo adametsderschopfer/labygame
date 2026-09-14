@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "MazeLayout.h"
+#include "MazeECSFragments.h"
 #include "MazeWorld.generated.h"
 
 class UInstancedStaticMeshComponent;
@@ -15,17 +15,18 @@ class LABY_API AMazeWorld : public AActor
 public:
 	AMazeWorld();
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
+	void InitializeMaze();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UPROPERTY(ReplicatedUsing=OnRep_Seed, VisibleAnywhere, Category="Maze") int32 Seed = 0;
 	FVector StartLocation() const;
-	int32 ExitAt(const FVector& Location) const;
-	const FMazeLayout& GetLayout() const { return Layout; }
-	float GetCellSize() const { return Cell; }
+	TSharedPtr<const FMazeGeneratedData> GetGeneratedData() const;
+	float GetCellSize() const;
 private:
 	UFUNCTION() void OnRep_Seed();
 	void Build();
 	UPROPERTY() TObjectPtr<UProceduralMeshComponent> Walls;
 	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Floor;
-	FMazeLayout Layout;
-	static constexpr float Cell = 875.f;
+	UPROPERTY(Transient) FMassEntityHandle MazeEntity;
+	UPROPERTY(Transient) TObjectPtr<class UMazeECSSubsystem> ECSSubsystem;
 };
