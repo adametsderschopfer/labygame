@@ -33,7 +33,7 @@ public:
 	bool bBusy = false;
 
 private:
-	void BeginLoadingScreen(const FWorldContext& WorldContext, const FString& MapName);
+	void BeginLoadingScreen(const FWorldContext& LoadingWorldContext, const FString& MapName);
 	void EndLoadingScreen(UWorld* LoadedWorld);
 	void ClearLoadingScreen();
 

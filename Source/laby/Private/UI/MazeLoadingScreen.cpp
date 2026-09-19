@@ -6,8 +6,7 @@
 #include "RenderingThread.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Layout/SBorder.h"
-#include "Widgets/Layout/SBox.h"
-#include "Widgets/Notifications/SThrobber.h"
+#include "Widgets/Images/SThrobber.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Text/STextBlock.h"
 
@@ -39,15 +38,16 @@ namespace
 	}
 }
 
-void UMazeOnlineGameInstance::BeginLoadingScreen(const FWorldContext& WorldContext, const FString& MapName)
+void UMazeOnlineGameInstance::BeginLoadingScreen(const FWorldContext& LoadingWorldContext, const FString& MapName)
 {
-	if (WorldContext.OwningGameInstance != this || IsDedicatedServerInstance() || !FSlateApplication::IsInitialized())
+	if (LoadingWorldContext.OwningGameInstance != this || IsDedicatedServerInstance() ||
+	    !FSlateApplication::IsInitialized())
 		return;
 
 	ClearLoadingScreen();
 	LoadingScreen = MakeLoadingScreen();
 
-	if (WorldContext.WorldType != EWorldType::PIE && IsMoviePlayerEnabled() && GetMoviePlayer()->IsInitialized())
+	if (LoadingWorldContext.WorldType != EWorldType::PIE && IsMoviePlayerEnabled() && GetMoviePlayer()->IsInitialized())
 	{
 		FLoadingScreenAttributes Attributes;
 

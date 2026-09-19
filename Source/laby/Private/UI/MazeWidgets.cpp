@@ -351,10 +351,29 @@ int32 UMazeHUDWidget::NativePaint(const FPaintArgs& Args,
 
 	// Fixed opposing chevrons frame the current look direction without degree numbers.
 	Layer += 2;
-	Line({Center - 5.f, Top - 5.f}, {Center, Top}, Accent, 2.f);
-	Line({Center, Top}, {Center + 5.f, Top - 5.f}, Accent, 2.f);
-	Line({Center - 4.f, Top + 53.f}, {Center, Top + 48.f}, Accent, 2.f);
-	Line({Center, Top + 48.f}, {Center + 4.f, Top + 53.f}, Accent, 2.f);
+
+	auto Chevron = [&](float TipY, float Direction)
+	{
+		const float HalfWidth = 5.f;
+		const float Height = 5.f;
+		const TArray<FVector2D> Points{{Center - HalfWidth, TipY + Direction * Height},
+		                               {Center, TipY},
+		                               {Center + HalfWidth, TipY + Direction * Height}};
+		// Draw both arms together so the tip has a single continuous join.
+		FSlateDrawElement::MakeLines(Elements,
+		                             Layer,
+		                             Geometry.ToPaintGeometry(),
+		                             Points,
+		                             ESlateDrawEffect::None,
+		                             FLinearColor(0.f, 0.f, 0.f, 0.7f) * Tint,
+		                             true,
+		                             4.f);
+		FSlateDrawElement::MakeLines(
+		    Elements, Layer + 1, Geometry.ToPaintGeometry(), Points, ESlateDrawEffect::None, Accent * Tint, true, 2.f);
+	};
+
+	Chevron(Top, -1.f);
+	Chevron(Top + 48.f, 1.f);
 
 	return Layer + 1;
 }

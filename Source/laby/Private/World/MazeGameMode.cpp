@@ -104,6 +104,10 @@ void AMazeGameMode::PostLogin(APlayerController* NewPlayer)
 	}
 
 	PublishRoom();
+
+	// PostLogin has registered the host in ECS before quick start spawns the player.
+	if (GetNetMode() == NM_Standalone && UGameplayStatics::HasOption(OptionsString, TEXT("QuickStart")))
+		StartRoom(NewPlayer);
 }
 
 void AMazeGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)

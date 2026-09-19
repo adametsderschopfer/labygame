@@ -18,9 +18,7 @@
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SSlider.h"
-#include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Text/STextBlock.h"
-#include "HAL/PlatformApplicationMisc.h"
 
 namespace
 {
@@ -247,8 +245,8 @@ void AMazePlayerController::CloseMenu()
 
 void AMazePlayerController::StartNewGame()
 {
-	if (auto* Online = GetGameInstance<UMazeOnlineGameInstance>())
-		Online->Host();
+	if (GetWorld()->GetNetMode() == NM_Standalone)
+		UGameplayStatics::OpenLevel(this, TEXT("/Game/Maps/Maze"), true, TEXT("Room=1?QuickStart=1"));
 }
 
 void AMazePlayerController::ShowMenu(bool Settings)
@@ -312,7 +310,8 @@ void AMazePlayerController::ShowNetworkMenu(bool bJoinScreen, bool bSettingsScre
 
 	const auto Room = ECSSubsystem->ReadRoom();
 
-	bJoinScreen &= !Room.bActive;
+	// Network room screens are temporarily hidden.
+	bJoinScreen = false;
 
 	auto* Online = GetGameInstance<UMazeOnlineGameInstance>();
 	TSharedRef<SVerticalBox> Content = SNew(SVerticalBox);
@@ -343,18 +342,12 @@ void AMazePlayerController::ShowNetworkMenu(bool bJoinScreen, bool bSettingsScre
 	};
 
 	Content->AddSlot().AutoHeight().Padding(
-	    10,
-	    10,
-	    10,
-	    22)[SNew(STextBlock)
-	            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 28))
-	            .AutoWrapText(true)
-	            .Text(bSettingsScreen ? NSLOCTEXT("Maze.Menu", "SettingsTitle", "SETTINGS")
-	                  : bJoinScreen   ? (bLocalJoin ? NSLOCTEXT("Maze.Local", "JoinTitle", "JOIN LOCAL SERVER")
-	                                                : NSLOCTEXT("Maze.Menu", "JoinTitle", "JOIN A ROOM"))
-	                  : Room.bStarted ? NSLOCTEXT("Maze.Menu", "GameMenu", "GAME MENU")
-	                  : Room.bActive  ? NSLOCTEXT("Maze.Menu", "Lobby", "WAITING ROOM")
-	                                  : NSLOCTEXT("Maze.Menu", "Title", "LABY - MULTIPLAYER"))];
+	    10, 10, 10, 22)[SNew(STextBlock)
+	                        .Font(FCoreStyle::GetDefaultFontStyle("Bold", 28))
+	                        .AutoWrapText(true)
+	                        .Text(bSettingsScreen ? NSLOCTEXT("Maze.Menu", "SettingsTitle", "SETTINGS")
+	                              : Room.bStarted ? NSLOCTEXT("Maze.Menu", "GameMenu", "GAME MENU")
+	                                              : NSLOCTEXT("Maze.Menu", "SimpleTitle", "LABY"))];
 
 	if (bSettingsScreen)
 	{
@@ -416,150 +409,26 @@ void AMazePlayerController::ShowNetworkMenu(bool bJoinScreen, bool bSettingsScre
 			       ShowNetworkMenu();
 		       });
 	}
-	else if (Room.bActive)
+	else if (Room.bStarted)
 	{
-		Content->AddSlot().AutoHeight().Padding(
-		    8)[SNew(STextBlock)
-		           .Font(FCoreStyle::GetDefaultFontStyle("Regular", 20))
-		           .Text_Lambda(
-		               [this]()
-		               {
-			               const auto Current = ECSSubsystem->ReadRoom();
-			               TArray<FText> Lines;
-			               Lines.Add(FText::Format(NSLOCTEXT("Maze.Menu", "PlayerCount", "Players: {Count} / 4\n"),
-			                                       FFormatNamedArguments{{TEXT("Count"), Current.Members.Num()}}));
-
-			               for (const auto& Member : Current.Members)
-			               {
-				               const FText Name = FText::AsCultureInvariant(Member.Name);
-				               Lines.Add(Member.Id == Current.HostId
-				                             ? FText::Format(NSLOCTEXT("Maze.Menu", "HostPlayer", "{Name}  [HOST]"),
-				                                             FFormatNamedArguments{{TEXT("Name"), Name}})
-				                             : Name);
-			               }
-
-			               return FText::Join(FText::AsCultureInvariant(TEXT("\n")), Lines);
-		               })];
-
-		if (HasAuthority() && !Room.bStarted)
-		{
-			const bool bLocal = Online && Online->IsLocalRoom();
-
-			Label(FText::Format(bLocal ? NSLOCTEXT("Maze.Local", "Address", "Server address: {Code}")
-			                           : NSLOCTEXT("Maze.Menu", "RoomCode", "Room code: {Code}"),
-			                    FFormatNamedArguments{
-			                        {TEXT("Code"),
-			                         FText::AsCultureInvariant(
-			                             Online ? (bLocal ? Online->LocalAddress() : Online->RoomCode) : FString())}}));
-
-			if (bLocal)
-				Label(NSLOCTEXT("Maze.Local",
-				                "HostHint",
-				                "On this PC, connect to 127.0.0.1 using the port above. On another PC, use this PC's "
-				                "LAN IPv4 address."));
-
-			Button(bLocal ? NSLOCTEXT("Maze.Local", "CopyAddress", "Copy address")
-			              : NSLOCTEXT("Maze.Menu", "CopyCode", "Copy code"),
-			       [Online, bLocal]()
-			       {
-				       if (!Online)
-					       return;
-
-				       FPlatformApplicationMisc::ClipboardCopy(*(bLocal ? Online->LocalAddress() : Online->RoomCode));
-				       Online->Status = bLocal ? NSLOCTEXT("Maze.Local", "AddressCopied", "Address copied.")
-				                               : NSLOCTEXT("Maze.Menu", "CodeCopied", "Code copied.");
-			       });
-			Button(NSLOCTEXT("Maze.Menu", "StartGame", "Start game"),
-			       [this]()
-			       {
-				       ServerStartRoom();
-			       });
-		}
-		else if (!Room.bStarted)
-			Label(NSLOCTEXT("Maze.Menu", "Waiting", "Waiting for the host to start the game..."));
-
-		if (Room.bStarted)
-			Button(NSLOCTEXT("Maze.Menu", "Resume", "Resume"),
-			       [this]()
-			       {
-				       CloseMenu();
-			       });
-
-		Button(NSLOCTEXT("Maze.Menu", "LeaveRoom", "Leave room"),
+		Button(NSLOCTEXT("Maze.Menu", "Resume", "Resume"),
+		       [this]()
+		       {
+			       CloseMenu();
+		       });
+		Button(NSLOCTEXT("Maze.Menu", "ReturnToMenu", "Main menu"),
 		       [Online]()
 		       {
 			       if (Online)
 				       Online->Leave();
 		       });
 	}
-	else if (bJoinScreen)
-	{
-		Label(bLocalJoin
-		          ? NSLOCTEXT("Maze.Local",
-		                      "JoinHint",
-		                      "Use 127.0.0.1:7777 on the same PC, or the host LAN IPv4 address on another PC.")
-		          : NSLOCTEXT("Maze.Menu", "JoinInstructions", "Enter the 10-character code shared by the host."));
-
-		TSharedRef<SEditableTextBox> Code =
-		    SNew(SEditableTextBox)
-		        .Font(FCoreStyle::GetDefaultFontStyle("Regular", 24))
-		        .Padding(FMargin(16))
-		        .IsEnabled_Lambda(
-		            [Online]()
-		            {
-			            return !Online || !Online->bBusy;
-		            })
-		        .Text(bLocalJoin ? FText::AsCultureInvariant(TEXT("127.0.0.1:7777")) : FText::GetEmpty())
-		        .HintText(bLocalJoin ? NSLOCTEXT("Maze.Local", "AddressHint", "Host IPv4:port")
-		                             : NSLOCTEXT("Maze.Menu", "RoomCodeHint", "Room code"));
-
-		Content->AddSlot().AutoHeight().Padding(8)[Code];
-		Button(NSLOCTEXT("Maze.Menu", "JoinRoom", "Join room"),
-		       [Online, Code, bLocalJoin]()
-		       {
-			       if (Online)
-			       {
-				       if (bLocalJoin)
-					       Online->JoinLocal(Code->GetText().ToString());
-				       else
-					       Online->Join(Code->GetText().ToString());
-			       }
-		       });
-		Button(NSLOCTEXT("Maze.Menu", "Back", "Back"),
-		       [this]()
-		       {
-			       ShowNetworkMenu();
-		       });
-	}
 	else
 	{
-		Button(NSLOCTEXT("Maze.Local", "Create", "Create local room"),
-		       [Online]()
+		Button(NSLOCTEXT("Maze.Menu", "CreateAndStart", "Create room and start game"),
+		       [this]()
 		       {
-			       if (Online)
-				       Online->HostLocal();
-		       });
-		Button(NSLOCTEXT("Maze.Local", "Join", "Join local room"),
-		       [this, Online]()
-		       {
-			       if (Online)
-				       Online->Status = FText::GetEmpty();
-
-			       ShowNetworkMenu(true, false, true);
-		       });
-		Button(NSLOCTEXT("Maze.Menu", "CreateRoom", "Create room"),
-		       [Online]()
-		       {
-			       if (Online)
-				       Online->Host();
-		       });
-		Button(NSLOCTEXT("Maze.Menu", "JoinRoom", "Join room"),
-		       [this, Online]()
-		       {
-			       if (Online)
-				       Online->Status = FText::GetEmpty();
-
-			       ShowNetworkMenu(true);
+			       StartNewGame();
 		       });
 	}
 
@@ -576,15 +445,6 @@ void AMazePlayerController::ShowNetworkMenu(bool bJoinScreen, bool bSettingsScre
 		       {
 			       ConsoleCommand(TEXT("quit"));
 		       });
-
-	Content->AddSlot().AutoHeight().Padding(8)[SNew(STextBlock)
-	                                               .Font(FCoreStyle::GetDefaultFontStyle("Regular", 18))
-	                                               .AutoWrapText(true)
-	                                               .Text_Lambda(
-	                                                   [Online]()
-	                                                   {
-		                                                   return Online ? Online->Status : FText::GetEmpty();
-	                                                   })];
 
 	TSharedRef<SWidget> Panel =
 	    SNew(SBorder)
