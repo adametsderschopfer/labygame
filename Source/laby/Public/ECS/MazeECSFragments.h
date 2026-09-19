@@ -127,7 +127,7 @@ struct FMazeGenerationFragment : public FMassFragment
 	UPROPERTY()
 	float WallThickness = 50.f;
 	UPROPERTY()
-	float WallHeight = 1000.f;
+	float WallHeight = 500.f;
 	UPROPERTY()
 	FVector Origin = FVector::ZeroVector;
 	UPROPERTY()

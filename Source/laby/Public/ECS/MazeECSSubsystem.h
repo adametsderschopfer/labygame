@@ -5,6 +5,7 @@
 #include "Mass/EntityHandle.h"
 #include "MassEntityQuery.h"
 #include "ECS/MazeECSFragments.h"
+#include "ECS/MazeItems.h"
 #include "MazeECSSubsystem.generated.h"
 
 enum class EMazeInputAxis
@@ -32,6 +33,9 @@ public:
 	virtual TStatId GetStatId() const override;
 	FMassEntityHandle CreatePlayer();
 	void DestroyPlayer(FMassEntityHandle Entity);
+	FMazeItemsSnapshot ReadItems(FMassEntityHandle Entity) const;
+	bool ReadHeadlampEnabled(FMassEntityHandle Entity) const;
+	void ReceiveItems(FMassEntityHandle Entity, const FMazeItemsSnapshot& Snapshot);
 	FMazeVitals ReadVitals(FMassEntityHandle Entity) const;
 	void SetLocomotion(FMassEntityHandle Entity, bool bRunning, bool bOnGround);
 	bool SpendJumpStamina(FMassEntityHandle Entity);

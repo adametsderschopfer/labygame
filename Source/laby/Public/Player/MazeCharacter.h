@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "ECS/MazeVitals.h"
+#include "ECS/MazeItems.h"
 #include "Mass/EntityHandle.h"
 #include "MazeCharacter.generated.h"
 
@@ -33,6 +34,16 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
+	UPROPERTY(VisibleAnywhere, Category = "Equipment")
+	TObjectPtr<class USpotLightComponent> HeadlampLight;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Items)
+	FMazeItemsSnapshot ReplicatedItems;
+
+	UFUNCTION()
+	void OnRep_Items();
+	void RefreshHeadlamp();
+
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerSnapshot)
 	FMazeVitals ReplicatedVitals;
 

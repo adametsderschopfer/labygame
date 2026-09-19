@@ -2,6 +2,8 @@
 #include "Player/MazePlayerController.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "ECS/MazeVitalsSystem.h"
+#include "ECS/MazeItemSystem.h"
+#include "Components/SpotLightComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -53,6 +55,22 @@ AMazeCharacter::AMazeCharacter()
 	Camera->SetRelativeLocation(FVector(0, 0, 70));
 	Camera->bUsePawnControlRotation = true;
 	Camera->FieldOfView = 95;
+
+	const auto& Lamp = FMazeItemSystem::HeadlampDefinition();
+
+	HeadlampLight = CreateDefaultSubobject<USpotLightComponent>(TEXT("HeadlampLight"));
+	HeadlampLight->SetupAttachment(GetCapsuleComponent());
+	HeadlampLight->SetRelativeLocation(Lamp.HeadOffset);
+	HeadlampLight->SetAbsolute(false, true, false);
+	HeadlampLight->SetMobility(EComponentMobility::Movable);
+	HeadlampLight->SetIntensityUnits(ELightUnits::Lumens);
+	HeadlampLight->SetIntensity(Lamp.IntensityLumens);
+	HeadlampLight->SetLightColor(Lamp.Color);
+	HeadlampLight->SetAttenuationRadius(Lamp.Range);
+	HeadlampLight->SetInnerConeAngle(Lamp.InnerConeDegrees);
+	HeadlampLight->SetOuterConeAngle(Lamp.OuterConeDegrees);
+	HeadlampLight->SetCastShadows(true);
+	HeadlampLight->SetVisibility(false);
 	bUseControllerRotationYaw = true;
 	GetCharacterMovement()->MaxWalkSpeed = 450;
 	GetCharacterMovement()->JumpZVelocity = 420;
@@ -67,7 +85,14 @@ void AMazeCharacter::BeginPlay()
 	PlayerEntity = ECSSubsystem->CreatePlayer();
 
 	if (!HasAuthority())
+	{
 		OnRep_PlayerSnapshot();
+		OnRep_Items();
+	}
+	else
+		ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);
+
+	RefreshHeadlamp();
 }
 
 void AMazeCharacter::EndPlay(const EEndPlayReason::Type Reason)
@@ -76,6 +101,8 @@ void AMazeCharacter::EndPlay(const EEndPlayReason::Type Reason)
 		ECSSubsystem->DestroyPlayer(PlayerEntity);
 
 	PlayerEntity = FMassEntityHandle();
+	HeadlampLight->SetVisibility(false);
+	ReplicatedItems = FMazeItemsSnapshot();
 	ECSSubsystem = nullptr;
 	Super::EndPlay(Reason);
 }
@@ -100,6 +127,7 @@ int32 AMazeCharacter::GetReachedExit() const
 void AMazeCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	RefreshHeadlamp();
 
 	auto* Movement = GetCharacterMovement();
 
@@ -135,6 +163,7 @@ void AMazeCharacter::Tick(float DeltaSeconds)
 	{
 		ReplicatedVitals = GetVitals();
 		ReplicatedExit = GetReachedExit();
+		ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);
 	}
 
 	if (!IsLocallyControlled() && !Command.bDead)
@@ -294,6 +323,28 @@ void AMazeCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(AMazeCharacter, ReplicatedVitals, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AMazeCharacter, ReplicatedExit, COND_OwnerOnly);
+	DOREPLIFETIME(AMazeCharacter, ReplicatedItems);
+}
+
+void AMazeCharacter::OnRep_Items()
+{
+	if (ECSSubsystem)
+		ECSSubsystem->ReceiveItems(PlayerEntity, ReplicatedItems);
+
+	RefreshHeadlamp();
+}
+
+void AMazeCharacter::RefreshHeadlamp()
+{
+	const bool bVisible =
+	    GetNetMode() != NM_DedicatedServer && ECSSubsystem && ECSSubsystem->ReadHeadlampEnabled(PlayerEntity);
+
+	if (HeadlampLight && HeadlampLight->IsVisible() != bVisible)
+		HeadlampLight->SetVisibility(bVisible);
+
+	// Base aim includes replicated view pitch for other players; their cameras are not evaluated locally.
+	if (HeadlampLight && bVisible)
+		HeadlampLight->SetWorldRotation(GetBaseAimRotation());
 }
 
 void AMazeCharacter::OnRep_PlayerSnapshot()

@@ -1,7 +1,6 @@
 #include "LiveCoding/MazeAutoLiveCoding.h"
 #include "Modules/ModuleManager.h"
 #include "UI/MazeWidgets.h"
-#include "UI/MazeExplorationMapWidget.h"
 #include "UI/MazeText.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Blueprint/WidgetTree.h"
@@ -372,15 +371,27 @@ namespace
 			return;
 		}
 
+		// A runtime class introduced by Live Coding may not be in the on-disk import library yet.
+		// Resolve the registered class instead of importing its generated construction symbol.
+		UClass* ParentClass = bExploration
+		                          ? LoadClass<UUserWidget>(nullptr, TEXT("/Script/laby.MazeExplorationMapWidget"))
+		                          : (bHUD ? UMazeHUDWidget::StaticClass() : UMazeMenuWidget::StaticClass());
+
+		if (!ParentClass)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Laby UI parent class is unavailable: %s"), *PackageName);
+
+			return;
+		}
+
 		UPackage* Package = CreatePackage(*PackageName);
-		auto* Blueprint = CastChecked<UWidgetBlueprint>(FKismetEditorUtilities::CreateBlueprint(
-		    bExploration ? UMazeExplorationMapWidget::StaticClass()
-		                 : (bHUD ? UMazeHUDWidget::StaticClass() : UMazeMenuWidget::StaticClass()),
-		    Package,
-		    FName(Name),
-		    BPTYPE_Normal,
-		    UWidgetBlueprint::StaticClass(),
-		    UWidgetBlueprintGeneratedClass::StaticClass()));
+		auto* Blueprint = CastChecked<UWidgetBlueprint>(
+		    FKismetEditorUtilities::CreateBlueprint(ParentClass,
+		                                            Package,
+		                                            FName(Name),
+		                                            BPTYPE_Normal,
+		                                            UWidgetBlueprint::StaticClass(),
+		                                            UWidgetBlueprintGeneratedClass::StaticClass()));
 
 		if (bExploration)
 		{

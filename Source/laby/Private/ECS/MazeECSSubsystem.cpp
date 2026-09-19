@@ -2,6 +2,7 @@
 #include "ECS/MazeVitalsSystem.h"
 #include "ECS/MazeGameplaySystems.h"
 #include "ECS/MazeExplorationSystem.h"
+#include "ECS/MazeItemSystem.h"
 #include "MassEntitySubsystem.h"
 #include "MassExecutionContext.h"
 #include "Engine/World.h"
@@ -30,7 +31,8 @@ void UMazeECSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	                                    FMazePlayerPoseFragment::StaticStruct(),
 	                                    FMazePlayerCommandFragment::StaticStruct(),
 	                                    FMazeProgressFragment::StaticStruct(),
-	                                    FMazeExplorationFragment::StaticStruct()};
+	                                    FMazeExplorationFragment::StaticStruct(),
+	                                    FMazeItemsFragment::StaticStruct()};
 
 	PlayerArchetype = Manager.CreateArchetype(MakeArrayView(Fragments));
 	VitalsQuery = MakeUnique<FMassEntityQuery>(Manager.AsShared());
@@ -112,7 +114,33 @@ FMassEntityHandle UMazeECSSubsystem::CreatePlayer()
 
 	FindFragment<FMazeProgressFragment>(Entity)->Maze = ReadSession().Maze;
 
+	if (GetWorld()->GetNetMode() != NM_Client)
+		FMazeItemSystem::InitializeLoadout(*FindFragment<FMazeItemsFragment>(Entity));
+
 	return Entity;
+}
+
+FMazeItemsSnapshot UMazeECSSubsystem::ReadItems(FMassEntityHandle Entity) const
+{
+	const auto* Items = FindFragment<FMazeItemsFragment>(Entity);
+
+	return Items ? Items->Value : FMazeItemsSnapshot();
+}
+
+bool UMazeECSSubsystem::ReadHeadlampEnabled(FMassEntityHandle Entity) const
+{
+	const auto* Items = FindFragment<FMazeItemsFragment>(Entity);
+
+	return Items && FMazeItemSystem::HasHeadlamp(*Items);
+}
+
+void UMazeECSSubsystem::ReceiveItems(FMassEntityHandle Entity, const FMazeItemsSnapshot& Snapshot)
+{
+	if (GetWorld()->GetNetMode() != NM_Client)
+		return;
+
+	if (auto* Items = FindFragment<FMazeItemsFragment>(Entity))
+		Items->Value = Snapshot;
 }
 
 void UMazeECSSubsystem::DestroyPlayer(FMassEntityHandle Entity)
