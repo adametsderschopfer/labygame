@@ -368,6 +368,11 @@ int32 UMazeMinimapWidget::NativePaint(const FPaintArgs& Args,
                                       bool bParentEnabled) const
 {
 	Layer = Super::NativePaint(Args, Geometry, CullingRect, Elements, Layer, Style, bParentEnabled);
+#if UE_BUILD_SHIPPING || UE_BUILD_TEST
+
+	return Layer;
+
+#endif
 
 	if (!GetWorld() || IsDesignTime())
 		return Layer;

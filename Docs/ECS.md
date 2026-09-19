@@ -31,3 +31,12 @@ Actor/Character, PlayerController, GameMode и HUD служат адаптера
 ## Применение
 
 Нужна полная сборка `labyEditor` с закрытым редактором: переименован World Subsystem и изменена структура отражаемых типов. После сборки открыть проект и запустить новую игру. Тесты и Play не запускались по просьбе пользователя.
+
+## Exploration maps
+
+- The player entity owns `FMazeExplorationFragment`: discovered cells, maze handle/revision and last pose samples. Data resets on entity destruction or maze regeneration; there is no disk persistence or shared team discovery.
+- `ResolvePlayer` calls `FMazeExplorationSystem::Update` after storing the pose and resolving input availability, before movement commands. The current cell and visible cell centers within six cells and a 120-degree forward sector are discovered. Grid-edge ray traversal stops at walls and exact diagonal corners. Disabled input, death and positions outside maze height suspend discovery. Position/direction changes refresh visibility.
+- Discovery is local navigation data. Clients compute their own mask from the replicated topology and local pose; server health and exit rules remain independent. `ReadExploration` validates the entity, maze handle and revision and returns const data for immediate painting only. Widgets never retain fragment pointers.
+- `Session.bMapOpen` is local interface state, like the existing menu (split-screen is unsupported). `SetMapOpen` invokes the system transition; the controller clears only its own character input, changes focus and blocks its movement/look. Other server players remain unaffected. Zoom and pan belong to widget presentation only.
+- `WBP_ExplorationMap` owns the new minimap slot. The editor module creates the missing Blueprint on startup. `UMazeExplorationMapWidget` renders discovered cells in the bottom-right corner and uses the same mask in fullscreen mode. M/Esc close, drag pans, wheel zooms, Home recenters. EndPlay removes the widget. A native layout fallback handles an absent asset.
+- The existing `UMazeMinimapWidget` remains the complete DEVELOPMENT MAP, toggled with F7. Shipping/Test hide it and disable its native rendering. It does not use exploration data.

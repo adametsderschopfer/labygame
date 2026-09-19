@@ -1,6 +1,7 @@
 #include "ECS/MazeECSSubsystem.h"
 #include "ECS/MazeVitalsSystem.h"
 #include "ECS/MazeGameplaySystems.h"
+#include "ECS/MazeExplorationSystem.h"
 #include "MassEntitySubsystem.h"
 #include "MassExecutionContext.h"
 #include "Engine/World.h"
@@ -28,7 +29,8 @@ void UMazeECSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	                                    FMazePlayerInputFragment::StaticStruct(),
 	                                    FMazePlayerPoseFragment::StaticStruct(),
 	                                    FMazePlayerCommandFragment::StaticStruct(),
-	                                    FMazeProgressFragment::StaticStruct()};
+	                                    FMazeProgressFragment::StaticStruct(),
+	                                    FMazeExplorationFragment::StaticStruct()};
 
 	PlayerArchetype = Manager.CreateArchetype(MakeArrayView(Fragments));
 	VitalsQuery = MakeUnique<FMassEntityQuery>(Manager.AsShared());
@@ -249,6 +251,11 @@ FMazePlayerCommandFragment UMazeECSSubsystem::ResolvePlayer(FMassEntityHandle En
 	*StoredPose = Pose;
 	StoredPose->bInputEnabled &= !ReadRoom().bActive || ReadRoom().bStarted;
 
+	if (auto* Exploration = FindFragment<FMazeExplorationFragment>(Entity))
+		if (const auto* Maze = FindFragment<FMazeGenerationFragment>(ReadSession().Maze))
+			FMazeExplorationSystem::Update(
+			    *Exploration, ReadSession().Maze, *Maze, *StoredPose, FMazeVitalsSystem::IsAlive(*Vitals));
+
 	if (GetWorld()->GetNetMode() != NM_Client)
 		if (const auto* Maze = FindFragment<FMazeGenerationFragment>(ReadSession().Maze))
 			FMazeHazardSystem::Apply(*Maze, *StoredPose, *Vitals);
@@ -387,6 +394,22 @@ void UMazeECSSubsystem::SetMenu(bool bOpen, bool bSettings)
 		Session->bMenuOpen = bOpen;
 		Session->bSettingsOpen = bOpen && bSettings;
 	}
+}
+
+const FMazeExplorationFragment* UMazeECSSubsystem::ReadExploration(FMassEntityHandle Entity) const
+{
+	const auto* Exploration = FindFragment<FMazeExplorationFragment>(Entity);
+	const auto* Maze = FindFragment<FMazeGenerationFragment>(ReadSession().Maze);
+
+	return Exploration && Maze && Exploration->Maze == ReadSession().Maze && Exploration->Revision == Maze->Revision
+	           ? Exploration
+	           : nullptr;
+}
+
+void UMazeECSSubsystem::SetMapOpen(bool bOpen)
+{
+	if (auto* Session = FindFragment<FMazeSessionFragment>(SessionEntity))
+		FMazeExplorationSystem::SetOpen(*Session, bOpen);
 }
 
 void UMazeECSSubsystem::ToggleMinimap()

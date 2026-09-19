@@ -146,6 +146,25 @@ template <> struct TMassFragmentTraits<FMazeGenerationFragment> final
 };
 
 USTRUCT()
+struct FMazeExplorationFragment : public FMassFragment
+{
+	GENERATED_BODY()
+	FMassEntityHandle Maze;
+	uint32 Revision = 0;
+	TArray<uint8> Seen;
+	FVector2D LastPosition = FVector2D(-1000, -1000);
+	FVector2D LastForward = FVector2D::ZeroVector;
+};
+
+template <> struct TMassFragmentTraits<FMazeExplorationFragment> final
+{
+	enum
+	{
+		AuthorAcceptsItsNotTriviallyCopyable = true
+	};
+};
+
+USTRUCT()
 struct FMazeSessionFragment : public FMassFragment
 {
 	GENERATED_BODY()
@@ -159,6 +178,8 @@ struct FMazeSessionFragment : public FMassFragment
 	bool bSessionStarted = false;
 	UPROPERTY()
 	bool bMinimapVisible = true;
+	UPROPERTY()
+	bool bMapOpen = false;
 };
 
 USTRUCT()

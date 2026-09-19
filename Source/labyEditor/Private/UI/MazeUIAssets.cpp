@@ -1,6 +1,7 @@
 #include "LiveCoding/MazeAutoLiveCoding.h"
 #include "Modules/ModuleManager.h"
 #include "UI/MazeWidgets.h"
+#include "UI/MazeExplorationMapWidget.h"
 #include "UI/MazeText.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Blueprint/WidgetTree.h"
@@ -358,7 +359,8 @@ namespace
 			        RepairFonts(FString(TEXT("/Game/UI/")) + Name);
 	        }));
 
-	void CreateAsset(const TCHAR* Name, bool bHUD, bool bPause = false, bool bSettings = false)
+	void CreateAsset(
+	    const TCHAR* Name, bool bHUD, bool bPause = false, bool bSettings = false, bool bExploration = false)
 	{
 		const FString PackageName = FString(TEXT("/Game/UI/")) + Name;
 
@@ -372,14 +374,23 @@ namespace
 
 		UPackage* Package = CreatePackage(*PackageName);
 		auto* Blueprint = CastChecked<UWidgetBlueprint>(FKismetEditorUtilities::CreateBlueprint(
-		    bHUD ? UMazeHUDWidget::StaticClass() : UMazeMenuWidget::StaticClass(),
+		    bExploration ? UMazeExplorationMapWidget::StaticClass()
+		                 : (bHUD ? UMazeHUDWidget::StaticClass() : UMazeMenuWidget::StaticClass()),
 		    Package,
 		    FName(Name),
 		    BPTYPE_Normal,
 		    UWidgetBlueprint::StaticClass(),
 		    UWidgetBlueprintGeneratedClass::StaticClass()));
 
-		if (bHUD)
+		if (bExploration)
+		{
+			auto* Tree = Blueprint->WidgetTree.Get();
+			auto* Canvas = Make<UCanvasPanel>(Tree, TEXT("MapCanvas"));
+
+			Tree->RootWidget = Canvas;
+			Place(Canvas, Make<USizeBox>(Tree, TEXT("MinimapBounds")), {-24, -24}, {272, 272}, {1, 1}, {1, 1});
+		}
+		else if (bHUD)
 			HUD(Blueprint->WidgetTree);
 		else
 			Menu(Blueprint->WidgetTree, bPause, bSettings);
@@ -431,6 +442,7 @@ public:
 		    [](float)
 		    {
 			    CreateAsset(TEXT("WBP_HUD"), true);
+			    CreateAsset(TEXT("WBP_ExplorationMap"), false, false, false, true);
 			    CreateAsset(TEXT("WBP_MainMenu"), false);
 			    CreateAsset(TEXT("WBP_PauseMenu"), false, true);
 			    CreateAsset(TEXT("WBP_Settings"), false, false, true);

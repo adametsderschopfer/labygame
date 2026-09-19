@@ -22,6 +22,11 @@ public:
 	                         AController* EventInstigator,
 	                         AActor* DamageCauser) override;
 	FMazeVitals GetVitals() const;
+	FMassEntityHandle GetPlayerEntity() const
+	{
+		return PlayerEntity;
+	}
+
 	void ClearLocalInput();
 	int32 GetReachedExit() const;
 	virtual void SetupPlayerInputComponent(UInputComponent* Input) override;

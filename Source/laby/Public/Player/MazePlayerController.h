@@ -29,6 +29,12 @@ public:
 	virtual void SetupInputComponent() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	void ToggleMenu();
+	void ToggleMap();
+	bool IsMapOpen() const
+	{
+		return ReadSession().bMapOpen;
+	}
+
 	void StartNewGame();
 	virtual void PlayerTick(float DeltaTime) override;
 	void ShowNetworkMenu(bool bJoinScreen = false, bool bSettingsScreen = false, bool bLocalJoin = false);
@@ -47,7 +53,7 @@ public:
 
 #else
 
-		return true;
+		return false;
 
 #endif
 	}
@@ -68,6 +74,9 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<class UMazeECSSubsystem> ECSSubsystem;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UMazeExplorationMapWidget> ExplorationMap;
 	TSharedPtr<class SWidget> NetworkMenu;
 	bool bDisplayedRoom = false;
 	bool bDisplayedStarted = false;

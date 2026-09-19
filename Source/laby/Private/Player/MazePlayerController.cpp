@@ -2,6 +2,7 @@
 #include "Player/MazeCharacter.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "UI/MazeWidgets.h"
+#include "UI/MazeExplorationMapWidget.h"
 #include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/ConfigCacheIni.h"
@@ -76,6 +77,20 @@ void AMazePlayerController::BeginPlay()
 	ECSSubsystem = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
 	check(ECSSubsystem);
 
+	UClass* MapClass =
+	    LoadClass<UMazeExplorationMapWidget>(nullptr, TEXT("/Game/UI/WBP_ExplorationMap.WBP_ExplorationMap_C"));
+
+	ExplorationMap =
+	    CreateWidget<UMazeExplorationMapWidget>(this, MapClass ? MapClass : UMazeExplorationMapWidget::StaticClass());
+
+	if (ExplorationMap)
+	{
+		ExplorationMap->SetIsFocusable(true);
+		ExplorationMap->ForceVolatile(true);
+		ExplorationMap->SetVisibility(ESlateVisibility::HitTestInvisible);
+		ExplorationMap->AddToViewport(20);
+	}
+
 	if (auto* Online = GetGameInstance<UMazeOnlineGameInstance>())
 		Online->LocalRoomReady();
 
@@ -103,10 +118,11 @@ FMazeSessionFragment AMazePlayerController::ReadSession() const
 void AMazePlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
+	InputComponent->BindKey(EKeys::M, IE_Pressed, this, &AMazePlayerController::ToggleMap);
 	InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &AMazePlayerController::ToggleMenu).bExecuteWhenPaused =
 	    true;
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
-	InputComponent->BindKey(EKeys::M, IE_Pressed, this, &AMazePlayerController::ToggleMinimap);
+	InputComponent->BindKey(EKeys::F7, IE_Pressed, this, &AMazePlayerController::ToggleMinimap);
 #endif
 }
 
@@ -118,6 +134,46 @@ void AMazePlayerController::ToggleMinimap()
 }
 
 #endif
+
+void AMazePlayerController::ToggleMap()
+{
+	if (!ECSSubsystem || !ExplorationMap || IsMenuOpen() || !ReadSession().bSessionStarted)
+		return;
+
+	const auto* MapPlayer = Cast<AMazeCharacter>(GetPawn());
+
+	if (!IsMapOpen() && (!MapPlayer || MapPlayer->GetVitals().Health <= 0))
+		return;
+
+	ECSSubsystem->SetMapOpen(!IsMapOpen());
+
+	if (auto* MazePawn = Cast<AMazeCharacter>(GetPawn()))
+		MazePawn->ClearLocalInput();
+
+	FlushPressedKeys();
+	ResetIgnoreMoveInput();
+	ResetIgnoreLookInput();
+	bShowMouseCursor = IsMapOpen();
+
+	if (IsMapOpen())
+	{
+		SetIgnoreMoveInput(true);
+		SetIgnoreLookInput(true);
+		ExplorationMap->CenterOnPlayer();
+		ExplorationMap->SetVisibility(ESlateVisibility::Visible);
+
+		FInputModeUIOnly Mode;
+
+		Mode.SetWidgetToFocus(ExplorationMap->TakeWidget());
+		Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		SetInputMode(Mode);
+	}
+	else
+	{
+		ExplorationMap->SetVisibility(ESlateVisibility::HitTestInvisible);
+		SetInputMode(FInputModeGameOnly());
+	}
+}
 
 void AMazePlayerController::RemoveMenuWidget()
 {
@@ -145,12 +201,24 @@ void AMazePlayerController::RemoveMenuWidget()
 void AMazePlayerController::EndPlay(const EEndPlayReason::Type Reason)
 {
 	RemoveMenuWidget();
+
+	if (ExplorationMap)
+		ExplorationMap->RemoveFromParent();
+
+	ExplorationMap = nullptr;
 	ECSSubsystem = nullptr;
 	Super::EndPlay(Reason);
 }
 
 void AMazePlayerController::ToggleMenu()
 {
+	if (IsMapOpen())
+	{
+		ToggleMap();
+
+		return;
+	}
+
 	if (ReadSession().bSettingsOpen)
 		ShowMenu();
 	else if (IsMenuOpen() && ReadSession().bSessionStarted)
@@ -195,6 +263,14 @@ void AMazePlayerController::PlayerTick(float DeltaTime)
 	if (!IsLocalController() || !ECSSubsystem)
 		return;
 
+	if (IsMapOpen())
+	{
+		const auto* MapPlayer = Cast<AMazeCharacter>(GetPawn());
+
+		if (!MapPlayer || MapPlayer->GetVitals().Health <= 0)
+			ToggleMap();
+	}
+
 	const auto Room = ECSSubsystem->ReadRoom();
 
 	if (Room.bActive != bDisplayedRoom || Room.bStarted != bDisplayedStarted)
@@ -217,6 +293,9 @@ void AMazePlayerController::ServerStartRoom_Implementation()
 
 void AMazePlayerController::ShowNetworkMenu(bool bJoinScreen, bool bSettingsScreen, bool bLocalJoin)
 {
+	if (IsMapOpen())
+		ToggleMap();
+
 	auto* Viewport = GetWorld()->GetGameViewport();
 
 	if (!Viewport || !ECSSubsystem)
