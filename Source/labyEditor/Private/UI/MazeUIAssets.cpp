@@ -1,4 +1,6 @@
 #include "LiveCoding/MazeAutoLiveCoding.h"
+#include "Diagnostics/MazeDiagnosticsToolset.h"
+#include "ToolsetRegistry/UToolsetRegistry.h"
 #include "Modules/ModuleManager.h"
 #include "UI/MazeWidgets.h"
 #include "UI/MazeText.h"
@@ -448,6 +450,7 @@ public:
 			return;
 
 		AutoLiveCoding.Start();
+		UToolsetRegistry::RegisterToolsetClass(UMazeDiagnosticsToolset::StaticClass());
 
 		CreationTicker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda(
 		    [](float)
@@ -465,6 +468,7 @@ public:
 	virtual void ShutdownModule() override
 	{
 		AutoLiveCoding.Stop();
+		UToolsetRegistry::UnregisterToolsetClass(UMazeDiagnosticsToolset::StaticClass());
 		FTSTicker::GetCoreTicker().RemoveTicker(CreationTicker);
 	}
 };

@@ -1,6 +1,8 @@
 #pragma once
+#include "ProfilingDebugging/CpuProfilerTrace.h"
 #include "ECS/MazeECSFragments.h"
 #include "ECS/MazeVitalsSystem.h"
+#include "ECS/MazePlayerControlDefinition.h"
 
 struct FMazeGenerationSystem
 {
@@ -10,8 +12,14 @@ struct FMazeGenerationSystem
 			return;
 
 		auto Data = MakeShared<FMazeGeneratedData>();
-		Data->Layout.Generate(Maze.Seed, Maze.Size);
-		Data->Surface.Build(Data->Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight);
+		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(Maze_GenerateTopology);
+			Data->Layout.Generate(Maze.Seed, Maze.Size);
+		}
+		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(Maze_BuildSurface);
+			Data->Surface.Build(Data->Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight);
+		}
 		const float Span = Data->Layout.Size * Maze.Cell;
 		// A solid slab covers rooms and floor holes, meeting the tops of the outer walls.
 		Data->CeilingTransform = FTransform(
@@ -177,17 +185,22 @@ struct FMazePlayerControlSystem
 		FMazePlayerCommandFragment Command;
 		Command.bDead = !FMazeVitalsSystem::IsAlive(Vitals);
 
-		if (!Pose.bInputEnabled)
+		if (!Pose.bInputEnabled || Command.bDead)
 			Input = FMazePlayerInputFragment();
 
-		const bool bSprint = Pose.bInputEnabled && Input.bSprintHeld && FMazeVitalsSystem::CanSprint(Vitals);
-		Command.Speed = bSprint ? 750.f : 450.f;
+		Command.bCrouch = Input.bCrouchHeld;
+		const bool bLowStance = Command.bCrouch || Pose.bCrouched;
+		const bool bSprint =
+		    !bLowStance && Pose.bInputEnabled && Input.bSprintHeld && FMazeVitalsSystem::CanSprint(Vitals);
+		Command.Speed = bLowStance ? FMazePlayerControlDefinition::CrouchSpeed
+		                : bSprint  ? FMazePlayerControlDefinition::SprintSpeed
+		                           : FMazePlayerControlDefinition::WalkSpeed;
 
 		if (!Command.bDead && Pose.bInputEnabled)
 		{
 			Command.Movement = (Pose.Forward * Input.Forward + Pose.Right * Input.Right).GetClampedToMaxSize(1.f);
-			Command.bJumpHeld = Input.bJumpHeld;
-			Command.bStartJump = Input.bJumpPressed;
+			Command.bJumpHeld = Input.bJumpHeld && !bLowStance;
+			Command.bStartJump = Input.bJumpPressed && !bLowStance;
 		}
 
 		Command.Yaw = Input.Yaw * Pose.Sensitivity;

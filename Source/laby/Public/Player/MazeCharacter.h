@@ -4,6 +4,7 @@
 #include "ECS/MazeVitals.h"
 #include "ECS/MazeItems.h"
 #include "Mass/EntityHandle.h"
+#include "Player/MazeCameraMotion.h"
 #include "MazeCharacter.generated.h"
 
 UCLASS()
@@ -15,6 +16,10 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult) override;
+	virtual void UnPossessed() override;
+	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 	virtual bool CanJumpInternal_Implementation() const override;
 	virtual void OnJumped_Implementation() override;
 	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode = 0) override;
@@ -34,6 +39,8 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
+	FMazeCameraMotion CameraMotion;
+
 	UPROPERTY(VisibleAnywhere, Category = "Equipment")
 	TObjectPtr<class USpotLightComponent> HeadlampLight;
 
@@ -54,6 +61,9 @@ private:
 	void OnRep_PlayerSnapshot();
 	UFUNCTION(Server, Reliable)
 	void ServerSetSprint(bool bHeld);
+	UFUNCTION(Server, Reliable)
+	void ServerToggleHeadlamp();
+	void ToggleHeadlamp();
 
 	UPROPERTY(Transient)
 	FMassEntityHandle PlayerEntity;
@@ -67,6 +77,9 @@ private:
 	void Turn(float Value);
 	void SprintStart();
 	void SprintStop();
+	void CrouchStart();
+	void CrouchStop();
+	void RefreshStancePresentation();
 	void JumpStart();
 	void JumpStop();
 	void RestartMaze();

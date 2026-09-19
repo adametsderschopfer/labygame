@@ -6,6 +6,7 @@
 #include "MassEntityQuery.h"
 #include "ECS/MazeECSFragments.h"
 #include "ECS/MazeItems.h"
+#include "ECS/MazeDiagnostics.h"
 #include "MazeECSSubsystem.generated.h"
 
 enum class EMazeInputAxis
@@ -18,6 +19,7 @@ enum class EMazeInputAxis
 enum class EMazeInputAction
 {
 	Sprint,
+	Crouch,
 	Jump
 };
 
@@ -35,6 +37,7 @@ public:
 	void DestroyPlayer(FMassEntityHandle Entity);
 	FMazeItemsSnapshot ReadItems(FMassEntityHandle Entity) const;
 	bool ReadHeadlampEnabled(FMassEntityHandle Entity) const;
+	bool ToggleHeadlamp(FMassEntityHandle Entity);
 	void ReceiveItems(FMassEntityHandle Entity, const FMazeItemsSnapshot& Snapshot);
 	FMazeVitals ReadVitals(FMassEntityHandle Entity) const;
 	void SetLocomotion(FMassEntityHandle Entity, bool bRunning, bool bOnGround);
@@ -51,6 +54,7 @@ public:
 	void RegenerateMaze(FMassEntityHandle Entity, int32 Seed, FVector Origin);
 	FMazeGenerationFragment ReadMaze(FMassEntityHandle Entity) const;
 	FMazeSessionFragment ReadSession() const;
+	FMazeDiagnosticsSnapshot ReadDiagnostics() const;
 	void SetSessionStarted(bool bStarted);
 	void SetMenu(bool bOpen, bool bSettings = false);
 	void ToggleMinimap();

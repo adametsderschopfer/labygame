@@ -1,4 +1,6 @@
 #include "World/MazeWorld.h"
+#include "ProfilingDebugging/CpuProfilerTrace.h"
+#include "World/MazeWindAudio.h"
 #include "Components/PostProcessComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "ECS/MazeECSSubsystem.h"
@@ -7,6 +9,7 @@
 #include "Components/TextRenderComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Net/UnrealNetwork.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -47,27 +50,37 @@ void AMazeWorld::BeginPlay()
 	// Loading here also applies the material to existing CDOs after Live Coding.
 	if (GetNetMode() != NM_DedicatedServer)
 	{
-		if (auto* Ground = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Materials/M_MazeGround.M_MazeGround")))
+		if (auto* Ground = LoadObject<UMaterialInterface>(
+		        nullptr, TEXT("/Game/Materials/Laboratory/MI_LabVinylSatin.MI_LabVinylSatin")))
 			Floor->SetMaterial(0, Ground);
 		else
-			UE_LOG(LogTemp, Error, TEXT("Missing maze ground material. Run Scripts/create_night_environment.py."));
+			UE_LOG(
+			    LogTemp, Error, TEXT("Missing laboratory floor material. Run Scripts/create_laboratory_materials.py."));
 
 		auto* Exposure = NewObject<UPostProcessComponent>(this, TEXT("NightExposure"));
 
 		Exposure->SetupAttachment(RootComponent);
 		Exposure->bUnbound = true;
 		Exposure->Priority = 10.f;
-		// Extended luminance range is enabled: equal EV100 bounds keep night dark.
+		// Fixed interior exposure prevents bright ceiling panels from pumping eye adaptation.
 		Exposure->Settings.bOverride_AutoExposureMinBrightness = true;
 		Exposure->Settings.bOverride_AutoExposureMaxBrightness = true;
-		Exposure->Settings.AutoExposureMinBrightness = -2.f;
-		Exposure->Settings.AutoExposureMaxBrightness = -2.f;
+		Exposure->Settings.AutoExposureMinBrightness = 0.5f;
+		Exposure->Settings.AutoExposureMaxBrightness = 0.5f;
 		Exposure->Settings.bOverride_AutoExposureBias = true;
 		Exposure->Settings.AutoExposureBias = 0.f;
+		// Moderate emissive panels still need sufficient GI/reflection sampling.
+		Exposure->Settings.bOverride_LumenFinalGatherQuality = true;
+		Exposure->Settings.LumenFinalGatherQuality = 2.f;
+		Exposure->Settings.bOverride_LumenReflectionQuality = true;
+		Exposure->Settings.LumenReflectionQuality = 2.f;
+		Exposure->Settings.bOverride_SceneFringeIntensity = true;
+		Exposure->Settings.SceneFringeIntensity = 0.f;
 		Exposure->RegisterComponent();
 	}
 
 	InitializeMaze();
+	MazeWindAudio::Start(*this);
 }
 
 void AMazeWorld::InitializeMaze()
@@ -78,6 +91,8 @@ void AMazeWorld::InitializeMaze()
 
 void AMazeWorld::EndPlay(const EEndPlayReason::Type Reason)
 {
+	MazeWindAudio::Stop(*this);
+
 	if (ECSSubsystem)
 		ECSSubsystem->DestroyMaze(MazeEntity);
 
@@ -122,6 +137,8 @@ float AMazeWorld::GetCellSize() const
 
 void AMazeWorld::Build()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(Maze_WorldBuild);
+
 	if (!ECSSubsystem)
 		ECSSubsystem = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
 
@@ -149,6 +166,44 @@ void AMazeWorld::Build()
 	Floor->ClearInstances();
 	Floor->AddInstances(Data->FloorTransforms, false);
 	Ceiling->SetRelativeTransform(Data->CeilingTransform);
+
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		auto* Panels = LoadObject<UMaterialInterface>(
+		    nullptr, TEXT("/Game/Materials/Laboratory/MI_LabCeilingMineral.MI_LabCeilingMineral"));
+
+		if (Panels)
+		{
+			// Presentation mirrors of generation facts, refreshed with each immutable payload.
+			auto* Material = Ceiling->CreateDynamicMaterialInstance(0, Panels);
+			const uint32 PatternSeed = static_cast<uint32>(Maze.Seed);
+
+			Material->SetScalarParameterValue(TEXT("CellSizeCm"), Maze.Cell);
+			Material->SetScalarParameterValue(TEXT("WallThicknessCm"), Maze.WallThickness);
+			Material->SetScalarParameterValue(TEXT("TargetPanelSizeCm"), 120.f);
+			Material->SetVectorParameterValue(TEXT("MazeOrigin"),
+			                                  FLinearColor(Maze.Origin.X, Maze.Origin.Y, Maze.Origin.Z));
+			Material->SetVectorParameterValue(TEXT("MazeSeed"),
+			                                  FLinearColor(PatternSeed & 0xffff, PatternSeed >> 16, 0.f));
+		}
+		else
+			UE_LOG(LogTemp, Error, TEXT("Missing square ceiling material. Run Scripts/create_ceiling_material.py."));
+
+		if (auto* Ceramic = LoadObject<UMaterialInterface>(
+		        nullptr, TEXT("/Game/Materials/Laboratory/MI_MazeWallCeramic.MI_MazeWallCeramic")))
+		{
+			auto* Material = Walls->CreateDynamicMaterialInstance(0, Ceramic);
+			const int32 Courses = FMath::Max(1, FMath::RoundToInt(Maze.WallHeight / 15.f));
+
+			Material->SetScalarParameterValue(TEXT("TileHeightCm"), Maze.WallHeight / Courses);
+
+			// Align complete courses downward from the actual ECS wall/ceiling junction.
+			Material->SetVectorParameterValue(
+			    TEXT("TileOrigin"), FLinearColor(Maze.Origin.X, Maze.Origin.Y, Maze.Origin.Z + Maze.WallHeight));
+		}
+		else
+			UE_LOG(LogTemp, Error, TEXT("Missing aligned wall ceramic. Run Scripts/create_wall_material.py."));
+	}
 
 	const FMazeSurface& Surface = Data->Surface;
 

@@ -7,6 +7,13 @@
 - Use a full editor restart/build when changes to module/plugin dependencies, component types/construction, or reflected object layout cannot safely be applied through Live Coding. Explain the concrete reason instead of treating every header edit as requiring a restart.
 - With the editor closed, normal builds and command-line automation tests are appropriate. Never terminate the user's editor to unlock files.
 
+# Unreal Engine solution selection
+
+- Before implementing a feature or solving a technical problem, check whether the project's Unreal Engine version already provides a suitable supported API, subsystem, tool or official plugin. Prefer current engine-native solutions over legacy approaches or custom equivalents when they fit the task and reduce implementation or maintenance work.
+- Actively consider newer Unreal Engine technologies and capabilities relevant to the work, even when a familiar approach would already solve the problem. Look beyond direct replacements for custom code: consider opportunities to improve visual quality, performance, scalability or authoring workflows. Bring concrete, beneficial options into the solution choice rather than defaulting to familiar techniques; apply the suitability checks below and keep adoption within the task's scope.
+- Evaluate suitability against the project's ECS architectural contract, feature maturity, target platforms, performance and integration cost. Engine facilities must preserve the ownership and dependency boundaries below; do not introduce a competing source of gameplay state or rules.
+- Verify availability and recommended usage against the installed engine source or official documentation instead of assuming an API exists or behaves the same across versions. Do not adopt experimental features, add dependencies or migrate working code solely for novelty. When a relevant engine solution is unsuitable, briefly explain the concrete reason for the chosen alternative.
+
 # Gameplay architecture
 
 ## Architectural contract
@@ -65,3 +72,10 @@
 - Preserve Unreal include order, especially `.generated.h` last. Never format engine, third-party or generated build files.
 - Formatting is a write step, not gameplay testing. No build, Play session or additional manual formatting review is required just for formatting. Optional read-only verification: `powershell -NoProfile -ExecutionPolicy Bypass -File Scripts/Format-Code.ps1 -Check`.
 - This is an agent workflow instruction, not an operating-system hook after every shell command. Commands that do not change source do not require formatting.
+
+# Local AI/editor tools
+
+- Project MCP connections: `unreal_epic` (Epic, local HTTP) and `ue_mcp_lyon` (db-lyon/ue-mcp 1.3.8, local stdio). See `Docs/AI-Integration.md`.
+- Prefer Epic tools for editor inspection, logs and Live Coding; use Lyon for additional authoring. Serialize calls to the editor across both connections and verify the active project before writes. Do not perform the same mutation through both servers.
+- Use `MazeDiagnosticsToolset.ReadSnapshots` for ECS diagnostics. Snapshots are detached, world-scoped copies; client data is not authoritative server state. Never use generic Mass write tools to bypass the subsystem/gameplay systems.
+- Insights captures and Play/tests remain opt-in. `Scripts/Export-Insights.ps1` exports an existing trace without launching gameplay. No plugin-provided workflow overrides this project's architecture or editor lifecycle rules.

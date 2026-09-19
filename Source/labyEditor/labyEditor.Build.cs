@@ -8,6 +8,7 @@ public class labyEditor : ModuleRules
 			PrivateDependencyModuleNames.Add("LiveCoding");
 
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+		PrivateDependencyModuleNames.Add("ToolsetRegistry");
 		PrivateDependencyModuleNames.AddRange(new string[] { "Core",
 			                                                 "CoreUObject",
 			                                                 "Engine",

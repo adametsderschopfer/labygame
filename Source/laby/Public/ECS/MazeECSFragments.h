@@ -5,6 +5,7 @@
 #include "MassEntityTypes.h"
 #include "Mass/ExternalSubsystemTraits.h"
 #include "ECS/MazeVitals.h"
+#include "ECS/MazePlayerControlDefinition.h"
 #include "Maze/MazeSurface.h"
 #include "MazeECSFragments.generated.h"
 
@@ -31,6 +32,8 @@ struct FMazePlayerInputFragment : public FMassFragment
 	UPROPERTY()
 	bool bSprintHeld = false;
 	UPROPERTY()
+	bool bCrouchHeld = false;
+	UPROPERTY()
 	bool bJumpHeld = false;
 	UPROPERTY()
 	bool bJumpPressed = false;
@@ -56,6 +59,8 @@ struct FMazePlayerPoseFragment : public FMassFragment
 	UPROPERTY()
 	bool bInputEnabled = true;
 	UPROPERTY()
+	bool bCrouched = false;
+	UPROPERTY()
 	float Sensitivity = 1.f;
 };
 
@@ -77,7 +82,7 @@ struct FMazePlayerCommandFragment : public FMassFragment
 	UPROPERTY()
 	FVector Movement = FVector::ZeroVector;
 	UPROPERTY()
-	float Speed = 450.f;
+	float Speed = FMazePlayerControlDefinition::WalkSpeed;
 	UPROPERTY()
 	float Yaw = 0.f;
 	UPROPERTY()
@@ -86,6 +91,8 @@ struct FMazePlayerCommandFragment : public FMassFragment
 	bool bJumpHeld = false;
 	UPROPERTY()
 	bool bStartJump = false;
+	UPROPERTY()
+	bool bCrouch = false;
 	UPROPERTY()
 	bool bDead = false;
 };

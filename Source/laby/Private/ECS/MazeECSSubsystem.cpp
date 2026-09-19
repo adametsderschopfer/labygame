@@ -1,4 +1,5 @@
 #include "ECS/MazeECSSubsystem.h"
+#include "ProfilingDebugging/CpuProfilerTrace.h"
 #include "ECS/MazeVitalsSystem.h"
 #include "ECS/MazeGameplaySystems.h"
 #include "ECS/MazeExplorationSystem.h"
@@ -81,6 +82,7 @@ TStatId UMazeECSSubsystem::GetStatId() const
 
 void UMazeECSSubsystem::Tick(float DeltaSeconds)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(Maze_ECS_Tick);
 	Super::Tick(DeltaSeconds);
 
 	if (!MassSubsystem || !VitalsQuery || !GetWorld()->HasBegunPlay() || GetWorld()->IsPaused() ||
@@ -131,7 +133,22 @@ bool UMazeECSSubsystem::ReadHeadlampEnabled(FMassEntityHandle Entity) const
 {
 	const auto* Items = FindFragment<FMazeItemsFragment>(Entity);
 
-	return Items && FMazeItemSystem::HasHeadlamp(*Items);
+	return Items && FMazeItemSystem::IsHeadlampEnabled(*Items);
+}
+
+bool UMazeECSSubsystem::ToggleHeadlamp(FMassEntityHandle Entity)
+{
+	if (GetWorld()->GetNetMode() == NM_Client || GetWorld()->IsPaused())
+		return false;
+
+	auto* Items = FindFragment<FMazeItemsFragment>(Entity);
+	const auto* Pose = FindFragment<FMazePlayerPoseFragment>(Entity);
+	const auto Room = ReadRoom();
+
+	return Items && FMazeItemSystem::ToggleHeadlamp(*Items,
+	                                                Pose && Pose->bInputEnabled &&
+	                                                    FMazeVitalsSystem::IsAlive(ReadVitals(Entity)) &&
+	                                                    (!Room.bActive || Room.bStarted));
 }
 
 void UMazeECSSubsystem::ReceiveItems(FMassEntityHandle Entity, const FMazeItemsSnapshot& Snapshot)
@@ -229,7 +246,9 @@ void UMazeECSSubsystem::SetInputAction(FMassEntityHandle Entity, EMazeInputActio
 	{
 		if (Action == EMazeInputAction::Sprint)
 			Input->bSprintHeld = bPressed;
-		else
+		else if (Action == EMazeInputAction::Crouch)
+			Input->bCrouchHeld = bPressed;
+		else if (Action == EMazeInputAction::Jump)
 		{
 			Input->bJumpPressed = bPressed && !Input->bJumpHeld;
 			Input->bJumpHeld = bPressed;
@@ -333,6 +352,8 @@ int32 UMazeECSSubsystem::ReadReachedExit(FMassEntityHandle Entity) const
 
 void UMazeECSSubsystem::GeneratePending()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(Maze_GeneratePending);
+
 	if (!MassSubsystem || !GenerationQuery)
 		return;
 

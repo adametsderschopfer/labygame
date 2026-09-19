@@ -1,0 +1,10 @@
+ue-mcp:
+  version: 1
+  contentRoots: [/Game/]
+  disable: [feedback]
+  nativeTools:
+    enabled: false
+  context:
+    strategy: lean
+  http:
+    enabled: false

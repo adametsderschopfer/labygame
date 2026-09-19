@@ -29,6 +29,8 @@ struct FMazeItemInstance
 	EMazeItemKind Kind = EMazeItemKind::None;
 	UPROPERTY()
 	EMazeEquipmentSlot Slot = EMazeEquipmentSlot::None;
+	UPROPERTY()
+	bool bEnabled = true;
 };
 
 // Value snapshot for transport and read-only consumers. ECS owns the authoritative copy.
