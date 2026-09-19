@@ -63,8 +63,8 @@ struct FMazeHeadlampDefinition
 {
 	FVector HeadOffset = FVector(8.f, 0.f, 96.f);
 	FLinearColor Color = FLinearColor(1.f, 0.94f, 0.82f);
-	float IntensityLumens = 1800.f;
+	float IntensityLumens = 120.f;
 	float Range = 2400.f;
-	float InnerConeDegrees = 16.f;
-	float OuterConeDegrees = 34.f;
+	float InnerConeDegrees = 8.f;
+	float OuterConeDegrees = 42.f;
 };

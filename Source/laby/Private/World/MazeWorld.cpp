@@ -1,10 +1,6 @@
 #include "World/MazeWorld.h"
-#include "Components/DirectionalLightComponent.h"
-#include "Components/SkyLightComponent.h"
-#include "Components/ExponentialHeightFogComponent.h"
 #include "Components/PostProcessComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Engine/TextureCube.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "ProceduralMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -22,6 +18,8 @@ AMazeWorld::AMazeWorld()
 	SetRootComponent(Walls);
 	Floor = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Floor"));
 	Floor->SetupAttachment(Walls);
+	Ceiling = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Ceiling"));
+	Ceiling->SetupAttachment(Walls);
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PlainMaterial(
@@ -30,6 +28,10 @@ AMazeWorld::AMazeWorld()
 	Floor->SetStaticMesh(Cube.Object);
 	Floor->SetMaterial(0, PlainMaterial.Object);
 	Floor->SetCollisionProfileName(TEXT("BlockAll"));
+	Ceiling->SetStaticMesh(Cube.Object);
+	Ceiling->SetMaterial(0, PlainMaterial.Object);
+	Ceiling->SetCollisionProfileName(TEXT("BlockAll"));
+	Ceiling->SetCanEverAffectNavigation(false);
 	Walls->SetMaterial(0, PlainMaterial.Object);
 	Walls->SetCollisionProfileName(TEXT("BlockAll"));
 	Walls->bUseComplexAsSimpleCollision = true;
@@ -49,59 +51,6 @@ void AMazeWorld::BeginPlay()
 			Floor->SetMaterial(0, Ground);
 		else
 			UE_LOG(LogTemp, Error, TEXT("Missing maze ground material. Run Scripts/create_night_environment.py."));
-
-		auto* Moon = NewObject<UDirectionalLightComponent>(this, TEXT("MoonLight"));
-
-		Moon->SetupAttachment(RootComponent);
-		Moon->SetMobility(EComponentMobility::Movable);
-		// Direction of the brightest HDRI pixel, converted from long-lat to UE axes.
-		Moon->SetWorldRotation((-FVector(0.291328, -0.393440, 0.871971)).Rotation());
-		Moon->SetIntensity(0.35f);
-		Moon->SetLightColor(FLinearColor(0.68f, 0.78f, 1.f));
-		Moon->LightSourceAngle = 0.55f;
-		Moon->RegisterComponent();
-
-		auto* NightMaterial =
-		    LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Environment/M_MoonNight.M_MoonNight"));
-		auto* NightCubemap = LoadObject<UTextureCube>(nullptr, TEXT("/Game/Environment/T_MoonNight.T_MoonNight"));
-
-		if (NightMaterial && NightCubemap)
-		{
-			auto* Dome = NewObject<UStaticMeshComponent>(this, TEXT("NightSky"));
-
-			Dome->SetupAttachment(RootComponent);
-			Dome->SetStaticMesh(Floor->GetStaticMesh());
-			Dome->SetMaterial(0, NightMaterial);
-			Dome->SetRelativeScale3D(FVector(20000.f));
-			Dome->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			Dome->SetCastShadow(false);
-			Dome->SetVisibleInRayTracing(false);
-			Dome->SetCanEverAffectNavigation(false);
-			Dome->bAffectDistanceFieldLighting = false;
-			Dome->RegisterComponent();
-
-			auto* Sky = NewObject<USkyLightComponent>(this, TEXT("NightSkyLight"));
-
-			Sky->SetupAttachment(RootComponent);
-			Sky->SetMobility(EComponentMobility::Movable);
-			Sky->SourceType = SLS_SpecifiedCubemap;
-			Sky->SetCubemap(NightCubemap);
-			Sky->SetIntensity(0.08f);
-			Sky->SetLightColor(FLinearColor(0.65f, 0.76f, 1.f));
-			Sky->SetLowerHemisphereColor(FLinearColor::Black);
-			Sky->RegisterComponent();
-		}
-		else
-			UE_LOG(LogTemp, Error, TEXT("Missing night sky assets. Run Scripts/create_night_environment.py."));
-
-		auto* Fog = NewObject<UExponentialHeightFogComponent>(this, TEXT("NightHaze"));
-
-		Fog->SetupAttachment(RootComponent);
-		Fog->SetFogDensity(0.008f);
-		Fog->SetFogHeightFalloff(0.3f);
-		Fog->SetFogInscatteringColor(FLinearColor(0.003f, 0.005f, 0.01f));
-		Fog->SetFogMaxOpacity(0.35f);
-		Fog->RegisterComponent();
 
 		auto* Exposure = NewObject<UPostProcessComponent>(this, TEXT("NightExposure"));
 
@@ -168,7 +117,7 @@ TSharedPtr<const FMazeGeneratedData> AMazeWorld::GetGeneratedData() const
 
 float AMazeWorld::GetCellSize() const
 {
-	return ECSSubsystem ? ECSSubsystem->ReadMaze(MazeEntity).Cell : 875.f;
+	return ECSSubsystem ? ECSSubsystem->ReadMaze(MazeEntity).Cell : FMazeGenerationFragment().Cell;
 }
 
 void AMazeWorld::Build()
@@ -199,6 +148,7 @@ void AMazeWorld::Build()
 	Walls->ClearAllMeshSections();
 	Floor->ClearInstances();
 	Floor->AddInstances(Data->FloorTransforms, false);
+	Ceiling->SetRelativeTransform(Data->CeilingTransform);
 
 	const FMazeSurface& Surface = Data->Surface;
 

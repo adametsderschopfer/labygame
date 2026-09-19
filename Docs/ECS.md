@@ -49,3 +49,12 @@ Actor/Character, PlayerController, GameMode и HUD служат адаптера
 - `Session.bMapOpen` is local interface state, like the existing menu (split-screen is unsupported). `SetMapOpen` invokes the system transition; the controller clears only its own character input, changes focus and blocks its movement/look. Other server players remain unaffected. Zoom and pan belong to widget presentation only.
 - `WBP_ExplorationMap` owns the new minimap slot. The editor module creates the missing Blueprint on startup. `UMazeExplorationMapWidget` renders discovered cells in the bottom-right corner and uses the same mask in fullscreen mode. M/Esc close, drag pans, wheel zooms, Home recenters. EndPlay removes the widget. A native layout fallback handles an absent asset.
 - The existing `UMazeMinimapWidget` remains the complete DEVELOPMENT MAP, toggled with F7. Shipping/Test hide it and disable its native rendering. It does not use exploration data.
+
+## Потолок и освещение лабиринта
+
+- Размер клетки в `FMazeGenerationFragment` — 462,5 см при толщине стены 50 см: чистая ширина коридора уменьшена с 825 до 412,5 см. Общий масштаб сетки также уменьшает физические размеры комнат; их ширина в топологии остаётся 2–4 клетки, стартовой — 2 клетки. Геометрия, точки появления и карта используют размер клетки из ECS; новый масштаб применяется при следующей генерации.
+
+- `FMazeGenerationSystem` формирует `CeilingTransform` в неизменяемом `FMazeGeneratedData` вместе со стенами и полом. Нижняя грань потолка совпадает с `WallHeight` (320 см), толщина равна `WallThickness`; плита закрывает весь лабиринт, включая комнаты и провалы пола, до внешних краёв стен.
+- `AMazeWorld` применяет готовый transform к компоненту потолка с материалом стен и коллизией `BlockAll`. Геометрия обновляется вместе с новой ревизией лабиринта; компонент живёт и уничтожается вместе с Actor. Сервер и клиенты получают одинаковую геометрию из реплицируемого seed, отдельного изменяемого состояния потолка нет.
+- Внешнее освещение, купол с текстурой неба/луны и ночная дымка больше не создаются. Освещение обеспечивают налобные фонарики; фиксированная экспозиция сохранена. Скрипт `create_night_environment.py` теперь создаёт только материал земли и его текстуры; старые ассеты неба больше не используются.
+- Для применения потолка нужна сборка с закрытым редактором и повторное открытие: добавлен default subobject `Ceiling` и отражаемое поле Actor. Сборка, тесты и Play при изменении не запускались.

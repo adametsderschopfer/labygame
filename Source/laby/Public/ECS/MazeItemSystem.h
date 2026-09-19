@@ -5,5 +5,5 @@ struct LABY_API FMazeItemSystem
 {
 	static void InitializeLoadout(FMazeItemsFragment& Items);
 	static bool HasHeadlamp(const FMazeItemsFragment& Items);
-	static const FMazeHeadlampDefinition& HeadlampDefinition();
+	static FMazeHeadlampDefinition HeadlampDefinition();
 };

@@ -7,6 +7,7 @@
 
 class UInstancedStaticMeshComponent;
 class UProceduralMeshComponent;
+class UStaticMeshComponent;
 
 UCLASS()
 class LABY_API AMazeWorld : public AActor
@@ -36,6 +37,9 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UInstancedStaticMeshComponent> Floor;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> Ceiling;
 
 	UPROPERTY(Transient)
 	FMassEntityHandle MazeEntity;

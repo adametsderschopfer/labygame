@@ -344,7 +344,15 @@ void AMazeCharacter::RefreshHeadlamp()
 
 	// Base aim includes replicated view pitch for other players; their cameras are not evaluated locally.
 	if (HeadlampLight && bVisible)
+	{
+		// Refresh existing lights too: constructor defaults do not update a live character.
+		const auto Lamp = FMazeItemSystem::HeadlampDefinition();
+
+		HeadlampLight->SetIntensity(Lamp.IntensityLumens);
+		HeadlampLight->SetInnerConeAngle(Lamp.InnerConeDegrees);
+		HeadlampLight->SetOuterConeAngle(Lamp.OuterConeDegrees);
 		HeadlampLight->SetWorldRotation(GetBaseAimRotation());
+	}
 }
 
 void AMazeCharacter::OnRep_PlayerSnapshot()

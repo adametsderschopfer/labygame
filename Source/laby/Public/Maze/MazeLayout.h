@@ -158,12 +158,13 @@ private:
 		Rooms.Reset();
 		Holes.Init(0, Walls.Num());
 		const int32 Center = Size / 2;
-		CarveRoom(FIntRect(Center - 1, Center - 1, Center + 2, Center + 2));
+		CarveRoom(FIntRect(Center - 1, Center - 1, Center + 1, Center + 2));
 		const int32 TargetRooms = FMath::Max(2, Size * Size / 350);
 
 		for (int32 Attempt = 0; Attempt < TargetRooms * 20 && Rooms.Num() < TargetRooms; ++Attempt)
 		{
-			const int32 Width = Random.RandRange(3, FMath::Min(7, Size - 2));
+			// Halve room width, rounding up to whole topology cells.
+			const int32 Width = (Random.RandRange(3, FMath::Min(7, Size - 2)) + 1) / 2;
 			const int32 Height = Random.RandRange(3, FMath::Min(7, Size - 2));
 			const int32 X = Random.RandRange(1, Size - Width - 1);
 			const int32 Y = Random.RandRange(1, Size - Height - 1);

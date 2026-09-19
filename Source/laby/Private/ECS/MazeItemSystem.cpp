@@ -22,9 +22,8 @@ bool FMazeItemSystem::HasHeadlamp(const FMazeItemsFragment& Items)
 	    });
 }
 
-const FMazeHeadlampDefinition& FMazeItemSystem::HeadlampDefinition()
+FMazeHeadlampDefinition FMazeItemSystem::HeadlampDefinition()
 {
-	static const FMazeHeadlampDefinition Definition;
-
-	return Definition;
+	// Do not retain pre-patch tuning in a function-local static during Live Coding.
+	return FMazeHeadlampDefinition();
 }

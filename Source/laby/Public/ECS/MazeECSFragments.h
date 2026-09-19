@@ -108,6 +108,7 @@ struct FMazeGeneratedData
 	FMazeLayout Layout;
 	FMazeSurface Surface;
 	TArray<FTransform> FloorTransforms;
+	FTransform CeilingTransform;
 	FVector Start = FVector::ZeroVector;
 	TArray<FVector> PlayerStarts;
 	TArray<FVector> ExitPositions;
@@ -123,11 +124,11 @@ struct FMazeGenerationFragment : public FMassFragment
 	UPROPERTY()
 	int32 Size = FMazeLayout::DefaultSize;
 	UPROPERTY()
-	float Cell = 875.f;
+	float Cell = 462.5f;
 	UPROPERTY()
 	float WallThickness = 50.f;
 	UPROPERTY()
-	float WallHeight = 500.f;
+	float WallHeight = 320.f;
 	UPROPERTY()
 	FVector Origin = FVector::ZeroVector;
 	UPROPERTY()

@@ -1,4 +1,4 @@
-"""Import ground and night assets; run with UnrealEditor-Cmd -run=pythonscript."""
+"""Import ground assets; run with UnrealEditor-Cmd -run=pythonscript."""
 from pathlib import Path
 import unreal
 
@@ -95,23 +95,4 @@ for source, suffix, prop, normal, linear in [
     output(sample, ground, prop, "RGB" if suffix in ("Albedo", "Normal") else "R")
 save(ground)
 
-cube = texture("ArtSource/Environment/qwantani_moon_noon_4k.hdr", "T_MoonNight",
-               "/Game/Environment", linear=True)
-sky = material("M_MoonNight", "/Game/Environment")
-sky.set_editor_property("two_sided", True)
-sky.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
-sky.set_editor_property("is_sky", True)
-direction = node(sky, unreal.MaterialExpressionCameraVectorWS)
-outward = node(sky, unreal.MaterialExpressionMultiply, const_b=-1.0)
-wire(direction, outward, "A")
-sample = node(sky, unreal.MaterialExpressionTextureSample, texture=cube,
-              sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
-wire(outward, sample, "UVs")
-brightness = node(sky, unreal.MaterialExpressionScalarParameter,
-                  parameter_name="SkyBrightness", default_value=0.015)
-multiply = node(sky, unreal.MaterialExpressionMultiply)
-wire(sample, multiply, "A", "RGB")
-wire(brightness, multiply, "B")
-output(multiply, sky, unreal.MaterialProperty.MP_EMISSIVE_COLOR)
-save(sky)
-unreal.log("LABY_NIGHT_ASSETS_SAVED")
+unreal.log("LABY_GROUND_ASSETS_SAVED")

@@ -13,6 +13,11 @@ struct FMazeGenerationSystem
 		Data->Layout.Generate(Maze.Seed, Maze.Size);
 		Data->Surface.Build(Data->Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight);
 		const float Span = Data->Layout.Size * Maze.Cell;
+		// A solid slab covers rooms and floor holes, meeting the tops of the outer walls.
+		Data->CeilingTransform = FTransform(
+		    FRotator::ZeroRotator,
+		    FVector(Span / 2, Span / 2, Maze.WallHeight + Maze.WallThickness / 2),
+		    FVector((Span + Maze.WallThickness) / 100, (Span + Maze.WallThickness) / 100, Maze.WallThickness / 100));
 		auto FloorRect = [&Data](float X, float Y, float Width, float Height)
 		{
 			Data->FloorTransforms.Add(FTransform(FRotator::ZeroRotator,
