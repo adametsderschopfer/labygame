@@ -33,6 +33,15 @@ public:
 	bool bBusy = false;
 
 private:
+	void BeginLoadingScreen(const FWorldContext& WorldContext, const FString& MapName);
+	void EndLoadingScreen(UWorld* LoadedWorld);
+	void ClearLoadingScreen();
+
+	FDelegateHandle PreLoadMapHandle, PostLoadMapHandle;
+	TSharedPtr<class SWidget> LoadingScreen;
+	TWeakObjectPtr<class UGameViewportClient> LoadingViewport;
+	bool bPlayingLoadingMovie = false;
+
 	bool Prepare(bool bHost, const FString& Code);
 	void ContinueOperation();
 	void Finish(const FText& Message);

@@ -20,7 +20,8 @@ public class laby : ModuleRules
 			                                                "MassEntity" });
 
 		PublicDependencyModuleNames.AddRange(new string[] { "OnlineSubsystem", "OnlineSubsystemUtils" });
-		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "ApplicationCore", "Sockets" });
+		PrivateDependencyModuleNames.AddRange(
+		    new string[] { "Slate", "SlateCore", "ApplicationCore", "Sockets", "MoviePlayer", "RenderCore" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

@@ -12,12 +12,18 @@
 void UMazeOnlineGameInstance::Init()
 {
 	Super::Init();
+	PreLoadMapHandle = FCoreUObjectDelegates::PreLoadMapWithContext.AddUObject(this, &ThisClass::BeginLoadingScreen);
+	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &ThisClass::EndLoadingScreen);
 	NetworkHandle = GEngine->OnNetworkFailure().AddUObject(this, &ThisClass::OnNetworkFailure);
 	TravelHandle = GEngine->OnTravelFailure().AddUObject(this, &ThisClass::OnTravelFailure);
 }
 
 void UMazeOnlineGameInstance::Shutdown()
 {
+	FCoreUObjectDelegates::PreLoadMapWithContext.Remove(PreLoadMapHandle);
+	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
+	ClearLoadingScreen();
+
 	if (Identity.IsValid())
 		Identity->ClearOnLoginCompleteDelegate_Handle(0, LoginHandle);
 
@@ -299,6 +305,7 @@ void UMazeOnlineGameInstance::OnNetworkFailure(UWorld* World,
 		return;
 
 	Status = NSLOCTEXT("Maze.Online", "ConnectionLost", "Connection lost or the host closed the room.");
+	ClearLoadingScreen();
 	Leave();
 }
 
@@ -308,6 +315,7 @@ void UMazeOnlineGameInstance::OnTravelFailure(UWorld* World, ETravelFailure::Typ
 		return;
 
 	Status = NSLOCTEXT("Maze.Online", "TravelFailed", "Could not load the multiplayer map.");
+	ClearLoadingScreen();
 	Leave();
 }
 
