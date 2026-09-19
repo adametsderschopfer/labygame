@@ -9,11 +9,53 @@
 
 # Gameplay architecture
 
-- Implement gameplay state and rules through Unreal Mass Entity ECS: player control, health/stamina, maze generation, progress and session state.
-- Store runtime data in Mass fragments and put rules in systems orchestrated by UMazeECSSubsystem. Actors, controllers and HUD are engine adapters for input, CharacterMovement physics, camera, mesh/collision creation, UI and seed replication. Do not add parallel authoritative gameplay state to those adapters.
-- Generate topology, mesh data, spawn positions and exit checks in ECS. AMazeWorld consumes immutable generation data; HUD only reads progress and never decides whether an exit was reached.
-- Preserve per-world entity lifecycle and validate handles. Clear input when menus/focus change. New gameplay mechanics should extend fragments/systems rather than grow Actor logic.
-- Do not run tests or Play unless the user requests it; the user is handling gameplay testing.
+## Architectural contract
+
+- Use one architecture for all gameplay features: data-oriented Unreal Mass Entity ECS with a functional gameplay core and thin Unreal adapters. This applies to player control, vitals, maze generation, progress, rooms/session rules, and future mechanics such as inventory, combat, interactions and AI.
+- Compose behavior from focused fragments and systems. Do not introduce a second gameplay framework, deep gameplay inheritance hierarchies, global gameplay managers, or an Actor/Component/Blueprint implementation of rules already owned by ECS.
+- Treat these rules as the target architecture for new and changed code. Existing shortcuts are not precedents. When a feature touches a misplaced rule, move that rule to its owning system within the feature's scope; avoid unrelated rewrites.
+- Read `Docs/ECS.md` before changing ECS behavior. Keep it current when changing fragment ownership, scheduling, authority or lifecycle. If descriptive documentation conflicts with this contract, follow this contract and update the relevant documentation.
+
+## Ownership and dependency direction
+
+- Mass fragments own mutable gameplay state. Each gameplay fact has one authoritative owner; derived values, presentation caches and replication mirrors must identify their source and refresh/invalidation path.
+- Fragments contain data, not engine side effects or gameplay services. Use focused fragments for distinct responsibilities; do not grow a universal player/session fragment for unrelated features.
+- Gameplay systems own decisions, validation, calculations and state transitions. Prefer stateless `FMaze...System` functions with explicit inputs and outputs, following `FMazeVitalsSystem` and `FMazePlayerControlSystem`.
+- `UMazeECSSubsystem` owns per-world entity lifecycle, Mass queries, scheduling and the typed bridge API. Keep new feature rules in focused systems rather than accumulating them in the subsystem. Boundary validation and orchestration belong in the subsystem.
+- Dependency direction is Unreal adapters -> subsystem API -> gameplay systems -> fragments/value types and pure algorithms. Systems and algorithms must not depend on concrete Actors, controllers, widgets, online services or editor modules; Unreal value types and containers are allowed.
+- Adapters submit input, observations and requests through the subsystem, then consume commands or read-only snapshots. Do not expose mutable fragment references or the entity manager to UI/Actors as a shortcut.
+- Engine-owned facts remain engine-owned: CharacterMovement resolves physical movement and collision; ECS consumes the resulting observations and decides gameplay consequences. Do not implement a competing physics simulation.
+- Adapters may own engine resources, widget state, presentation caches, local preferences, transport operation state and replication mirrors. These must not become alternative sources for health, costs, cooldowns, inventory, victory or room/session rules. `UMazeOnlineGameInstance` manages transport across travel, not authoritative room membership or start permissions.
+
+## Data flow and execution
+
+- Use the explicit flow: input/engine observation -> ECS validation and rule evaluation -> state update and commands -> engine execution -> confirmed outcome back to ECS when needed. For example, the engine confirms a successful jump and ECS applies its stamina cost.
+- Distinguish held input, one-shot requests and continuous observations. Consume one-shot requests once; apply gameplay costs and effects once per accepted action. Clear input on menu/focus changes, unpossession and teardown.
+- Keep the current synchronous game-thread scheduling through `UMazeECSSubsystem`. Document when a new system runs, which fragments it reads/writes and its ordering dependencies. Do not silently mix subsystem execution with automatically scheduled `UMassProcessor` execution or process the same rule from multiple ticks.
+- If a feature requires Mass processors or background work, explicitly design and document the scheduling change. Worker work must operate on owned data without UObject access; publish results on the game thread after validating world/entity lifetime and the request or generation revision.
+- Use simulation delta time for time-dependent rules and define pause behavior. Keep gameplay timers/cooldowns in ECS; engine timers may deliver callbacks but must not own an independent gameplay state machine.
+- Generate topology, mesh data, spawn positions and exit checks in ECS using the pure `Maze/` algorithms. `AMazeWorld` consumes immutable generation data; HUD only reads progress and never decides whether an exit was reached.
+- Make generation reproducible from explicit seed and parameters. Use a local seeded random stream for deterministic algorithms. Choose a new seed at the session boundary and replicate it; do not sample global random state or wall-clock time inside deterministic generation.
+- Publish generated data as immutable shared payloads. Rebuild engine geometry and invalidate dependent progress/caches by revision. Do not mutate a payload already held by consumers or create an entity per static wall without a concrete gameplay need.
+
+## Lifecycle and multiplayer
+
+- Keep entities, handles and runtime gameplay state scoped to their owning world. Validate handles against that world's entity manager before access. Never retain fragment pointers/views across entity destruction, structural changes, callbacks or ticks.
+- Pair entity/resource creation with cleanup during EndPlay/world teardown. Unbind delegates, cancel pending work or reject stale callbacks, and clear handles and input. Do not preserve world entity handles in GameInstance, static variables or save data across travel.
+- Keep authoritative multiplayer gameplay decisions on the server (or standalone world): damage, resource costs, inventory changes, room admission/start and progress. Clients send intent; validate ownership, payloads and gameplay preconditions before accepting it. Client UI checks do not authorize an action.
+- RPCs, replicated properties and OnRep handlers are transport adapters. Send authoritative ECS snapshots through them and apply received data to client ECS through the subsystem. Replication mirrors must not independently execute gameplay rules.
+- Client prediction, if needed, must explicitly define predicted state and reconciliation against server results. Preserve CharacterMovement's engine networking and avoid duplicate movement or cost application.
+- Keep local presentation/preferences distinct from server gameplay state. Explicitly choose per-player versus per-session ownership for new data; do not assume one local player when the feature must support multiple players.
+
+## Code organization and feature completion
+
+- Follow the existing `Source/laby/Public` and `Private` layout: `ECS/` for fragments, systems and orchestration; `Maze/` for pure topology/geometry algorithms; `Player/` for input, camera and physics adapters; `World/` for world/transport adapters; `UI/` for presentation. Keep editor tooling in `labyEditor` and runtime code independent of editor modules.
+- Split growing features into focused files under these areas. Use `FMaze...Fragment`, `FMaze...System` and Unreal naming conventions. Expose only necessary public interfaces; put nontrivial implementation in `.cpp` files unless templates or a small existing value/helper pattern justify a header implementation.
+- Keep tunable gameplay parameters in one explicit configuration/value definition consumed by ECS. Config files or Data Assets may supply defaults; Actors and widgets must not duplicate gameplay constants or reinterpret the rules.
+- Use Widget Blueprints for layout/presentation and native adapters for binding actions. Blueprint graphs follow the same ECS boundary. Keep UI text in the project's `MazeText`/`FText` conventions; do not duplicate native button handlers in Blueprint.
+- Before implementing a feature, identify its owning entity/fragments, rule system, subsystem entry points, adapter responsibilities, authority, execution order and reset/cleanup behavior. Add only the abstractions needed for that feature.
+- Before completion, check the diff for duplicate state/rules, mutable data leaking into adapters, stale handles, repeated one-shot effects and missing reset/replication paths. This is a code review, not permission to launch gameplay.
+- Do not run tests or Play unless the user requests it; the user is handling gameplay testing. Do not restart Play under the iteration guidance above without that request. When tests are requested, favor focused system/algorithm invariants and relevant lifecycle/authority checks. Report what was actually verified and what was not run.
 
 # Automatic code formatting
 

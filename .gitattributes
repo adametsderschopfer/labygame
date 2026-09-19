@@ -8,3 +8,4 @@
 *.uproject text eol=lf
 *.uasset binary
 *.umap binary
+ArtSource/Ceiling/TextureCan0013/source4k.zip filter=lfs diff=lfs merge=lfs -text
