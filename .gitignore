@@ -33,3 +33,6 @@ __pycache__/
 /Plugins/UE_MCP_Bridge/Intermediate/
 /Plugins/UE_MCP_Bridge/Saved/
 /ue-mcp.local.yml
+
+# Original download exceeds GitHub's 100 MiB limit; imported maps are tracked.
+/ArtSource/Ceiling/TextureCan0013/source4k.zip
