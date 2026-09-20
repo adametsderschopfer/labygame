@@ -1,5 +1,6 @@
 #include "Player/MazePlayerController.h"
 #include "Player/MazeCharacter.h"
+#include "Camera/PlayerCameraManager.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "UI/MazeWidgets.h"
 #include "UI/MazeExplorationMapWidget.h"
@@ -10,54 +11,6 @@
 #include "World/MazeOnlineGameInstance.h"
 #include "GameFramework/PlayerState.h"
 #include "Engine/GameViewportClient.h"
-#include "Widgets/SWeakWidget.h"
-#include "Widgets/Layout/SBorder.h"
-#include "Widgets/Layout/SBox.h"
-#include "Widgets/Layout/SScaleBox.h"
-#include "Styling/CoreStyle.h"
-#include "Widgets/SBoxPanel.h"
-#include "Widgets/Input/SButton.h"
-#include "Widgets/Input/SSlider.h"
-#include "Widgets/Text/STextBlock.h"
-
-namespace
-{
-	class SMazeMenuRoot : public SCompoundWidget
-	{
-	public:
-		SLATE_BEGIN_ARGS(SMazeMenuRoot)
-		{
-		}
-		SLATE_DEFAULT_SLOT(FArguments, Content)
-		SLATE_EVENT(FSimpleDelegate, OnEscape)
-		SLATE_END_ARGS()
-		void Construct(const FArguments& Args)
-		{
-			Escape = Args._OnEscape;
-			ChildSlot[Args._Content.Widget];
-		}
-
-		virtual bool SupportsKeyboardFocus() const override
-		{
-			return true;
-		}
-
-		virtual FReply OnKeyDown(const FGeometry& Geometry, const FKeyEvent& Event) override
-		{
-			if (Event.GetKey() == EKeys::Escape)
-			{
-				Escape.ExecuteIfBound();
-
-				return FReply::Handled();
-			}
-
-			return SCompoundWidget::OnKeyDown(Geometry, Event);
-		}
-
-	private:
-		FSimpleDelegate Escape;
-	};
-}
 
 void UMazePreferences::SetSensitivity(float Value)
 {
@@ -71,6 +24,14 @@ void AMazePlayerController::BeginPlay()
 
 	if (!IsLocalController())
 		return;
+
+	// Keep the arms in view without letting the camera look vertically into the body.
+	// CameraManager clamps ControlRotation itself, keeping view and aiming aligned.
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->ViewPitchMin = -55.f;
+		PlayerCameraManager->ViewPitchMax = 65.f;
+	}
 
 	ECSSubsystem = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
 	check(ECSSubsystem);
@@ -121,10 +82,20 @@ void AMazePlayerController::SetupInputComponent()
 	    true;
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 	InputComponent->BindKey(EKeys::F7, IE_Pressed, this, &AMazePlayerController::ToggleMinimap);
+	InputComponent->BindKey(EKeys::F6, IE_Pressed, this, &AMazePlayerController::ToggleDevelopmentCamera);
 #endif
 }
 
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+void AMazePlayerController::ToggleDevelopmentCamera()
+{
+	if (IsMenuOpen() || IsMapOpen() || !ReadSession().bSessionStarted)
+		return;
+
+	if (auto* MazePawn = Cast<AMazeCharacter>(GetPawn()))
+		MazePawn->ToggleDevelopmentCamera();
+}
+
 void AMazePlayerController::ToggleMinimap()
 {
 	if (ECSSubsystem)
@@ -182,13 +153,6 @@ void AMazePlayerController::RemoveMenuWidget()
 		GetWorld()->GetGameViewport()->RemoveViewportWidgetContent(NetworkMenu.ToSharedRef());
 
 	NetworkMenu.Reset();
-
-	if (ReadSession().bSettingsOpen)
-	{
-		auto* Preferences = GetMutableDefault<UMazePreferences>();
-
-		Preferences->SetSensitivity(Preferences->GetSensitivity());
-	}
 
 	if (MenuWidget)
 		MenuWidget->RemoveFromParent();
@@ -291,15 +255,28 @@ void AMazePlayerController::ServerStartRoom_Implementation()
 
 void AMazePlayerController::ShowNetworkMenu(bool bJoinScreen, bool bSettingsScreen, bool bLocalJoin)
 {
+	// Room browsing remains hidden; all displayed layouts now belong to the editable Widget Blueprints.
+	if (!IsLocalController() || !ECSSubsystem || !GetWorld()->GetGameViewport())
+		return;
+
+	const TCHAR* Path = bSettingsScreen                 ? TEXT("/Game/UI/WBP_Settings.WBP_Settings_C")
+	                    : ReadSession().bSessionStarted ? TEXT("/Game/UI/WBP_PauseMenu.WBP_PauseMenu_C")
+	                                                    : TEXT("/Game/UI/WBP_MainMenu.WBP_MainMenu_C");
+	UClass* Class = LoadClass<UMazeMenuWidget>(nullptr, Path);
+	UMazeMenuWidget* NextMenu = Class ? CreateWidget<UMazeMenuWidget>(this, Class) : nullptr;
+
+	if (!NextMenu)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Laby menu asset is unavailable: %s"), Path);
+
+		return;
+	}
+
 	if (IsMapOpen())
 		ToggleMap();
 
-	auto* Viewport = GetWorld()->GetGameViewport();
-
-	if (!Viewport || !ECSSubsystem)
-		return;
-
 	RemoveMenuWidget();
+	MenuWidget = NextMenu;
 	ECSSubsystem->SetMenu(true, bSettingsScreen);
 	ResetIgnoreMoveInput();
 	ResetIgnoreLookInput();
@@ -307,173 +284,11 @@ void AMazePlayerController::ShowNetworkMenu(bool bJoinScreen, bool bSettingsScre
 	SetIgnoreLookInput(true);
 	FlushPressedKeys();
 	bShowMouseCursor = true;
-
-	const auto Room = ECSSubsystem->ReadRoom();
-
-	// Network room screens are temporarily hidden.
-	bJoinScreen = false;
-
-	auto* Online = GetGameInstance<UMazeOnlineGameInstance>();
-	TSharedRef<SVerticalBox> Content = SNew(SVerticalBox);
-	auto Label = [&Content](const FText& Value)
-	{
-		Content->AddSlot().AutoHeight().Padding(
-		    10)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular", 20)).Text(Value).AutoWrapText(true)];
-	};
-	auto Button = [&Content, Online](const FText& Value, TFunction<void()> Action)
-	{
-		Content->AddSlot().AutoHeight().Padding(
-		    10)[SNew(SButton)
-		            .HAlign(HAlign_Center)
-		            .ContentPadding(FMargin(20))
-		            .TextStyle(&FCoreStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
-		            .IsEnabled_Lambda(
-		                [Online]()
-		                {
-			                return !Online || !Online->bBusy;
-		                })
-		            .OnClicked_Lambda(
-		                [Action]()
-		                {
-			                Action();
-
-			                return FReply::Handled();
-		                })[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular", 22)).Text(Value)]];
-	};
-
-	Content->AddSlot().AutoHeight().Padding(
-	    10, 10, 10, 22)[SNew(STextBlock)
-	                        .Font(FCoreStyle::GetDefaultFontStyle("Bold", 28))
-	                        .AutoWrapText(true)
-	                        .Text(bSettingsScreen ? NSLOCTEXT("Maze.Menu", "SettingsTitle", "SETTINGS")
-	                              : Room.bStarted ? NSLOCTEXT("Maze.Menu", "GameMenu", "GAME MENU")
-	                                              : NSLOCTEXT("Maze.Menu", "SimpleTitle", "LABY"))];
-
-	if (bSettingsScreen)
-	{
-		Label(NSLOCTEXT("Maze.Widgets", "SensitivityLabel", "Mouse sensitivity"));
-		Content->AddSlot().AutoHeight().Padding(
-		    10)[SNew(STextBlock)
-		            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 22))
-		            .Text_Lambda(
-		                []()
-		                {
-			                FNumberFormattingOptions Options;
-			                Options.MinimumFractionalDigits = 2;
-			                Options.MaximumFractionalDigits = 2;
-
-			                return FText::Format(
-			                    NSLOCTEXT("Maze.Settings", "SensitivityValue", "{Value} x"),
-			                    FFormatNamedArguments{
-			                        {TEXT("Value"),
-			                         FText::AsNumber(GetDefault<UMazePreferences>()->GetSensitivity(), &Options)}});
-		                })];
-		Content->AddSlot().AutoHeight().Padding(
-		    10,
-		    18)[SNew(SBox).HeightOverride(36)[SNew(SSlider)
-		                                          .MinValue(0.1f)
-		                                          .MaxValue(3.f)
-		                                          .StepSize(0.05f)
-		                                          .Value_Lambda(
-		                                              []()
-		                                              {
-			                                              return GetDefault<UMazePreferences>()->GetSensitivity();
-		                                              })
-		                                          .OnValueChanged_Lambda(
-		                                              [](float Value)
-		                                              {
-			                                              GetMutableDefault<UMazePreferences>()->MouseSensitivity =
-			                                                  FMath::Clamp(Value, 0.1f, 3.f);
-		                                              })
-		                                          .OnMouseCaptureEnd_Lambda(
-		                                              []()
-		                                              {
-			                                              auto* Preferences = GetMutableDefault<UMazePreferences>();
-			                                              Preferences->SetSensitivity(Preferences->GetSensitivity());
-		                                              })
-		                                          .OnControllerCaptureEnd_Lambda(
-		                                              []()
-		                                              {
-			                                              auto* Preferences = GetMutableDefault<UMazePreferences>();
-			                                              Preferences->SetSensitivity(Preferences->GetSensitivity());
-		                                              })]];
-		Label(NSLOCTEXT("Maze.Widgets", "SettingsHint", "0.10 - 3.00 - Saved automatically"));
-		Button(NSLOCTEXT("Maze.Widgets", "ResetButtonLabel", "Reset to defaults"),
-		       []()
-		       {
-			       GetMutableDefault<UMazePreferences>()->SetSensitivity(1.f);
-		       });
-		Button(NSLOCTEXT("Maze.Menu", "Back", "Back"),
-		       [this]()
-		       {
-			       ShowNetworkMenu();
-		       });
-	}
-	else if (Room.bStarted)
-	{
-		Button(NSLOCTEXT("Maze.Menu", "Resume", "Resume"),
-		       [this]()
-		       {
-			       CloseMenu();
-		       });
-		Button(NSLOCTEXT("Maze.Menu", "ReturnToMenu", "Main menu"),
-		       [Online]()
-		       {
-			       if (Online)
-				       Online->Leave();
-		       });
-	}
-	else
-	{
-		Button(NSLOCTEXT("Maze.Menu", "CreateAndStart", "Create room and start game"),
-		       [this]()
-		       {
-			       StartNewGame();
-		       });
-	}
-
-	if (!bJoinScreen && !bSettingsScreen)
-		Button(NSLOCTEXT("Maze.Menu", "Settings", "Settings"),
-		       [this]()
-		       {
-			       ShowMenu(true);
-		       });
-
-	if (!Room.bActive && !bJoinScreen && !bSettingsScreen)
-		Button(NSLOCTEXT("Maze.Menu", "Quit", "Quit game"),
-		       [this]()
-		       {
-			       ConsoleCommand(TEXT("quit"));
-		       });
-
-	TSharedRef<SWidget> Panel =
-	    SNew(SBorder)
-	        .BorderBackgroundColor(FLinearColor(0.015f, 0.025f, 0.04f, 1.f))
-	        .HAlign(HAlign_Center)
-	        .VAlign(VAlign_Center)[SNew(SScaleBox)
-	                                   .Stretch(EStretch::ScaleToFit)
-	                                   .StretchDirection(
-	                                       EStretchDirection::DownOnly)[SNew(SBox).WidthOverride(640)[Content]]];
-
-	TSharedRef<SWidget> Root = SNew(SMazeMenuRoot)
-	                               .OnEscape(FSimpleDelegate::CreateLambda(
-	                                   [this, bJoinScreen, bSettingsScreen, Online]()
-	                                   {
-		                                   if (bJoinScreen || bSettingsScreen)
-		                                   {
-			                                   if (!Online || !Online->bBusy)
-				                                   ShowNetworkMenu();
-		                                   }
-		                                   else
-			                                   ToggleMenu();
-	                                   }))[Panel];
-
-	NetworkMenu = Root;
-	Viewport->AddViewportWidgetContent(Root, 100);
+	MenuWidget->AddToPlayerScreen(100);
 
 	FInputModeUIOnly Mode;
 
-	Mode.SetWidgetToFocus(Root);
+	Mode.SetWidgetToFocus(MenuWidget->TakeWidget());
 	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	SetInputMode(Mode);
 }

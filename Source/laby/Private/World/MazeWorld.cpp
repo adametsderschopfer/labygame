@@ -1,9 +1,12 @@
 #include "World/MazeWorld.h"
 #include "ProfilingDebugging/CpuProfilerTrace.h"
 #include "World/MazeWindAudio.h"
+#include "World/MazeLampAudio.h"
 #include "Components/PostProcessComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "ECS/MazeECSSubsystem.h"
+#include "Maze/MazeInterior.h"
+#include "World/MazeFixtureMeshes.h"
 #include "ProceduralMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
@@ -92,6 +95,7 @@ void AMazeWorld::InitializeMaze()
 void AMazeWorld::EndPlay(const EEndPlayReason::Type Reason)
 {
 	MazeWindAudio::Stop(*this);
+	MazeLampAudio::Stop(*this);
 
 	if (ECSSubsystem)
 		ECSSubsystem->DestroyMaze(MazeEntity);
@@ -180,7 +184,7 @@ void AMazeWorld::Build()
 
 			Material->SetScalarParameterValue(TEXT("CellSizeCm"), Maze.Cell);
 			Material->SetScalarParameterValue(TEXT("WallThicknessCm"), Maze.WallThickness);
-			Material->SetScalarParameterValue(TEXT("TargetPanelSizeCm"), 120.f);
+			Material->SetScalarParameterValue(TEXT("TargetPanelSizeCm"), FMazeInterior::PanelTargetCm);
 			Material->SetVectorParameterValue(TEXT("MazeOrigin"),
 			                                  FLinearColor(Maze.Origin.X, Maze.Origin.Y, Maze.Origin.Z));
 			Material->SetVectorParameterValue(TEXT("MazeSeed"),
@@ -215,6 +219,43 @@ void AMazeWorld::Build()
 	                         TArray<FColor>(),
 	                         TArray<FProcMeshTangent>(),
 	                         true);
+
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		const auto Interior = ECSSubsystem->BuildMazeInterior(MazeEntity);
+		const TCHAR* Materials[] = {TEXT("/Game/Materials/Laboratory/MI_LabVinylSatin.MI_LabVinylSatin"),
+		                            TEXT("/Game/Materials/Laboratory/MI_LabTrimMetal.MI_LabTrimMetal"),
+		                            TEXT("/Game/Materials/Laboratory/MI_LabServiceIvory.MI_LabServiceIvory"),
+		                            TEXT("/Game/Materials/Laboratory/MI_LabServiceRecess.MI_LabServiceRecess")};
+
+		if (Interior)
+		{
+			MazeFixtureMeshes::Rebuild(*this, *Interior);
+			MazeLampAudio::Rebuild(*this, *Interior);
+
+			for (int32 Section = 0; Section < 4; ++Section)
+			{
+				const auto& Mesh = Interior->Sections[Section];
+				auto* Material = LoadObject<UMaterialInterface>(nullptr, Materials[Section]);
+
+				if (!Material)
+				{
+					UE_LOG(LogTemp, Error, TEXT("Missing interior material: %s"), Materials[Section]);
+					continue;
+				}
+
+				Walls->SetMaterial(Section + 1, Material);
+				Walls->CreateMeshSection(Section + 1,
+				                         Mesh.Vertices,
+				                         Mesh.Triangles,
+				                         Mesh.Normals,
+				                         TArray<FVector2D>(),
+				                         TArray<FColor>(),
+				                         TArray<FProcMeshTangent>(),
+				                         false);
+			}
+		}
+	}
 
 	// Labels are local visual components; topology alone is replicated.
 	TArray<UTextRenderComponent*> OldLabels;

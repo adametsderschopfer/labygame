@@ -5,6 +5,10 @@ artist overrides on MI_MazeSubway. All distances are Unreal centimeters.
 """
 import unreal
 
+editor = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
+if editor is not None and editor.is_in_play_in_editor():
+    raise RuntimeError("Stop Play before rebuilding materials; no material was changed")
+
 LIB = unreal.MaterialEditingLibrary
 TOOLS = unreal.AssetToolsHelpers.get_asset_tools()
 FOLDER = globals().get("MATERIAL_FOLDER", "/Game/Materials")
@@ -53,6 +57,7 @@ for name, value in {
     "TileRoughness": 0.19,
     "GroutRoughness": 0.85,
     "ShadeVariation": 0.04,
+    "TileFinishVariation": 0.045,
 }.items():
     inputs[name] = node(unreal.MaterialExpressionScalarParameter,
                         parameter_name=name, default_value=value, group="Subway Tiles")
@@ -172,12 +177,15 @@ float3 U = axis.z > max(axis.x, axis.y) ? float3(1, 0, 0) :
            (axis.x > axis.y ? float3(0, 1, 0) : float3(1, 0, 0));
 float3 V = axis.z > max(axis.x, axis.y) ? float3(0, 1, 0) : float3(0, 0, 1);
 WorldNormal = normalize(N - (U * gradient.x + V * gradient.y) * resolved);
-float glazeRoughness = TileRoughness + variation * 0.35 + (glaze.x - 0.5) * 0.035 * glazeFade;
+float finish = (filter.Hash(id + 71.3) - 0.5) * TileFinishVariation * resolved;
+float glazeRoughness = TileRoughness + finish + (glaze.x - 0.5) * 0.035 * glazeFade;
 float groutRoughness = GroutRoughness + (grain.x - 0.5) * 0.12 * grainFade;
 Roughness = clamp(lerp(groutRoughness, glazeRoughness, mask), 0.06, 1.0);
 Occlusion = lerp(1.0, lerp(0.8, 1.0, face), resolved);
 float3 groutColor = GroutColor.rgb * (1.0 + (groutMottle.x - 0.5) * 0.25 * mottleFade);
-return lerp(saturate(groutColor), saturate(TileColor.rgb * (1.0 + variation)), mask);
+float warmth = (filter.Hash(id + 23.7) - 0.5) * ShadeVariation * resolved;
+float3 tileTint = TileColor.rgb * (1.0 + variation) + float3(0.08, 0.025, -0.06) * warmth;
+return lerp(saturate(groutColor), saturate(tileTint), mask);
 """,
 )
 for name, source in inputs.items():
@@ -191,7 +199,9 @@ for pin, prop in [
     if not LIB.connect_material_property(shader, pin, prop):
         raise RuntimeError(f"Cannot connect material output {pin}")
 LIB.layout_material_expressions(material)
-LIB.recompile_material(material)
+errors = LIB.recompile_material(material)
+if errors:
+    raise RuntimeError(f"Material compilation failed for M_{NAME}:\n" + "\n".join(errors))
 if not unreal.EditorAssetLibrary.save_loaded_asset(material):
     raise RuntimeError("Cannot save subway material")
 

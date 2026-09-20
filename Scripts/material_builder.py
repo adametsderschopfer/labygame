@@ -12,6 +12,9 @@ def properties(obj, **values):
 
 
 def create(name, scalars, colors, code, instanced=False, animated=False, textures=None):
+    editor = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
+    if editor is not None and editor.is_in_play_in_editor():
+        raise RuntimeError("Stop Play before rebuilding materials; no material was changed")
     path = f"{FOLDER}/M_{name}"
     material = unreal.load_asset(path)
     if material is None:
@@ -64,7 +67,9 @@ def create(name, scalars, colors, code, instanced=False, animated=False, texture
         if not LIB.connect_material_property(shader, pin, prop):
             raise RuntimeError(f"Cannot connect {pin}")
     LIB.layout_material_expressions(material)
-    LIB.recompile_material(material)
+    errors = LIB.recompile_material(material)
+    if errors:
+        raise RuntimeError(f"Material compilation failed for {path}:\n" + "\n".join(errors))
     if not unreal.EditorAssetLibrary.save_loaded_asset(material):
         raise RuntimeError(f"Cannot save {path}; execute inside the editor if the asset is open")
     instance = unreal.load_asset(f"{FOLDER}/MI_{name}")

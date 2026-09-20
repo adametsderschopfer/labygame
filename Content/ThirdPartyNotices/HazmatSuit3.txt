@@ -1,0 +1,17 @@
+Hazmat Suit 3
+Author: 07productionz (Sketchfab username: impulsio)
+Source: https://sketchfab.com/3d-models/hazmat-suit-3-b4a96fe273c0431fabd54c9d65926d59
+License: Creative Commons Attribution (CC BY), as published on the source page.
+License information: https://sketchfab.com/licenses
+
+Original author's credits:
+- Human head created with MakeHuman.
+- Hardhat created by Kristiyan Marinov and edited to fit inside the suit.
+
+Project adaptations: imported FBX as an Unreal skeletal mesh; rebuilt materials
+from supplied texture maps, converted normal-map Y convention for Unreal,
+configured translucent visors, and scaled/oriented the character for laby.
+Further adaptations: retargeted Unreal template locomotion, procedural crouch,
+and separate first-person hood/head masking. Epic template animations are
+separate engine content and are not covered by the Hazmat model's CC BY license.
+Original source files are retained under ArtSource/Characters/HazmatSuit3/Original.

@@ -34,12 +34,22 @@ public:
 	}
 
 	void ClearLocalInput();
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	void ToggleDevelopmentCamera();
+#endif
 	int32 GetReachedExit() const;
 	virtual void SetupPlayerInputComponent(UInputComponent* Input) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
 	FMazeCameraMotion CameraMotion;
+
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	bool bDevelopmentThirdPerson = false;
+
+	void SetDevelopmentThirdPerson(bool bEnabled);
+
+#endif
 
 	UPROPERTY(VisibleAnywhere, Category = "Equipment")
 	TObjectPtr<class USpotLightComponent> HeadlampLight;

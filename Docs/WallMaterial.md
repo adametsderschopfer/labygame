@@ -48,19 +48,77 @@ and must be assessed in-game, especially on the large generated ceiling slab.
 Fixed exposure is EV100 0.5 for this interior. No gameplay state, entity ownership,
 collision, topology or generated floor holes are changed.
 
-### Satin vinyl variation
+### Softly marbled green sheet flooring
 
 `Scripts/create_vinyl_material.py` authors the active `M_LabVinylSatin` /
-`MI_LabVinylSatin` pair. The original `MI_LabVinyl` remains available for comparison.
-The green base color is unchanged. Smooth, rotated noise at two physical scales
-replaces the original regularly spaced dots. Pigment has no height. Analytic
-normal gradients add only 0.01 mm microrelief and 0.02 mm broader waviness;
-low-contrast polishing variation mostly affects roughness rather than albedo.
-Fine detail fades by pixel footprint. No new geometry, textures, collision or
-gameplay state is introduced. Existing Unreal material normal/roughness inputs
-and the project's Substrate conversion remain in use; a separate coating/layer
-stack is unnecessary for this single dielectric surface. Final appearance and
-shader cost at gameplay resolution have not been measured in Play.
+`MI_LabVinylSatin` pair. The green base remains linear RGB (0.20, 0.265, 0.235).
+Warped, elongated pigment fields replace the earlier almost uniform noise: the
+editable `PatternScaleCm` defaults to 8 cm, with finer streaks and inclusions.
+This is an original procedural interpretation of sheet linoleum, not a downloaded
+Forbo texture. World-space mapping is continuous between static floor instances.
+
+Default roughness is 0.43; low-amplitude polish variation affects highlights.
+Pigment is flat, and the finish uses only 0.004 mm microrelief, filtered at distance.
+There are no geometric grooves, displacement, additional coating passes or changes
+to ECS/collision. Standard Unreal material normal/roughness inputs suffice here.
+The prior parent is preserved as `M_LabVinylSatinBeforeMarbling` (created only once).
+
+### First interior detailing pass
+
+`Maze/MazeInterior` builds four batched decorative sections through the ECS bridge.
+Outside corners receive a 3.5 mm rounded satin metal profile and 12 mm wings,
+softening the visible edge while preserving the original wall collision. This
+is a rounded tile termination, not a bevel operation on the structural wall mesh.
+A 10 cm green sanitary upstand has a 3 cm cove with smooth shading and mitered
+joins. It is omitted beside missing floor cells; no floor holes are filled.
+
+Ceiling service details occupy the passive panel opposite the diffuser. Roughly
+7.5% of bays receive a 52 cm vent, 3.5% a 57 cm access hatch, and 4% a 12 cm detector.
+Rare 8 cm wall sockets/switches are placed on long faces above intact floors at
+35/110 cm respectively. These are cosmetic meshes with no Actors, collision,
+tick or interaction. Four extra sections share the existing procedural component;
+additional geometry and shadow cost have not been profiled.
+
+The wall shader has independent per-tile finish variation (`TileFinishVariation`
+0.045) and subtle warm/cool glaze tint. Sparse short floor scuffs affect roughness
+(`WearStrength` 0.055), with pixel-footprint filtering. Lower floor roughness makes
+existing Lumen highlights more legible; no extra light intensity or GI sampling
+cost was added. Actual reflections still require in-game visual assessment.
+
+`Scripts/create_interior_materials.py` creates satin metal, ivory painted fittings
+and dark recesses using ordinary native material inputs. The coordinated builder
+includes it. Engine 5.8 ProceduralMeshComponent supports independent non-colliding
+sections, so this pass adds no plugin, component type or reflected layout changes.
+The user performs Play and gameplay testing; neither was started by the agent.
+Live Coding reported Success after the final smooth-normal change. Saved material
+parameters were read back through the editor bridge, and Epic LogMaterial returned
+no Error/Failed entries. Placement, corner joins and FPS still need visual review
+in the user's next generated maze.
+
+Floor compilation correction: the scuff shader used HLSL's reserved `line` keyword
+as a variable, causing a default checkerboard fallback. Renamed it to `scuffMask`.
+The authoring helper now checks UE 5.8's `recompile_material` error return before
+saving or reporting success. The earlier LogMaterial-only check missed this error:
+shader diagnostics were in LogShaderCompilers. The green base color was unchanged.
+
+Floor distance filtering: the fixed conservative frequency multiplier could erase
+the pigment layer at grazing angles. Filtering now uses derivatives of each actual
+warped coordinate, plus a separate 45 cm pigment layer, so subpixel fine detail
+can fade without erasing the larger pattern. Compiled/saved in the editor; the
+reported gameplay transition has not been visually reproduced (Play not started).
+
+Imported fixtures: `Scripts/import_lab_fixtures.py` builds `/Game/Fixtures` using
+native texture and OBJ import. Socket plate dimensions 14.6 x 8.6 x 1.2 cm, with
+TextureCan Others 0023 CC0 PBR maps and cropped UVs; placed at 30 cm on ~3.5% of
+long wall faces. The Scopia CC-BY-3.0 smoke detector replaces the earlier generated
+placeholder, centered and facing down, 12 cm diameter. Native ISM batches provide
+instance transforms from ECS. Asset bounds/material slots and thumbnails inspected.
+Attribution is in ArtSource/Fixtures/README.md and staged Content/ThirdPartyNotices.
+
+Applied and saved through the running UE MCP Bridge. Epic MCP supplied the material
+thumbnail and LogMaterial inspection: no matching compilation errors were reported.
+The thumbnail confirms the soft finish but cannot establish the appearance or
+pattern scale under level lighting. Play and gameplay tests were not run.
 
 ### Cell-aligned square ceiling
 

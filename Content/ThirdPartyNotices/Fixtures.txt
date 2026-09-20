@@ -1,0 +1,12 @@
+Smoke detector model
+Copyright Scopia Visual Interfaces Systems, s.l. (http://www.scopia.es)
+and Space Mushrooms (info@sweethome3d.com).
+Source: https://www.sweethome3d.com/models/scopia/smoke-detector.zip
+Licensed under Creative Commons Attribution 3.0 Unported:
+https://creativecommons.org/licenses/by/3.0/
+Adaptations: centered, rotated, scaled to 12 cm, converted to Unreal static mesh,
+and assigned Unreal plastic, recess and red indicator materials.
+
+Socket textures: TextureCan, Double Electrical Outlet Texture (Others 0023).
+https://www.texturecan.com/details/323/
+CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/

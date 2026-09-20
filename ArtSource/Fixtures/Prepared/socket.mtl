@@ -1,0 +1,4 @@
+newmtl SocketFace
+Kd 0.8 0.8 0.8
+newmtl Plastic
+Kd 0.65 0.67 0.64

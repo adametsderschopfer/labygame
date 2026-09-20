@@ -16,6 +16,9 @@ enum class EMazeInputAxis
 	Yaw,
 	Pitch
 };
+
+struct FMazeInterior;
+
 enum class EMazeInputAction
 {
 	Sprint,
@@ -53,6 +56,7 @@ public:
 	void DestroyMaze(FMassEntityHandle Entity);
 	void RegenerateMaze(FMassEntityHandle Entity, int32 Seed, FVector Origin);
 	FMazeGenerationFragment ReadMaze(FMassEntityHandle Entity) const;
+	TSharedPtr<const FMazeInterior> BuildMazeInterior(FMassEntityHandle Entity) const;
 	FMazeSessionFragment ReadSession() const;
 	FMazeDiagnosticsSnapshot ReadDiagnostics() const;
 	void SetSessionStarted(bool bStarted);

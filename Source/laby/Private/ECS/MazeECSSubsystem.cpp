@@ -7,6 +7,7 @@
 #include "MassEntitySubsystem.h"
 #include "MassExecutionContext.h"
 #include "Engine/World.h"
+#include "Maze/MazeInterior.h"
 
 template <typename T> T* UMazeECSSubsystem::FindFragment(FMassEntityHandle Entity) const
 {
@@ -421,6 +422,17 @@ FMazeGenerationFragment UMazeECSSubsystem::ReadMaze(FMassEntityHandle Entity) co
 	const auto* Maze = FindFragment<FMazeGenerationFragment>(Entity);
 
 	return Maze ? *Maze : FMazeGenerationFragment();
+}
+
+TSharedPtr<const FMazeInterior> UMazeECSSubsystem::BuildMazeInterior(FMassEntityHandle Entity) const
+{
+	const auto* Maze = FindFragment<FMazeGenerationFragment>(Entity);
+
+	if (!Maze || !Maze->Data)
+		return nullptr;
+
+	return MakeShared<FMazeInterior>(FMazeInterior::Build(
+	    Maze->Data->Layout, Maze->Data->Surface, Maze->Cell, Maze->WallThickness, Maze->WallHeight, Maze->Seed));
 }
 
 FMazeSessionFragment UMazeECSSubsystem::ReadSession() const

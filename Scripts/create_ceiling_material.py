@@ -35,7 +35,7 @@ create("LabCeilingMineral", {
     # Runtime adapter supplies these dimensions from its read-only ECS snapshot.
     "CellSizeCm": 462.5, "WallThicknessCm": 50.0,
     "TargetPanelSizeCm": 120.0, "RailWidthCm": 2.4,
-    "LightStrength": 2.0, "PoreContrast": 0.48,
+    "LightStrength": 2.3, "PoreContrast": 0.48,
     "OffFraction": 0.18, "FlickerFraction": 0.12,
     "FlickerPeriodSeconds": 12.0,
 }, {"MazeOrigin": (0.0, 0.0, 0.0), "MazeSeed": (0.0, 0.0, 0.0),

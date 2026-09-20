@@ -1,5 +1,7 @@
 #include "UI/MazeWidgets.h"
 #include "UI/MazeText.h"
+#include "UI/MazeInterfacePreferences.h"
+#include "Blueprint/WidgetTree.h"
 #include "Player/MazeCharacter.h"
 #include "Player/MazePlayerController.h"
 #include "ECS/MazeVitalsSystem.h"
@@ -12,9 +14,6 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/ConfigCacheIni.h"
 #include "Rendering/DrawElements.h"
-#include "Framework/Application/SlateApplication.h"
-#include "Fonts/FontMeasure.h"
-#include "Rendering/SlateRenderer.h"
 #include "Styling/CoreStyle.h"
 
 namespace
@@ -72,7 +71,28 @@ void UMazeMenuWidget::NativeConstruct()
 		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::Quit);
 
 	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("ResetButton"))))
-		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ResetSensitivity);
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ResetSettings);
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("MainMenuButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ReturnToMainMenu);
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("VideoTabButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ShowVideoSettings);
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("ControlsTabButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ShowControlSettings);
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("GameTabButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ShowGameSettings);
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("ApplyButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ApplySettings);
+
+	if (auto* Slider = Cast<USlider>(GetWidgetFromName(TEXT("FieldOfViewSlider"))))
+		Slider->OnValueChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeFieldOfView);
+
+	if (auto* Slider = Cast<USlider>(GetWidgetFromName(TEXT("RenderScaleSlider"))))
+		Slider->OnValueChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeRenderScale);
 
 	const float Sensitivity = GetDefault<UMazePreferences>()->GetSensitivity();
 
@@ -83,11 +103,27 @@ void UMazeMenuWidget::NativeConstruct()
 		Slider->SetStepSize(0.05f);
 		Slider->SetValue(Sensitivity);
 		Slider->OnValueChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeSensitivity);
-		Slider->OnMouseCaptureEnd.AddUniqueDynamic(this, &UMazeMenuWidget::SaveSensitivity);
-		Slider->OnControllerCaptureEnd.AddUniqueDynamic(this, &UMazeMenuWidget::SaveSensitivity);
 	}
 
 	Text(this, TEXT("SensitivityText"), SensitivityText(Sensitivity));
+	ReadSettingsIntoControls();
+	SelectSettingsSection(0);
+}
+
+void UMazeMenuWidget::NativeDestruct()
+{
+	if (WidgetTree)
+		WidgetTree->ForEachWidget(
+		    [this](UWidget* Widget)
+		    {
+			    if (auto* Button = Cast<UButton>(Widget))
+				    Button->OnClicked.RemoveAll(this);
+
+			    if (auto* Slider = Cast<USlider>(Widget))
+				    Slider->OnValueChanged.RemoveAll(this);
+		    });
+
+	Super::NativeDestruct();
 }
 
 FReply UMazeMenuWidget::NativeOnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent& Event)
@@ -136,21 +172,16 @@ void UMazeMenuWidget::Quit()
 
 void UMazeMenuWidget::ChangeSensitivity(float Value)
 {
-	GetMutableDefault<UMazePreferences>()->MouseSensitivity = FMath::Clamp(Value, 0.1f, 3.f);
-	Text(this, TEXT("SensitivityText"), SensitivityText(GetDefault<UMazePreferences>()->GetSensitivity()));
+	Text(this, TEXT("SensitivityText"), SensitivityText(FMath::Clamp(Value, 0.1f, 3.f)));
 }
 
 void UMazeMenuWidget::SaveSensitivity()
 {
-	auto* Preferences = GetMutableDefault<UMazePreferences>();
-
-	Preferences->SetSensitivity(Preferences->GetSensitivity());
+	ApplySettings();
 }
 
 void UMazeMenuWidget::ResetSensitivity()
 {
-	GetMutableDefault<UMazePreferences>()->SetSensitivity(1.f);
-
 	if (auto* Slider = Cast<USlider>(GetWidgetFromName(TEXT("SensitivitySlider"))))
 		Slider->SetValue(1.f);
 
@@ -190,6 +221,15 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 {
 	Super::NativeTick(Geometry, DeltaSeconds);
 
+	if (IsDesignTime() || !GetWorld())
+		return;
+
+	const auto Preferences = FMazeInterfacePreferences::Read();
+
+	Visible(this, TEXT("Crosshair"), Preferences.bShowCrosshair);
+	Visible(this, TEXT("HealthText"), !Preferences.bCompactHUD);
+	Visible(this, TEXT("StaminaText"), !Preferences.bCompactHUD);
+
 	const auto* Controller = GetOwningPlayer<AMazePlayerController>();
 
 	// Hide the content, not the root: the widget must keep ticking while a menu is open.
@@ -210,13 +250,12 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 		ReachedExit = Player->GetReachedExit();
 		Text(this,
 		     TEXT("HealthText"),
-		     FText::Format(NSLOCTEXT("Maze.HUD", "Health", "HEALTH  {Value} / 100"),
+		     FText::Format(NSLOCTEXT("Maze.HUD", "Health", "СОСТОЯНИЕ   {Value}"),
 		                   FFormatNamedArguments{{TEXT("Value"), FMath::CeilToInt(Vitals.Health)}}));
 		Text(this,
 		     TEXT("StaminaText"),
-		     FText::Format(Vitals.bExhausted
-		                       ? NSLOCTEXT("Maze.HUD", "StaminaRecovering", "STAMINA / RECOVERING  {Value} / 100")
-		                       : NSLOCTEXT("Maze.HUD", "Stamina", "STAMINA  {Value} / 100"),
+		     FText::Format(Vitals.bExhausted ? NSLOCTEXT("Maze.HUD", "StaminaRecovering", "ВОССТАНОВЛЕНИЕ   {Value}")
+		                                     : NSLOCTEXT("Maze.HUD", "Stamina", "ВЫНОСЛИВОСТЬ   {Value}"),
 		                   FFormatNamedArguments{{TEXT("Value"), FMath::CeilToInt(Vitals.Stamina)}}));
 
 		if (auto* Bar = Cast<UProgressBar>(GetWidgetFromName(TEXT("HealthBar"))))
@@ -231,9 +270,10 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 
 	Visible(this, TEXT("DeathPanel"), bDead);
 	Visible(this, TEXT("ExitPanel"), !bDead && ReachedExit != 0);
-	Text(this, TEXT("ExitText"), NSLOCTEXT("Maze.Widgets", "ExitText", "EXIT REACHED"));
+	Text(this, TEXT("ExitText"), NSLOCTEXT("Maze.Widgets", "ExitText", "ВЫХОД НАЙДЕН"));
 	Visible(this, TEXT("MinimapPanel"), !bDead && (!Controller || Controller->IsMinimapVisible()));
-	Visible(this, TEXT("SessionText"), !bDead);
+	Visible(this, TEXT("SessionText"), !bDead && Controller && Controller->IsMinimapVisible());
+	Visible(this, TEXT("DeveloperHint"), !bDead && Controller && Controller->IsMinimapVisible());
 
 	for (TActorIterator<AMazeWorld> It(GetWorld()); It; ++It)
 	{
@@ -256,126 +296,7 @@ int32 UMazeHUDWidget::NativePaint(const FPaintArgs& Args,
                                   const FWidgetStyle& Style,
                                   bool bParentEnabled) const
 {
-	Layer = Super::NativePaint(Args, Geometry, CullingRect, Elements, Layer, Style, bParentEnabled);
-
-	const auto* Controller = GetOwningPlayer<AMazePlayerController>();
-	const auto* Player = Controller ? Cast<AMazeCharacter>(Controller->GetPawn()) : nullptr;
-
-	if (IsDesignTime() || !Player || Controller->IsMenuOpen() || !FMazeVitalsSystem::IsAlive(Player->GetVitals()))
-		return Layer;
-
-	const float Width = FMath::Min(560.f, Geometry.GetLocalSize().X - 80.f);
-
-	if (Width <= 0.f)
-		return Layer;
-
-	const float Center = Geometry.GetLocalSize().X * 0.5f;
-	const float Top = 24.f;
-	const float HalfArc = 90.f;
-	// The minimap projects +X right and -Y up, so north is world -Y.
-	const float Heading = FRotator::ClampAxis(Controller->GetControlRotation().Yaw + 90.f);
-	const FLinearColor Tint = Style.GetColorAndOpacityTint();
-	const FLinearColor White(0.92f, 0.95f, 1.f);
-	const FLinearColor Accent(1.f, 0.75f, 0.25f);
-	const auto FontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
-	const FSlateFontInfo CardinalFont = FCoreStyle::GetDefaultFontStyle("Bold", 18);
-	const FSlateFontInfo IntermediateFont = FCoreStyle::GetDefaultFontStyle("Regular", 13);
-	const TCHAR* Directions[] = {
-	    TEXT("N"), TEXT("NE"), TEXT("E"), TEXT("SE"), TEXT("S"), TEXT("SW"), TEXT("W"), TEXT("NW")};
-
-	++Layer;
-
-	auto Line = [&](FVector2D A, FVector2D B, FLinearColor Color, float Thickness)
-	{
-		const TArray<FVector2D> ShadowPoints{A + FVector2D(0, 1), B + FVector2D(0, 1)};
-		const TArray<FVector2D> Points{A, B};
-		FSlateDrawElement::MakeLines(Elements,
-		                             Layer,
-		                             Geometry.ToPaintGeometry(),
-		                             ShadowPoints,
-		                             ESlateDrawEffect::None,
-		                             FLinearColor(0.f, 0.f, 0.f, Color.A * 0.7f) * Tint,
-		                             true,
-		                             Thickness + 2.f);
-		FSlateDrawElement::MakeLines(Elements,
-		                             Layer + 1,
-		                             Geometry.ToPaintGeometry(),
-		                             Points,
-		                             ESlateDrawEffect::None,
-		                             Color * Tint,
-		                             true,
-		                             Thickness);
-	};
-
-	// Wrap each tick relative to the camera to keep the tape continuous across north.
-	for (int32 Tick = 0; Tick < 72; ++Tick)
-	{
-		const float Delta = FMath::FindDeltaAngleDegrees(Heading, Tick * 5.f);
-
-		if (FMath::Abs(Delta) >= HalfArc)
-			continue;
-
-		const float X = Center + Delta / HalfArc * Width * 0.5f;
-		const float Alpha = FMath::Clamp((HalfArc - FMath::Abs(Delta)) / 20.f, 0.f, 1.f);
-		const bool bDirection = Tick % 9 == 0;
-		const float Height = bDirection ? 12.f : (Tick % 3 == 0 ? 8.f : 4.f);
-		FLinearColor Color = Tick == 0 ? Accent : White;
-
-		Color.A = Alpha;
-		Line({X, Top + 32.f}, {X, Top + 32.f + Height}, Color, bDirection ? 1.5f : 1.f);
-
-		if (bDirection)
-		{
-			const FString Label(Directions[Tick / 9]);
-			const auto& Font = Tick % 18 == 0 ? CardinalFont : IntermediateFont;
-			const FVector2D Size = FontMeasure->Measure(Label, Font);
-			const FVector2D Position(X - Size.X * 0.5f, Top + 17.f - Size.Y * 0.5f);
-
-			FSlateDrawElement::MakeText(
-			    Elements,
-			    Layer,
-			    Geometry.ToPaintGeometry(Size, FSlateLayoutTransform(Position + FVector2D(1, 1))),
-			    Label,
-			    Font,
-			    ESlateDrawEffect::None,
-			    FLinearColor(0.f, 0.f, 0.f, Alpha * 0.8f) * Tint);
-			FSlateDrawElement::MakeText(Elements,
-			                            Layer + 1,
-			                            Geometry.ToPaintGeometry(Size, FSlateLayoutTransform(Position)),
-			                            Label,
-			                            Font,
-			                            ESlateDrawEffect::None,
-			                            Color * Tint);
-		}
-	}
-
-	// Fixed opposing chevrons frame the current look direction without degree numbers.
-	Layer += 2;
-
-	auto Chevron = [&](float TipY, float Direction)
-	{
-		const float HalfWidth = 5.f;
-		const float Height = 5.f;
-		const TArray<FVector2D> Points{{Center - HalfWidth, TipY + Direction * Height},
-		                               {Center, TipY},
-		                               {Center + HalfWidth, TipY + Direction * Height}};
-		// Draw both arms together so the tip has a single continuous join.
-		FSlateDrawElement::MakeLines(Elements,
-		                             Layer,
-		                             Geometry.ToPaintGeometry(),
-		                             Points,
-		                             ESlateDrawEffect::None,
-		                             FLinearColor(0.f, 0.f, 0.f, 0.7f) * Tint,
-		                             true,
-		                             4.f);
-		FSlateDrawElement::MakeLines(
-		    Elements, Layer + 1, Geometry.ToPaintGeometry(), Points, ESlateDrawEffect::None, Accent * Tint, true, 2.f);
-	};
-
-	Chevron(Top, -1.f);
-	Chevron(Top + 48.f, 1.f);
-
-	return Layer + 1;
+	return Super::NativePaint(Args, Geometry, CullingRect, Elements, Layer, Style, bParentEnabled);
 }
 
 int32 UMazeMinimapWidget::NativePaint(const FPaintArgs& Args,

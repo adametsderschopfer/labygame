@@ -9,6 +9,7 @@ void FMazeItemSystem::InitializeLoadout(FMazeItemsFragment& Items)
 	Lamp.Id = Items.Value.NextInstanceId++;
 	Lamp.Kind = EMazeItemKind::Headlamp;
 	Lamp.Slot = EMazeEquipmentSlot::Head;
+	Lamp.bEnabled = false;
 	Items.Value.Items.Add(Lamp);
 }
 

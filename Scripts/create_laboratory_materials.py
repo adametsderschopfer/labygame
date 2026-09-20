@@ -16,6 +16,7 @@ runpy.run_path(str(Path(__file__).with_name("create_wall_material.py")))
 runpy.run_path(str(Path(__file__).with_name("create_vinyl_material.py")))
 
 runpy.run_path(str(Path(__file__).with_name("create_ceiling_material.py")))
+runpy.run_path(str(Path(__file__).with_name("create_interior_materials.py")))
 unreal.log("LABY_LABORATORY_MATERIALS_SAVED")
 
 

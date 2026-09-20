@@ -10,6 +10,7 @@ class LABY_API UMazeMenuWidget : public UUserWidget
 	GENERATED_BODY()
 protected:
 	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
 	virtual FReply NativeOnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent& Event) override;
 
 private:
@@ -29,6 +30,24 @@ private:
 	void ChangeSensitivity(float Value);
 	UFUNCTION()
 	void SaveSensitivity();
+	UFUNCTION()
+	void ReturnToMainMenu();
+	UFUNCTION()
+	void ShowVideoSettings();
+	UFUNCTION()
+	void ShowControlSettings();
+	UFUNCTION()
+	void ShowGameSettings();
+	UFUNCTION()
+	void ApplySettings();
+	UFUNCTION()
+	void ResetSettings();
+	UFUNCTION()
+	void ChangeFieldOfView(float Value);
+	UFUNCTION()
+	void ChangeRenderScale(float Value);
+	void SelectSettingsSection(int32 Index);
+	void ReadSettingsIntoControls();
 };
 
 UCLASS(Abstract, Blueprintable)

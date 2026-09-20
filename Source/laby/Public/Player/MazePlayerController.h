@@ -66,6 +66,7 @@ public:
 private:
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 	void ToggleMinimap();
+	void ToggleDevelopmentCamera();
 #endif
 	void RemoveMenuWidget();
 

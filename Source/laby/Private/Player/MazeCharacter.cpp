@@ -1,4 +1,6 @@
 #include "Player/MazeCharacter.h"
+#include "Player/MazeCharacterAnimInstance.h"
+#include "Materials/MaterialInterface.h"
 #include "Player/MazeFootstepAudioComponent.h"
 #include "Player/MazePlayerController.h"
 #include "ECS/MazeECSSubsystem.h"
@@ -7,12 +9,14 @@
 #include "ECS/MazePlayerControlDefinition.h"
 #include "Components/SpotLightComponent.h"
 #include "Camera/CameraComponent.h"
+#include "UI/MazeInterfacePreferences.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "Components/StaticMeshComponent.h"
-#include "Engine/StaticMesh.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Net/UnrealNetwork.h"
 
@@ -21,6 +25,17 @@ namespace
 	// Cosmetic only: the cosine profile starts and finishes at zero vertical speed.
 	constexpr float StanceTransitionSeconds = 0.55f;
 
+	UCameraComponent* FindFirstPersonCamera(const AActor& Actor)
+	{
+		TInlineComponentArray<UCameraComponent*> Cameras(&Actor);
+
+		for (auto* Camera : Cameras)
+			if (Camera->GetFName() == TEXT("FirstPersonCamera"))
+				return Camera;
+
+		return nullptr;
+	}
+
 	void TraceStanceCamera(AMazeCharacter& Character, const TCHAR* Stage, float HeightAdjust = 0.f)
 	{
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
@@ -28,7 +43,7 @@ namespace
 		if (!Character.IsLocallyControlled())
 			return;
 
-		if (const auto* Camera = Character.FindComponentByClass<UCameraComponent>())
+		if (const auto* Camera = FindFirstPersonCamera(Character))
 			UE_LOG(LogTemp,
 			       Log,
 			       TEXT("[CrouchTrace] %s %s time=%.4f crouched=%d ground=%d keepBase=%d adjust=%.3f capsuleHalf=%.3f "
@@ -53,9 +68,9 @@ namespace
 		if (!Character.IsLocallyControlled())
 			return;
 
-		auto* Camera = Character.FindComponentByClass<UCameraComponent>();
+		auto* Camera = FindFirstPersonCamera(Character);
 		const auto* Defaults = Character.GetClass()->GetDefaultObject<AMazeCharacter>();
-		const auto* DefaultCamera = Defaults->FindComponentByClass<UCameraComponent>();
+		const auto* DefaultCamera = FindFirstPersonCamera(*Defaults);
 
 		if (!Camera || !DefaultCamera)
 			return;
@@ -117,7 +132,7 @@ namespace
 	void CompensateStanceCamera(AMazeCharacter& Character, float HalfHeightAdjust)
 	{
 		if (Character.IsLocallyControlled() && Character.GetCharacterMovement()->bCrouchMaintainsBaseLocation)
-			if (auto* Camera = Character.FindComponentByClass<UCameraComponent>())
+			if (auto* Camera = FindFirstPersonCamera(Character))
 			{
 				// CharacterMovement already moved the capsule; preserve the previous world-space eye height.
 				FVector Location = Camera->GetRelativeLocation();
@@ -134,40 +149,105 @@ AMazeCharacter::AMazeCharacter()
 	bReplicates = true;
 	SetReplicateMovement(true);
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> Sphere(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cylinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
-	auto* Body = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PillBody"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> Hazmat(
+	    TEXT("/Game/Characters/HazmatSuit3/SK_HazmatSuit3.SK_HazmatSuit3"));
+	auto* CharacterMesh = GetMesh();
 
-	Body->SetupAttachment(GetCapsuleComponent());
-	Body->SetStaticMesh(Cylinder.Object);
-	Body->SetRelativeScale3D(FVector(0.68f, 0.68f, 1.12f));
-	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Body->SetOwnerNoSee(true);
+	CharacterMesh->SetSkeletalMesh(Hazmat.Object);
+	// The imported model faces +Y; CharacterMovement uses +X as forward.
+	CharacterMesh->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
 
-	auto* Top = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PillTop"));
+	if (Hazmat.Succeeded())
+	{
+		const FBoxSphereBounds Bounds = Hazmat.Object->GetBounds();
+		const float Height = Bounds.BoxExtent.Z * 2.f;
+		const float HalfHeight = GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+		const float Scale = Height > UE_SMALL_NUMBER ? HalfHeight * 2.f / Height : 1.f;
 
-	Top->SetupAttachment(GetCapsuleComponent());
-	Top->SetStaticMesh(Sphere.Object);
-	Top->SetRelativeLocation(FVector(0, 0, 56));
-	Top->SetRelativeScale3D(FVector(0.68f));
-	Top->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Top->SetOwnerNoSee(true);
+		CharacterMesh->SetRelativeScale3D(FVector(Scale));
+		CharacterMesh->SetRelativeLocation(
+		    FVector(0.f, 0.f, -HalfHeight - (Bounds.Origin.Z - Bounds.BoxExtent.Z) * Scale));
+	}
 
-	auto* Bottom = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PillBottom"));
+	CharacterMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CharacterMesh->SetGenerateOverlapEvents(false);
+	CharacterMesh->SetCanEverAffectNavigation(false);
+	CharacterMesh->SetOwnerNoSee(true);
+	CharacterMesh->SetCastHiddenShadow(true);
+	CharacterMesh->SetAnimInstanceClass(UMazeCharacterAnimInstance::StaticClass());
+	// The owner sees a follower mesh, so refresh the hidden leader's bones too.
+	CharacterMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 
-	Bottom->SetupAttachment(GetCapsuleComponent());
-	Bottom->SetStaticMesh(Sphere.Object);
-	Bottom->SetRelativeLocation(FVector(0, 0, -56));
-	Bottom->SetRelativeScale3D(FVector(0.68f));
-	Bottom->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Bottom->SetOwnerNoSee(true);
+	auto* FirstPersonBody = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonBody"));
+
+	FirstPersonBody->SetupAttachment(CharacterMesh);
+	FirstPersonBody->SetSkeletalMesh(Hazmat.Object);
+	FirstPersonBody->SetOnlyOwnerSee(true);
+	FirstPersonBody->SetCastShadow(false);
+	FirstPersonBody->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	FirstPersonBody->SetGenerateOverlapEvents(false);
+	FirstPersonBody->SetCanEverAffectNavigation(false);
+	FirstPersonBody->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+	FirstPersonBody->SetLeaderPoseComponent(CharacterMesh);
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> FirstPersonSuit(
+	    TEXT("/Game/Characters/HazmatSuit3/Materials/M_H_SUIT_FirstPerson"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> HiddenMaterial(
+	    TEXT("/Game/Characters/HazmatSuit3/Materials/M_FirstPersonHidden"));
+
+	if (Hazmat.Succeeded() && FirstPersonSuit.Succeeded() && HiddenMaterial.Succeeded())
+	{
+		const auto& Materials = Hazmat.Object->GetMaterials();
+
+		for (int32 I = 0; I < Materials.Num(); ++I)
+		{
+			const FName Slot = Materials[I].MaterialSlotName;
+
+			if (Slot == TEXT("H_SUIT"))
+				FirstPersonBody->SetMaterial(I, FirstPersonSuit.Object);
+			else if (Slot != TEXT("H_GLOVE") && Slot != TEXT("H_BOOT") && Slot != TEXT("H_SHIRT"))
+				FirstPersonBody->SetMaterial(I, HiddenMaterial.Object);
+		}
+	}
 
 	auto* Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 
 	Camera->SetupAttachment(GetCapsuleComponent());
-	Camera->SetRelativeLocation(FVector(0, 0, 70));
+	Camera->SetRelativeLocation(FVector(12, 0, 70));
 	Camera->bUsePawnControlRotation = true;
 	Camera->FieldOfView = 95;
+	Camera->SetEnableFirstPersonFieldOfView(true);
+	Camera->SetFirstPersonFieldOfView(85.f);
+	Camera->SetEnableFirstPersonScale(true);
+	Camera->SetFirstPersonScale(0.5f);
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaskVisor(
+	    TEXT("/Game/Characters/HazmatSuit3/Materials/M_MaskVisor"));
+
+	if (MaskVisor.Succeeded())
+		Camera->PostProcessSettings.AddBlendable(MaskVisor.Object, 1.f);
+
+	Camera->PostProcessBlendWeight = 1.f;
+
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	auto* CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("DevelopmentCameraBoom"));
+
+	CameraBoom->SetupAttachment(GetCapsuleComponent());
+	CameraBoom->TargetOffset = FVector(0.f, 0.f, 45.f);
+	CameraBoom->TargetArmLength = 240.f;
+	CameraBoom->SocketOffset = FVector(0.f, 35.f, 10.f);
+	CameraBoom->ProbeSize = 12.f;
+	CameraBoom->bUsePawnControlRotation = true;
+	CameraBoom->bInheritRoll = false;
+	CameraBoom->bDoCollisionTest = true;
+
+	auto* ThirdPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("DevelopmentThirdPersonCamera"));
+
+	ThirdPersonCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	ThirdPersonCamera->FieldOfView = 85.f;
+	ThirdPersonCamera->SetAutoActivate(false);
+
+#endif
 
 	const auto& Lamp = FMazeItemSystem::HeadlampDefinition();
 
@@ -196,6 +276,13 @@ AMazeCharacter::AMazeCharacter()
 void AMazeCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	TInlineComponentArray<USkeletalMeshComponent*> BodyMeshes(this);
+
+	for (auto* Body : BodyMeshes)
+		if (Body->GetFName() == TEXT("FirstPersonBody"))
+			Body->SetLeaderPoseComponent(GetMesh(), true);
+
 	ECSSubsystem = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
 	check(ECSSubsystem);
 	PlayerEntity = ECSSubsystem->CreatePlayer();
@@ -345,9 +432,22 @@ void AMazeCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult)
 {
 	Super::CalcCamera(DeltaTime, OutResult);
 
+	const FMazeInterfacePreferences Preferences = FMazeInterfacePreferences::Read();
+
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+
+	if (bDevelopmentThirdPerson)
+		return;
+
+#endif
+
+	if (IsLocallyControlled())
+		OutResult.FOV = Preferences.FieldOfView;
+
 	const auto* PC = Cast<APlayerController>(Controller);
-	const bool bEnabled = IsLocallyControlled() && PC && !PC->IsMoveInputIgnored() && !PC->IsLookInputIgnored() &&
-	                      !UGameplayStatics::IsGamePaused(this) && FMazeVitalsSystem::IsAlive(GetVitals());
+	const bool bEnabled = Preferences.bCameraMotion && IsLocallyControlled() && PC && !PC->IsMoveInputIgnored() &&
+	                      !PC->IsLookInputIgnored() && !UGameplayStatics::IsGamePaused(this) &&
+	                      FMazeVitalsSystem::IsAlive(GetVitals());
 
 	if (!bEnabled)
 	{
@@ -369,6 +469,9 @@ void AMazeCharacter::UnPossessed()
 {
 	ClearLocalInput();
 	CameraMotion = FMazeCameraMotion();
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	SetDevelopmentThirdPerson(false);
+#endif
 	Super::UnPossessed();
 }
 
@@ -487,7 +590,8 @@ void AMazeCharacter::Turn(float Value)
 void AMazeCharacter::LookUp(float Value)
 {
 	if (ECSSubsystem)
-		ECSSubsystem->SetInputAxis(PlayerEntity, EMazeInputAxis::Pitch, Value);
+		ECSSubsystem->SetInputAxis(
+		    PlayerEntity, EMazeInputAxis::Pitch, FMazeInterfacePreferences::Read().bInvertMouseY ? -Value : Value);
 }
 
 void AMazeCharacter::SprintStart()
@@ -574,18 +678,8 @@ void AMazeCharacter::RefreshStancePresentation()
 
 		FVector Location = (*DefaultEntry)->GetRelativeLocation();
 
-		if (Name == TEXT("FirstPersonCamera") || Name == TEXT("HeadlampLight") || Name == TEXT("PillTop"))
+		if (Name == TEXT("FirstPersonCamera") || Name == TEXT("HeadlampLight"))
 			Location.Z -= HeightAdjust;
-		else if (Name == TEXT("PillBottom"))
-			Location.Z += HeightAdjust;
-		else if (Name == TEXT("PillBody"))
-		{
-			FVector Scale = (*DefaultEntry)->GetRelativeScale3D();
-			const float Radius = GetCapsuleComponent()->GetUnscaledCapsuleRadius();
-
-			Scale.Z *= FMath::Max(0.f, HalfHeight - Radius) / FMath::Max(1.f, StandingHalfHeight - Radius);
-			Component->SetRelativeScale3D(Scale);
-		}
 		else
 			continue;
 
