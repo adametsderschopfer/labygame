@@ -2,8 +2,11 @@
 
 Generation remains deterministic from the replicated maze seed. `FMazeLayout`
 carves rooms and selects holes; `FMazeGenerationSystem` produces the immutable
-wall surface, floor-instance transforms, spawn positions and exit positions.
-`AMazeWorld` only consumes this payload to create rendering and collision.
+topology, floor-instance transforms, spawn positions and exit positions.
+The ECS bridge produces the transient collision surface and schedules visual
+chunk generation through `FMazeChunkSystem`. `AMazeWorld` consumes these results
+to create engine resources. See [Streaming.md](Streaming.md) for lifecycle,
+memory ownership, thread scheduling and current resident-collision policy.
 
 Default 80 x 80 maps target 18 rooms (including the 3 x 3 spawn room) and at most
 64 single-cell holes. Random rooms range from 3 x 3 to 7 x 7 cells, stay inside

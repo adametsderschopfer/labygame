@@ -64,6 +64,15 @@
 - Before completion, check the diff for duplicate state/rules, mutable data leaking into adapters, stale handles, repeated one-shot effects and missing reset/replication paths. This is a code review, not permission to launch gameplay.
 - Do not run tests or Play unless the user requests it; the user is handling gameplay testing. Do not restart Play under the iteration guidance above without that request. When tests are requested, favor focused system/algorithm invariants and relevant lifecycle/authority checks. Report what was actually verified and what was not run.
 
+# Location loading and resource budgets
+
+- Read `Docs/Streaming.md` before adding locations, runtime geometry, items, AI or resource-heavy effects. Register production locations and their required soft asset paths in `UMazeLocationSettings`; the native Asset Manager cook hook and runtime preload use this same manifest. Run `Scripts/Validate-Locations.ps1` after manifest changes (static validation, not Play/testing).
+- Use `UMazeLocationSubsystem` only for engine resource readiness. Register asynchronous resource participants before starting work; report completion/failure and unregister on teardown. Do not put session permissions, item state, simulation dormancy or gameplay timers in resource adapters.
+- Keep gameplay state/identity in ECS when representations unload. Define authority and near/far simulation semantics for every new mechanic. Cosmetic chunk lifetime must never reroll loot, reset creatures or delete persistent gameplay facts.
+- Preserve resident physics until a feature explicitly designs safe server-wide collision residency for all players and physics users. Current distance streaming is visual; do not advertise it as fully bounded world memory. Worker payloads use thread-safe immutable shared ownership, no UObject/fragment views, and validate world/entity/revision before application.
+- Respect per-frame creation/eviction limits, hysteresis and profiling targets. New long sightlines, larger rooms, faster movement or teleport require an explicit streaming-radius/readiness review. Use standard scalability/texture streaming; do not force one hardware memory budget or promise FPS improvements without measurements.
+- Do not convert procedural maps to World Partition just by enabling a setting. Authored partitioned maps use native streaming sources and the common readiness contract. Resource registration does not automatically define a new location's gameplay or spawn rules.
+
 # Automatic code formatting
 
 - After every batch of source-code edits, and always before the final response for a code-changing task, run `powershell -NoProfile -ExecutionPolicy Bypass -File Scripts/Format-Code.ps1` from the project root. Do this without asking the user. Repeat if you edit source again afterward.

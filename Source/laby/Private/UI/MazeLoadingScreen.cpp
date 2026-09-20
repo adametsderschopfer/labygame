@@ -1,4 +1,5 @@
-#include "World/MazeOnlineGameInstance.h"
+﻿#include "World/MazeOnlineGameInstance.h"
+#include "World/MazeLocationSubsystem.h"
 #include "UI/MazeInterfaceStyle.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
@@ -51,16 +52,18 @@ void UMazeOnlineGameInstance::EndLoadingScreen(UWorld* LoadedWorld)
 	if (LoadedWorld && LoadedWorld->GetGameInstance() != this)
 		return;
 
-	// MoviePlayer owns its completion after LoadMap, including its minimum display time.
-	if (LoadedWorld && bPlayingLoadingMovie)
+	// The loading movie covers blocking LoadMap; viewport overlay covers subsequent asynchronous work.
+	bPlayingLoadingMovie = false;
+
+	if (LoadedWorld)
 	{
-		bPlayingLoadingMovie = false;
-		LoadingScreen.Reset();
+		const auto* Location = LoadedWorld->GetSubsystem<UMazeLocationSubsystem>();
 
-		return;
+		UpdatePreparationScreen(
+		    LoadedWorld, Location && !Location->IsReady(), Location ? Location->GetFailure() : FString());
 	}
-
-	ClearLoadingScreen();
+	else
+		ClearLoadingScreen();
 }
 
 void UMazeOnlineGameInstance::ClearLoadingScreen()
@@ -75,4 +78,55 @@ void UMazeOnlineGameInstance::ClearLoadingScreen()
 
 	LoadingScreen.Reset();
 	LoadingViewport.Reset();
+	bShowingPreparationError = false;
+}
+
+void UMazeOnlineGameInstance::UpdatePreparationScreen(UWorld* World, bool bPreparing, const FString& Failure)
+{
+	if (!World || World != GetWorld() || World->GetNetMode() == NM_DedicatedServer ||
+	    !FSlateApplication::IsInitialized())
+		return;
+
+	if (!bPreparing)
+	{
+		if (LoadingViewport.IsValid())
+			ClearLoadingScreen();
+
+		return;
+	}
+
+	auto* Viewport = GetGameViewportClient();
+
+	if (!Viewport)
+		return;
+
+	if (LoadingViewport.IsValid() && (Failure.IsEmpty() || bShowingPreparationError))
+		return;
+
+	if (LoadingViewport.IsValid() && LoadingScreen)
+		LoadingViewport->RemoveViewportWidgetContent(LoadingScreen.ToSharedRef());
+
+	if (Failure.IsEmpty())
+		LoadingScreen = MazeInterfaceStyle::MakeLoadingScreen();
+	else
+	{
+		// Details are in the log; never expose internal resource paths as product UI.
+		LoadingScreen =
+		    SNew(SBorder)
+		        .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
+		        .BorderBackgroundColor(FLinearColor::Black)
+		        .HAlign(HAlign_Center)
+		        .VAlign(
+		            VAlign_Center)[SNew(STextBlock)
+		                               .Text(NSLOCTEXT(
+		                                   "Maze.Loading",
+		                                   "PreparationFailed",
+		                                   "Не удалось подготовить локацию. Проверьте файлы игры и повторите запуск."))
+		                               .AutoWrapText(true)
+		                               .ColorAndOpacity(FLinearColor::White)];
+		bShowingPreparationError = true;
+	}
+
+	LoadingViewport = Viewport;
+	Viewport->AddViewportWidgetContent(LoadingScreen.ToSharedRef(), MAX_int32);
 }

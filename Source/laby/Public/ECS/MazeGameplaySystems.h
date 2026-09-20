@@ -11,14 +11,10 @@ struct FMazeGenerationSystem
 		if (!Maze.bNeedsGeneration)
 			return;
 
-		auto Data = MakeShared<FMazeGeneratedData>();
+		auto Data = MakeShared<FMazeGeneratedData, ESPMode::ThreadSafe>();
 		{
 			TRACE_CPUPROFILER_EVENT_SCOPE(Maze_GenerateTopology);
 			Data->Layout.Generate(Maze.Seed, Maze.Size);
-		}
-		{
-			TRACE_CPUPROFILER_EVENT_SCOPE(Maze_BuildSurface);
-			Data->Surface.Build(Data->Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight);
 		}
 		const float Span = Data->Layout.Size * Maze.Cell;
 		// A solid slab covers rooms and floor holes, meeting the tops of the outer walls.

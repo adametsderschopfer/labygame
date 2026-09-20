@@ -1,4 +1,5 @@
 #include "Player/MazeCharacter.h"
+#include "World/MazeLocationSubsystem.h"
 #include "Player/MazeCharacterAnimInstance.h"
 #include "Materials/MaterialInterface.h"
 #include "Player/MazeFootstepAudioComponent.h"
@@ -385,7 +386,18 @@ void AMazeCharacter::Tick(float DeltaSeconds)
 	Pose.Acceleration = Movement->GetCurrentAcceleration();
 	Pose.bOnGround = Movement->IsMovingOnGround();
 	Pose.bCrouched = Movement->IsCrouching();
-	Pose.bInputEnabled = Controller && !Controller->IsMoveInputIgnored();
+
+	const auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>();
+
+	Pose.bInputEnabled =
+	    Controller && !Controller->IsMoveInputIgnored() && (!IsLocallyControlled() || !Location || Location->IsReady());
+
+	if (IsLocallyControlled() && Location && !Location->IsReady())
+	{
+		ClearLocalInput();
+		Movement->StopMovementImmediately();
+	}
+
 	Pose.Sensitivity = GetDefault<UMazePreferences>()->GetSensitivity();
 
 	const auto Command = ECSSubsystem->ResolvePlayer(PlayerEntity, Pose);
@@ -548,6 +560,9 @@ void AMazeCharacter::SetupPlayerInputComponent(UInputComponent* Input)
 
 void AMazeCharacter::ToggleHeadlamp()
 {
+	if (const auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>(); Location && !Location->IsReady())
+		return;
+
 	if (!IsLocallyControlled() || !Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() ||
 	    UGameplayStatics::IsGamePaused(this))
 		return;

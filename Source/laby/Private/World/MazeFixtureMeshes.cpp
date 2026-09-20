@@ -35,6 +35,7 @@ void MazeFixtureMeshes::Rebuild(AActor& Owner, const FMazeInterior& Interior)
 		Owner.AddInstanceComponent(Component);
 		Component->RegisterComponent();
 		Component->AddInstances(Transforms, false, false, false);
+		Component->PrecachePSOs();
 	};
 
 	Add(TEXT("/Game/Fixtures/SM_LabSocket.SM_LabSocket"), Interior.SocketTransforms);

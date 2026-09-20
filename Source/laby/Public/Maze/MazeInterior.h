@@ -14,6 +14,12 @@ struct FMazeInterior
 	TArray<FTransform> SocketTransforms;
 	TArray<FTransform> DetectorTransforms;
 	TArray<FVector> LampLocations;
-	static FMazeInterior Build(
-	    const FMazeLayout& Layout, const FMazeSurface& Walls, float Cell, float Thickness, float Height, int32 Seed);
+	static FMazeInterior Build(const FMazeLayout& Layout,
+	                           const FMazeSurface& Walls,
+	                           float Cell,
+	                           float Thickness,
+	                           float Height,
+	                           int32 Seed,
+	                           FIntRect Cells = FIntRect(),
+	                           bool bLampsOnly = false);
 };

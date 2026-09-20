@@ -424,15 +424,21 @@ FMazeGenerationFragment UMazeECSSubsystem::ReadMaze(FMassEntityHandle Entity) co
 	return Maze ? *Maze : FMazeGenerationFragment();
 }
 
-TSharedPtr<const FMazeInterior> UMazeECSSubsystem::BuildMazeInterior(FMassEntityHandle Entity) const
+TSharedPtr<const FMazeInterior> UMazeECSSubsystem::BuildMazeLampLocations(FMassEntityHandle Entity) const
 {
 	const auto* Maze = FindFragment<FMazeGenerationFragment>(Entity);
 
 	if (!Maze || !Maze->Data)
 		return nullptr;
 
-	return MakeShared<FMazeInterior>(FMazeInterior::Build(
-	    Maze->Data->Layout, Maze->Data->Surface, Maze->Cell, Maze->WallThickness, Maze->WallHeight, Maze->Seed));
+	return MakeShared<FMazeInterior>(FMazeInterior::Build(Maze->Data->Layout,
+	                                                      FMazeSurface(),
+	                                                      Maze->Cell,
+	                                                      Maze->WallThickness,
+	                                                      Maze->WallHeight,
+	                                                      Maze->Seed,
+	                                                      FIntRect(),
+	                                                      true));
 }
 
 FMazeSessionFragment UMazeECSSubsystem::ReadSession() const

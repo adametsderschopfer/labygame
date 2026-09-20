@@ -22,6 +22,8 @@ public:
 	void ResetPlayback();
 
 private:
+	void InitializeAudio();
+
 	UPROPERTY(Transient)
 	TObjectPtr<UAudioComponent> Audio;
 

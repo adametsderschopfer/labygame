@@ -37,11 +37,24 @@ namespace
 	}
 }
 
-FMazeInterior FMazeInterior::Build(
-    const FMazeLayout& Layout, const FMazeSurface& Walls, float Cell, float Thickness, float Height, int32 Seed)
+FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
+                                   const FMazeSurface& Walls,
+                                   float Cell,
+                                   float Thickness,
+                                   float Height,
+                                   int32 Seed,
+                                   FIntRect Cells,
+                                   bool bLampsOnly)
 {
 	FMazeInterior Result;
-	FRandomStream Random(Seed ^ 0x4c4142);
+	const bool bRegion = Cells.Width() > 0 && Cells.Height() > 0;
+	const auto Owns = [&](FVector P)
+	{
+		const FIntPoint CellIndex(FMath::Clamp(FMath::FloorToInt(P.X / Cell), 0, Layout.Size - 1),
+		                          FMath::Clamp(FMath::FloorToInt(P.Y / Cell), 0, Layout.Size - 1));
+
+		return !bRegion || Cells.Contains(CellIndex);
+	};
 	const FVector Up(0, 0, 1);
 	TMap<FIntPoint, FVector> Joins;
 
@@ -75,6 +88,14 @@ FMazeInterior FMazeInterior::Build(
 		const FVector A = Walls.Vertices[I], B = Walls.Vertices[I + 1];
 		const FVector U = (B - A).GetSafeNormal();
 		const FVector Mid = (A + B) * 0.5;
+
+		if (!Owns(Mid))
+			continue;
+
+		// Independent local streams keep decoration stable across chunk order/reloads.
+		const FIntPoint FaceKey = Key(Mid);
+		FRandomStream Random(
+		    static_cast<int32>(uint32(Seed) ^ uint32(FaceKey.X) * 73856093u ^ uint32(FaceKey.Y) * 19349663u));
 		const FVector JA = Joins.FindChecked(Key(A)), JB = Joins.FindChecked(Key(B));
 		const FVector MA = JA / FMath::Max(1.0, FVector::DotProduct(JA, N));
 		const FVector MB = JB / FMath::Max(1.0, FVector::DotProduct(JB, N));
@@ -194,6 +215,9 @@ FMazeInterior FMazeInterior::Build(
 		for (int32 Row = 0; Row < Layout.Size; ++Row)
 			for (int32 Col = 0; Col < Layout.Size; ++Col)
 			{
+				if (!bLampsOnly && bRegion && !Cells.Contains(FIntPoint(Col, Row)))
+					continue;
+
 				const float PX = Col * Count + LampTile + (PatternSeed & 0xffff) + 19.73f;
 				const float PY = Row * Count + LampTile + (PatternSeed >> 16) + 19.73f;
 				float XHash = Frac(PX * 0.1031f), YHash = Frac(PY * 0.1031f), ZHash = XHash;
@@ -207,6 +231,9 @@ FMazeInterior FMazeInterior::Build(
 					    Col * Cell + (LampTile + 0.5f) * Panel, Row * Cell + (LampTile + 0.5f) * Panel, Height - 3.f);
 			}
 
+	if (bLampsOnly)
+		return Result;
+
 	const FVector X(1, 0, 0), Y(0, 1, 0), Down(0, 0, -1);
 	// Opposite the luminous tile: never cover a diffuser or cross a panel rail.
 	const int32 Tile = Count - 2;
@@ -215,6 +242,11 @@ FMazeInterior FMazeInterior::Build(
 		for (int32 Row = 0; Row < Layout.Size; ++Row)
 			for (int32 Col = 0; Col < Layout.Size; ++Col)
 			{
+				if (bRegion && !Cells.Contains(FIntPoint(Col, Row)))
+					continue;
+
+				FRandomStream Random(
+				    static_cast<int32>(uint32(Seed) ^ uint32(Col) * 83492791u ^ uint32(Row) * 2654435761u));
 				const float Choice = Random.FRand();
 
 				if (Choice >= 0.15f)

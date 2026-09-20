@@ -71,4 +71,20 @@ struct LABY_API FMazeDiagnosticsSnapshot
 	bool bNeedsGeneration = false;
 	UPROPERTY()
 	TArray<FMazePlayerDiagnostics> Players;
+	UPROPERTY()
+	bool bLocationReady = false;
+	// Resource fields are enriched by the editor adapter; the ECS reader never queries Actors.
+	UPROPERTY()
+	bool bHasResourceDiagnostics = false;
+	UPROPERTY()
+	FString LocationFailure;
+	UPROPERTY()
+	int32 PendingPSOs = 0;
+	UPROPERTY()
+	int32 ResidentChunks = 0;
+	UPROPERTY()
+	int32 PendingChunks = 0;
+	// Source-array estimate only, not process memory, collision memory or VRAM.
+	UPROPERTY()
+	int64 ResidentGeometryBytes = 0;
 };

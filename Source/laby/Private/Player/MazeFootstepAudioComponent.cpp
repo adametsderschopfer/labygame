@@ -1,4 +1,5 @@
 #include "Player/MazeFootstepAudioComponent.h"
+#include "World/MazeLocationSubsystem.h"
 #include "Player/MazeCharacter.h"
 #include "ECS/MazeVitalsSystem.h"
 #include "ECS/MazePlayerControlDefinition.h"
@@ -47,7 +48,10 @@ void UMazeFootstepAudioComponent::BeginPlay()
 	}
 
 	AddTickPrerequisiteComponent(Character->GetCharacterMovement());
+}
 
+void UMazeFootstepAudioComponent::InitializeAudio()
+{
 	for (const TCHAR* Action : {TEXT("Walk"), TEXT("Run"), TEXT("Sneak")})
 	{
 		for (int32 Variant = 1; Variant <= FootstepVariants; ++Variant)
@@ -109,6 +113,11 @@ void UMazeFootstepAudioComponent::TickComponent(float DeltaTime,
 	const auto* Character = Cast<AMazeCharacter>(GetOwner());
 	const auto* PC = Character ? Cast<APlayerController>(Character->GetController()) : nullptr;
 	const auto* Movement = Character ? Character->GetCharacterMovement() : nullptr;
+	const auto* LocationResources = GetWorld()->GetSubsystem<UMazeLocationSubsystem>();
+
+	if (!Audio && Character && Character->IsLocallyControlled() &&
+	    (!LocationResources || (LocationResources->AreAssetsReady() && LocationResources->GetFailure().IsEmpty())))
+		InitializeAudio();
 
 	if (!Audio || !Character || !Character->IsLocallyControlled() || !PC || PC->IsMoveInputIgnored() ||
 	    UGameplayStatics::IsGamePaused(this) || !FMazeVitalsSystem::IsAlive(Character->GetVitals()) ||

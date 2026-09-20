@@ -19,6 +19,7 @@ public:
 	void HostLocal();
 	void JoinLocal(const FString& Address);
 	void LocalRoomReady();
+	void UpdatePreparationScreen(UWorld* World, bool bPreparing, const FString& Failure);
 	bool IsLocalRoom() const
 	{
 		return bLocalTransport;
@@ -41,6 +42,7 @@ private:
 	TSharedPtr<class SWidget> LoadingScreen;
 	TWeakObjectPtr<class UGameViewportClient> LoadingViewport;
 	bool bPlayingLoadingMovie = false;
+	bool bShowingPreparationError = false;
 
 	bool Prepare(bool bHost, const FString& Code);
 	void ContinueOperation();

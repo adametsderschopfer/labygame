@@ -113,7 +113,6 @@ struct FMazeProgressFragment : public FMassFragment
 struct FMazeGeneratedData
 {
 	FMazeLayout Layout;
-	FMazeSurface Surface;
 	TArray<FTransform> FloorTransforms;
 	FTransform CeilingTransform;
 	FVector Start = FVector::ZeroVector;
@@ -142,7 +141,7 @@ struct FMazeGenerationFragment : public FMassFragment
 	bool bNeedsGeneration = true;
 	UPROPERTY()
 	uint32 Revision = 0;
-	TSharedPtr<const FMazeGeneratedData> Data;
+	TSharedPtr<const FMazeGeneratedData, ESPMode::ThreadSafe> Data;
 };
 
 template <> struct TMassFragmentTraits<FMazeGenerationFragment> final

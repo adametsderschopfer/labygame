@@ -8,12 +8,17 @@ struct FMazeSurface
 	TArray<FVector> Vertices;
 	TArray<int32> Triangles;
 	TArray<FVector> Normals;
-	void Build(const FMazeLayout& Layout, float Cell, float Thickness, float Height)
+	void Build(const FMazeLayout& Layout, float Cell, float Thickness, float Height, FIntRect Cells = FIntRect())
 	{
 		Vertices.Reset();
 		Triangles.Reset();
 		Normals.Reset();
 		const int32 N = Layout.Size * 2 + 1;
+		const bool bRegion = Cells.Width() > 0 && Cells.Height() > 0;
+		const int32 BeginX = bRegion ? FMath::Clamp(Cells.Min.X * 2, 0, N) : 0;
+		const int32 BeginY = bRegion ? FMath::Clamp(Cells.Min.Y * 2, 0, N) : 0;
+		const int32 EndX = bRegion ? FMath::Min(N, Cells.Max.X * 2 + (Cells.Max.X == Layout.Size ? 1 : 0)) : N;
+		const int32 EndY = bRegion ? FMath::Min(N, Cells.Max.Y * 2 + (Cells.Max.Y == Layout.Size ? 1 : 0)) : N;
 		TArray<bool> Solid;
 		Solid.Init(false, N * N);
 		auto Strip = [&](int32 X, int32 Y, bool Horizontal)
@@ -56,8 +61,8 @@ struct FMazeSurface
 			Triangles.Append({Base, Base + 2, Base + 1, Base, Base + 3, Base + 2});
 		};
 
-		for (int32 Y = 0; Y < N; ++Y)
-			for (int32 X = 0; X < N; ++X)
+		for (int32 Y = BeginY; Y < EndY; ++Y)
+			for (int32 X = BeginX; X < EndX; ++X)
 			{
 				if (!Occupied(X, Y))
 					continue;

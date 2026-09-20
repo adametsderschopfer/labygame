@@ -18,6 +18,8 @@ enum class EMazeInputAxis
 };
 
 struct FMazeInterior;
+struct FMazeChunkJob;
+struct FMazeChunkData;
 
 enum class EMazeInputAction
 {
@@ -56,7 +58,10 @@ public:
 	void DestroyMaze(FMassEntityHandle Entity);
 	void RegenerateMaze(FMassEntityHandle Entity, int32 Seed, FVector Origin);
 	FMazeGenerationFragment ReadMaze(FMassEntityHandle Entity) const;
-	TSharedPtr<const FMazeInterior> BuildMazeInterior(FMassEntityHandle Entity) const;
+	TSharedPtr<const FMazeInterior> BuildMazeLampLocations(FMassEntityHandle Entity) const;
+	TSharedPtr<const FMazeSurface> BuildMazeCollision(FMassEntityHandle Entity) const;
+	TSharedPtr<FMazeChunkJob> RequestMazeChunk(FMassEntityHandle Entity, FIntPoint Chunk, int32 ChunkCells) const;
+	TSharedPtr<const FMazeChunkData, ESPMode::ThreadSafe> TakeMazeChunk(const TSharedPtr<FMazeChunkJob>& Job) const;
 	FMazeSessionFragment ReadSession() const;
 	FMazeDiagnosticsSnapshot ReadDiagnostics() const;
 	void SetSessionStarted(bool bStarted);

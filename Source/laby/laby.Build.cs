@@ -17,17 +17,13 @@ public class laby : ModuleRules
 			                                                "EnhancedInput",
 			                                                "ProceduralMeshComponent",
 			                                                "MassCore",
-			                                                "MassEntity" });
+			                                                "MassEntity",
+			                                                "RenderCore" });
 
 		PublicDependencyModuleNames.AddRange(new string[] { "OnlineSubsystem", "OnlineSubsystemUtils" });
-		PrivateDependencyModuleNames.AddRange(new string[] { "Slate",
-			                                                 "SlateCore",
-			                                                 "ApplicationCore",
-			                                                 "Sockets",
-			                                                 "MoviePlayer",
-			                                                 "RenderCore",
-			                                                 "AnimGraphRuntime",
-			                                                 "AnimationCore" });
+		PrivateDependencyModuleNames.AddRange(new string[] {
+			"Slate", "SlateCore", "ApplicationCore", "Sockets", "MoviePlayer", "AnimGraphRuntime", "AnimationCore"
+		});
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

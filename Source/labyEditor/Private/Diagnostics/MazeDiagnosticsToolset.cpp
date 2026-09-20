@@ -2,6 +2,9 @@
 #include "ECS/MazeECSSubsystem.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "World/MazeLocationSubsystem.h"
+#include "World/MazeWorld.h"
+#include "EngineUtils.h"
 
 TArray<FMazeDiagnosticsSnapshot> UMazeDiagnosticsToolset::ReadSnapshots()
 {
@@ -19,7 +22,25 @@ TArray<FMazeDiagnosticsSnapshot> UMazeDiagnosticsToolset::ReadSnapshots()
 				continue;
 
 			if (const auto* ECS = World->GetSubsystem<UMazeECSSubsystem>())
-				Result.Add(ECS->ReadDiagnostics());
+			{
+				auto& Snapshot = Result.Add_GetRef(ECS->ReadDiagnostics());
+
+				Snapshot.bHasResourceDiagnostics = true;
+
+				if (const auto* Location = World->GetSubsystem<UMazeLocationSubsystem>())
+				{
+					Snapshot.bLocationReady = Location->IsReady();
+					Snapshot.LocationFailure = Location->GetFailure();
+					Snapshot.PendingPSOs = Location->GetPendingPSOs();
+				}
+
+				for (TActorIterator<AMazeWorld> It(World); It; ++It)
+				{
+					Snapshot.ResidentChunks += It->GetResidentChunkCount();
+					Snapshot.PendingChunks += It->HasPendingChunk() ? 1 : 0;
+					Snapshot.ResidentGeometryBytes += It->GetResidentGeometryBytes();
+				}
+			}
 		}
 	}
 
