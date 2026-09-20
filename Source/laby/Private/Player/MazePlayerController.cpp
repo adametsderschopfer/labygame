@@ -3,6 +3,7 @@
 #include "Camera/PlayerCameraManager.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "UI/MazeWidgets.h"
+#include "UI/MazeInterfaceStyle.h"
 #include "UI/MazeExplorationMapWidget.h"
 #include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
@@ -31,6 +32,15 @@ void AMazePlayerController::BeginPlay()
 	{
 		PlayerCameraManager->ViewPitchMin = -55.f;
 		PlayerCameraManager->ViewPitchMax = 65.f;
+	}
+
+	if (auto* Viewport = GetWorld()->GetGameViewport();
+	    Viewport && GetLocalPlayer() == GetGameInstance()->GetFirstGamePlayer())
+	{
+		const TSharedRef<SWidget> Cursor = MazeInterfaceStyle::MakeCursor();
+
+		Viewport->SetSoftwareCursorWidget(EMouseCursor::Default, Cursor);
+		Viewport->SetSoftwareCursorWidget(EMouseCursor::Hand, Cursor);
 	}
 
 	ECSSubsystem = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
@@ -168,6 +178,14 @@ void AMazePlayerController::EndPlay(const EEndPlayReason::Type Reason)
 		ExplorationMap->RemoveFromParent();
 
 	ExplorationMap = nullptr;
+
+	if (IsLocalController() && GetLocalPlayer() == GetGameInstance()->GetFirstGamePlayer())
+		if (auto* Viewport = GetWorld()->GetGameViewport())
+		{
+			Viewport->SetSoftwareCursorWidget(EMouseCursor::Default, TSharedPtr<SWidget>());
+			Viewport->SetSoftwareCursorWidget(EMouseCursor::Hand, TSharedPtr<SWidget>());
+		}
+
 	ECSSubsystem = nullptr;
 	Super::EndPlay(Reason);
 }

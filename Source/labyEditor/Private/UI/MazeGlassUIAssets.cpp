@@ -1,5 +1,7 @@
 #include "UI/MazeWidgets.h"
 #include "UI/MazeText.h"
+#include "UI/MazeInterfaceStyle.h"
+#include "Sound/SoundBase.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Blueprint/WidgetTree.h"
 #include "Blueprint/WidgetBlueprintGeneratedClass.h"
@@ -36,12 +38,13 @@
 #include "UObject/SavePackage.h"
 #include "UObject/StrongObjectPtr.h"
 #include "WidgetBlueprint.h"
+#include "Widgets/SOverlay.h"
+#include "Widgets/Images/SImage.h"
+#include "Widgets/Layout/SBox.h"
 
-namespace MazeArcUI
+namespace MazeGlassUI
 {
-	const FLinearColor Ink(0.83f, 0.85f, 0.86f);
-	const FLinearColor Muted(0.39f, 0.43f, 0.46f);
-	const FLinearColor Accent(0.8f, 0.65f, 0.39f);
+	using namespace MazeInterfaceStyle;
 
 	bool Save(UObject* Asset)
 	{
@@ -57,102 +60,6 @@ namespace MazeArcUI
 		    FPackageName::LongPackageNameToFilename(Package->GetName(), FPackageName::GetAssetPackageExtension());
 
 		return UPackage::SavePackage(Package, Asset, *Filename, Args);
-	}
-
-	float Smooth(float A, float B, float V)
-	{
-		const float T = FMath::Clamp((V - A) / (B - A), 0.f, 1.f);
-
-		return T * T * (3.f - 2.f * T);
-	}
-
-	// Baked editor-only artwork: four UI textures, no runtime capture, blur, material tick or extra scene.
-	FLinearColor Art(int32 Kind, float U, float V)
-	{
-		if (Kind == 0)
-		{
-			const float X = (U - 0.73f) * 1.78f, Y = V - 0.46f;
-			const float R = FMath::Sqrt(X * X + Y * Y);
-			float Tone = 0.006f + 0.045f * FMath::Exp(-R * 3.4f);
-			// A quiet perspective relief of architectural ribs on the right.
-			const float Perspective = FMath::Atan2(Y, X);
-			const float Rib = FMath::Pow(FMath::Max(0.f, FMath::Cos(Perspective * 8.f + R * 17.f)), 26.f);
-
-			Tone += Rib * 0.035f * Smooth(0.42f, 0.8f, U);
-
-			const float Grain = FMath::Frac(FMath::Sin(U * 9452.f + V * 12932.f) * 43758.f);
-
-			Tone += Grain * 0.002f;
-
-			return FLinearColor(Tone * 0.92f, Tone, Tone * 1.08f, 1.f);
-		}
-
-		if (Kind == 1)
-		{
-			const float X = U - 0.06f, Y = V - 0.5f;
-			const float R = FMath::Sqrt(X * X + Y * Y);
-			const float Angle = FMath::Atan2(Y, X);
-			const float A = 1.f - Smooth(1.48f, 1.56f, FMath::Abs(Angle));
-			const float Outer = (1.f - Smooth(0.594f, 0.598f, R)) * Smooth(0.442f, 0.448f, R);
-			const float Inner = (1.f - Smooth(0.434f, 0.438f, R)) * Smooth(0.418f, 0.422f, R);
-			const float Rim = FMath::Exp(-FMath::Square((R - 0.59f) * 700.f));
-			const float InnerRim = FMath::Exp(-FMath::Square((R - 0.45f) * 640.f));
-			const float Brushed = FMath::Sin(R * 9500.f) * 0.003f;
-			float Tone = 0.055f + 0.12f * (1.f - V) + Rim * 0.35f + InnerRim * 0.09f + Brushed;
-			const float Notch = FMath::Frac((Angle + PI) / PI * 72.f);
-
-			if (R > 0.557f && R < 0.578f && Notch < 0.065f)
-				Tone *= 0.18f;
-
-			return FLinearColor(Tone * 0.94f, Tone, Tone * 1.04f, FMath::Max(Outer, Inner * 0.85f) * A);
-		}
-
-		const float Edge = Kind == 2 ? 0.29f + 0.15f * FMath::Sin(U * PI) : 0.23f + 0.24f * FMath::Sin(U * PI);
-		const float D = Edge - FMath::Abs(V - 0.5f);
-		const float Alpha = Smooth(0.f, 0.012f, D) * Smooth(0.f, 0.025f, U) * (1.f - Smooth(0.976f, 1.f, U));
-		const float Bevel = FMath::Exp(-FMath::Square((D - 0.018f) * 90.f));
-		float Tone = (Kind == 2 ? 0.15f : 0.045f) + (1.f - V) * 0.075f + Bevel * (V < 0.5f ? 0.25f : 0.06f);
-
-		Tone += FMath::Sin(V * 450.f) * 0.002f;
-
-		return FLinearColor(Tone * 0.94f, Tone, Tone * 1.03f, Alpha);
-	}
-
-	UTexture2D* Texture(const TCHAR* Name, int32 Kind, int32 Width, int32 Height)
-	{
-		const FString Path = FString(TEXT("/Game/UI/Arc/")) + Name;
-		auto* Result = LoadObject<UTexture2D>(nullptr, *Path);
-
-		if (Result)
-			return Result;
-
-		UPackage* Package = CreatePackage(*Path);
-
-		Result = NewObject<UTexture2D>(Package, Name, RF_Public | RF_Standalone | RF_Transactional);
-
-		TArray<FColor> Pixels;
-
-		Pixels.SetNumUninitialized(Width * Height);
-
-		for (int32 Y = 0; Y < Height; ++Y)
-			for (int32 X = 0; X < Width; ++X)
-				Pixels[Y * Width + X] = Art(Kind, (X + 0.5f) / Width, (Y + 0.5f) / Height).ToFColor(true);
-
-		Result->PreEditChange(nullptr);
-		Result->Source.Init(Width, Height, 1, 1, TSF_BGRA8, reinterpret_cast<const uint8*>(Pixels.GetData()));
-		Result->SRGB = true;
-		Result->CompressionSettings = TC_EditorIcon;
-		Result->LODGroup = TEXTUREGROUP_UI;
-		Result->MipGenSettings = TMGS_NoMipmaps;
-		Result->NeverStream = true;
-		Result->Filter = TF_Bilinear;
-		Result->PostEditChange();
-		FAssetRegistryModule::AssetCreated(Result);
-
-		if (!Save(Result))
-			UE_LOG(LogTemp, Error, TEXT("Laby arc texture save failed: %s"), *Path);
-
-		return Result;
 	}
 
 	FSlateBrush Brush(UTexture2D* Texture, FLinearColor Tint = FLinearColor::White)
@@ -199,12 +106,13 @@ namespace MazeArcUI
 		FSlateFontInfo Font = Widget->GetFont();
 
 		Font.Size = Size;
-		Font.TypefaceFontName = TEXT("Regular");
+		Font.TypefaceFontName = TEXT("Light");
+		Font.LetterSpacing = Size >= 24 ? 160 : 80;
 		Widget->SetFont(Font);
 		Widget->SetText(Text);
 		Widget->SetColorAndOpacity(Color);
 		Widget->SetShadowColorAndOpacity(FLinearColor(0, 0, 0, 0.5f));
-		Widget->SetShadowOffset(FVector2D(0, 2));
+		Widget->SetShadowOffset(FVector2D(0, 1));
 		Widget->SetVisibility(ESlateVisibility::HitTestInvisible);
 
 		return Widget;
@@ -224,42 +132,111 @@ namespace MazeArcUI
 		Place(Parent, Widget, Position, Size);
 	}
 
+	FSlateBrush Solid(FLinearColor Color)
+	{
+		FSlateBrush Result = *FCoreStyle::Get().GetBrush("WhiteBrush");
+
+		Result.TintColor = Color;
+
+		return Result;
+	}
+
+	void Rect(
+	    UWidgetTree* Tree, UCanvasPanel* Parent, const FString& Name, FVector2D P, FVector2D Size, FLinearColor Color)
+	{
+		auto* Item = Make<UImage>(Tree, *Name);
+
+		Item->SetBrush(Solid(Color));
+		Item->SetVisibility(ESlateVisibility::HitTestInvisible);
+		Place(Parent, Item, P, Size);
+	}
+
+	void Frame(UWidgetTree* Tree, UCanvasPanel* Parent, const FString& Name, FVector2D P, FVector2D Size)
+	{
+		Rect(Tree, Parent, Name + TEXT("Top"), P, {Size.X, 1}, Line);
+		Rect(Tree, Parent, Name + TEXT("Bottom"), P + FVector2D(0, Size.Y), {Size.X, 1}, Line);
+		Rect(Tree, Parent, Name + TEXT("Left"), P, {1, Size.Y}, Line);
+		Rect(Tree, Parent, Name + TEXT("Right"), P + FVector2D(Size.X, 0), {1, Size.Y}, Line);
+
+		for (int32 I = 0; I < 4; ++I)
+		{
+			const bool Right = (I & 1) != 0, Bottom = (I & 2) != 0;
+			const FVector2D Corner = P + FVector2D(Right ? Size.X : 0, Bottom ? Size.Y : 0);
+
+			Rect(Tree,
+			     Parent,
+			     Name + FString::Printf(TEXT("CornerH%d"), I),
+			     Corner - FVector2D(Right ? 16 : 0, 0),
+			     {16, 1},
+			     Ink);
+			Rect(Tree,
+			     Parent,
+			     Name + FString::Printf(TEXT("CornerV%d"), I),
+			     Corner - FVector2D(0, Bottom ? 16 : 0),
+			     {1, 16},
+			     Ink);
+		}
+	}
+
 	UButton* Button(UWidgetTree* Tree,
 	                UCanvasPanel* Parent,
 	                const TCHAR* Name,
 	                const FText& Text,
-	                UTexture2D* Plate,
+	                UTexture2D*,
 	                FVector2D Position,
 	                FVector2D Size,
-	                float Angle = 0.f)
+	                float = 0.f)
 	{
 		auto* Result = Make<UButton>(Tree, Name);
 		FButtonStyle Style;
 
-		Style.SetNormal(Brush(Plate, FLinearColor(0.68f, 0.71f, 0.74f)));
-		Style.SetHovered(Brush(Plate, FLinearColor(1.f, 0.88f, 0.67f)));
-		Style.SetPressed(Brush(Plate, FLinearColor(0.44f, 0.4f, 0.31f)));
-		Style.SetDisabled(Brush(Plate, FLinearColor(0.25f, 0.27f, 0.29f)));
-		Style.SetNormalForeground(Ink);
-		Style.SetHoveredForeground(FLinearColor::White);
-		Style.SetNormalPadding(FMargin(28, 10));
-		Style.SetPressedPadding(FMargin(30, 12, 26, 8));
+		Style.SetNormal(Solid(FLinearColor::Transparent));
+		Style.SetHovered(Solid(Accent.CopyWithNewOpacity(0.12f)));
+		Style.SetPressed(Solid(Accent.CopyWithNewOpacity(0.23f)));
+		Style.SetDisabled(Solid(FLinearColor::Transparent));
+		Style.SetNormalForeground(Ink).SetHoveredForeground(Accent).SetPressedForeground(Ink);
+		Style.SetDisabledForeground(Muted.CopyWithNewOpacity(0.45f));
+		Style.SetNormalPadding(FMargin(26, 8)).SetPressedPadding(FMargin(27, 9, 25, 7));
+
+		if (auto* Sound = LoadObject<USoundBase>(nullptr, TEXT("/Game/UI/Glass/S_UIHover")))
+		{
+			FSlateSound Hover;
+
+			Hover.SetResourceObject(Sound);
+			Style.SetHoveredSound(Hover);
+		}
+
+		if (auto* Sound = LoadObject<USoundBase>(nullptr, TEXT("/Game/UI/Glass/S_UIPress")))
+		{
+			FSlateSound Press;
+
+			Press.SetResourceObject(Sound);
+			Style.SetPressedSound(Press);
+		}
+
 		Result->SetStyle(Style);
+		Result->SetCursor(EMouseCursor::Hand);
 
-		auto* TextWidget = Label(Tree, *(FString(Name) + TEXT("Label")), Text, Size.X > 390 ? 28 : 21);
+		auto* TextWidget = Label(Tree, *(FString(Name) + TEXT("Label")), Text, Size.X > 390 ? 23 : 18);
 
+		TextWidget->SetColorAndOpacity(FSlateColor::UseForeground());
 		Result->SetContent(TextWidget);
-		CastChecked<UButtonSlot>(TextWidget->Slot)->SetHorizontalAlignment(HAlign_Center);
+		CastChecked<UButtonSlot>(TextWidget->Slot)->SetHorizontalAlignment(HAlign_Left);
 		CastChecked<UButtonSlot>(TextWidget->Slot)->SetVerticalAlignment(VAlign_Center);
-		Result->SetRenderTransformAngle(Angle);
 		Place(Parent, Result, Position, Size);
+		Rect(Tree,
+		     Parent,
+		     FString(Name) + TEXT("Rule"),
+		     Position + FVector2D(26, Size.Y - 1),
+		     {Size.X - 52, 1},
+		     Line.CopyWithNewOpacity(0.7f));
 
 		return Result;
 	}
 
 	void Caption(UWidgetTree* Tree, UCanvasPanel* Page, const TCHAR* Name, const FText& Text, float Y)
 	{
-		Place(Page, Label(Tree, Name, Text, 24), {0, Y + 8}, {475, 42});
+		Place(Page, Label(Tree, Name, Text.ToUpper(), 18), {0, Y + 8}, {485, 42});
 	}
 
 	UComboBoxString* Combo(UWidgetTree* Tree, UCanvasPanel* Page, const TCHAR* Name, float Y, TArray<FText> Options)
@@ -283,11 +260,11 @@ namespace MazeArcUI
 
 		FSlateBrush Base = *FCoreStyle::Get().GetBrush("WhiteBrush");
 
-		Base.TintColor = FLinearColor(0.033f, 0.041f, 0.047f);
+		Base.TintColor = Glass;
 
 		FSlateBrush Hover = Base;
 
-		Hover.TintColor = FLinearColor(0.11f, 0.1f, 0.077f);
+		Hover.TintColor = Accent.CopyWithNewOpacity(0.16f);
 
 		FComboBoxStyle Style = Widget->GetWidgetStyle();
 
@@ -316,7 +293,9 @@ namespace MazeArcUI
 			auto* Font = Property->ContainerPtrToValuePtr<FSlateFontInfo>(Widget);
 
 			*Font = GetDefault<UTextBlock>()->GetFont();
-			Font->Size = 21;
+			Font->Size = 18;
+			Font->TypefaceFontName = TEXT("Light");
+			Font->LetterSpacing = 60;
 		}
 
 		Place(Page, Widget, {500, Y}, {385, 55});
@@ -331,7 +310,12 @@ namespace MazeArcUI
 		FSlateBrush Off = *FCoreStyle::Get().GetBrush("WhiteBrush");
 
 		Off.ImageSize = FVector2D(20, 20);
-		Off.TintColor = FLinearColor(0.1f, 0.12f, 0.13f);
+		Off.TintColor = FLinearColor::Transparent;
+		Off.DrawAs = ESlateBrushDrawType::RoundedBox;
+		Off.OutlineSettings.CornerRadii = FVector4(2, 2, 2, 2);
+		Off.OutlineSettings.Color = Muted;
+		Off.OutlineSettings.Width = 1.f;
+		Off.OutlineSettings.RoundingType = ESlateBrushRoundingType::FixedRadius;
 
 		FSlateBrush On = Off;
 
@@ -339,15 +323,14 @@ namespace MazeArcUI
 
 		FSlateBrush Hover = Off;
 
-		Hover.TintColor = FLinearColor(0.35f, 0.31f, 0.23f);
+		Hover.TintColor = Muted;
 		Style.SetUncheckedImage(Off).SetUncheckedHoveredImage(Hover).SetUncheckedPressedImage(On);
 		Style.SetCheckedImage(On).SetCheckedHoveredImage(On).SetCheckedPressedImage(Hover);
 		Style.SetPadding(FMargin(8));
 		Widget->SetWidgetStyle(Style);
 
 		Widget->SetIsChecked(bChecked);
-		Widget->SetContent(
-		    Label(Tree, *(FString(Name) + TEXT("Label")), NSLOCTEXT("Maze.Arc", "Enabled", "Включено"), 21));
+
 		Place(Page, Widget, {620, Y}, {265, 55});
 	}
 
@@ -368,41 +351,38 @@ namespace MazeArcUI
 		Widget->SetMaxValue(Max);
 		Widget->SetStepSize(Step);
 		Widget->SetValue(Value);
-		Widget->SetSliderBarColor(FLinearColor(0.17f, 0.2f, 0.22f));
+		Widget->SetSliderBarColor(Line);
 		Widget->SetSliderHandleColor(Accent);
 		Place(Page, Widget, {500, Y + 8}, {275, 42});
-		Place(Page, Label(Tree, TextName, ValueText, 22, Accent), {798, Y + 6}, {102, 44});
+		Place(Page, Label(Tree, TextName, ValueText, 18, Accent), {798, Y + 6}, {102, 44});
 	}
 
 	void Settings(UWidgetTree* Tree, UCanvasPanel* Stage, UTexture2D* Plate)
 	{
-		Button(Tree,
-		       Stage,
-		       TEXT("VideoTabButton"),
-		       NSLOCTEXT("Maze.Arc", "Video", "ВИДЕО"),
-		       Plate,
-		       {210, 280},
-		       {355, 108},
-		       -9);
-		Button(Tree,
-		       Stage,
-		       TEXT("ControlsTabButton"),
-		       NSLOCTEXT("Maze.Arc", "Controls", "УПРАВЛЕНИЕ"),
-		       Plate,
-		       {295, 485},
-		       {355, 108});
-		Button(Tree,
-		       Stage,
-		       TEXT("GameTabButton"),
-		       NSLOCTEXT("Maze.Arc", "Game", "ИГРА"),
-		       Plate,
-		       {210, 690},
-		       {355, 108},
-		       9);
+		const TCHAR* Tabs[] = {TEXT("VideoTabButton"), TEXT("ControlsTabButton"), TEXT("GameTabButton")};
+		const FText Titles[] = {NSLOCTEXT("Maze.Glass", "Video", "ВИДЕО"),
+		                        NSLOCTEXT("Maze.Glass", "Controls", "УПРАВЛЕНИЕ"),
+		                        NSLOCTEXT("Maze.Glass", "Game", "ИГРА")};
+
+		for (int32 I = 0; I < 3; ++I)
+		{
+			Button(Tree, Stage, Tabs[I], Titles[I], Plate, {80, 308.0 + I * 76}, {370, 64});
+
+			auto* Indicator =
+			    Label(Tree, *(FString(Tabs[I]) + TEXT("Indicator")), FText::AsCultureInvariant(TEXT("›")), 28, Accent);
+
+			Place(Stage, Indicator, {60, 318.0 + I * 76}, {24, 38});
+			Indicator->SetVisibility(I == 0 ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden);
+		}
+
+		Rect(Tree, Stage, TEXT("SettingsGlass"), {570, 170}, {1270, 734}, Glass.CopyWithNewOpacity(0.65f));
+		Frame(Tree, Stage, TEXT("SettingsFrame"), {570, 170}, {1270, 734});
+		Place(Stage, Label(Tree, TEXT("SettingsSectionTitle"), Titles[0], 25), {640, 214}, {990, 50});
+		Rect(Tree, Stage, TEXT("SettingsTitleRule"), {640, 280}, {1110, 1}, Line);
 
 		auto* Pages = Make<UWidgetSwitcher>(Tree, TEXT("SettingsPages"));
 
-		Place(Stage, Pages, {805, 275}, {900, 555});
+		Place(Stage, Pages, {640, 330}, {1120, 540});
 
 		auto* Video = Make<UCanvasPanel>(Tree, TEXT("VideoPage"));
 		auto* Controls = Make<UCanvasPanel>(Tree, TEXT("ControlsPage"));
@@ -488,7 +468,7 @@ namespace MazeArcUI
 		            NSLOCTEXT("Maze.Arc",
 		                      "BindingsMovement",
 		                      "W A S D   Движение     /     SHIFT   Бег     /     SPACE   Прыжок"),
-		            21),
+		            18),
 		      {0, 300},
 		      {910, 50});
 		Place(
@@ -496,14 +476,14 @@ namespace MazeArcUI
 		    Label(Tree,
 		          TEXT("BindingsActions"),
 		          NSLOCTEXT("Maze.Arc", "BindingsActions", "CTRL   Присесть     /     L   Фонарик     /     M   Карта"),
-		          21),
+		          18),
 		    {0, 365},
 		    {910, 50});
 		Place(Controls,
 		      Label(Tree,
 		            TEXT("BindingsMenu"),
 		            NSLOCTEXT("Maze.Arc", "BindingsMenu", "ESC   Меню     /     TAB и ENTER   Выбор пункта"),
-		            21),
+		            18),
 		      {0, 430},
 		      {910, 50});
 
@@ -535,23 +515,18 @@ namespace MazeArcUI
 		          NSLOCTEXT("Maze.Arc", "SettingsStatus", "Изменения сохраняются кнопкой «Применить». Назад — отмена."),
 		          18,
 		          Muted),
-		    {805, 848},
-		    {975, 40});
+		    {640, 858},
+		    {1120, 38});
 		Button(Tree,
 		       Stage,
 		       TEXT("ApplyButton"),
 		       NSLOCTEXT("Maze.Arc", "Apply", "ПРИМЕНИТЬ"),
 		       Plate,
-		       {800, 900},
-		       {300, 84});
-		Button(Tree,
-		       Stage,
-		       TEXT("ResetButton"),
-		       NSLOCTEXT("Maze.Arc", "Reset", "ИСХОДНЫЕ"),
-		       Plate,
-		       {1120, 900},
-		       {300, 84});
-		Button(Tree, Stage, TEXT("BackButton"), NSLOCTEXT("Maze.Arc", "Back", "НАЗАД"), Plate, {1440, 900}, {300, 84});
+		       {1510, 980},
+		       {300, 58});
+		Button(
+		    Tree, Stage, TEXT("ResetButton"), NSLOCTEXT("Maze.Arc", "Reset", "ИСХОДНЫЕ"), Plate, {370, 980}, {300, 58});
+		Button(Tree, Stage, TEXT("BackButton"), NSLOCTEXT("Maze.Arc", "Back", "НАЗАД"), Plate, {80, 980}, {230, 58});
 	}
 
 	void SyncWidgetGuids(UWidgetBlueprint* Blueprint)
@@ -620,35 +595,44 @@ namespace MazeArcUI
 		Bounds->SetHeightOverride(1080);
 		Scale->SetContent(Bounds);
 
-		auto* Stage = Make<UCanvasPanel>(Tree, TEXT("ArcStage"));
+		auto* Stage = Make<UCanvasPanel>(Tree, TEXT("InterfaceStage"));
 
 		Bounds->SetContent(Stage);
-		Image(Tree,
-		      Stage,
-		      TEXT("ArcShell"),
-		      Shell,
-		      bSettings ? FVector2D(-180, -180) : FVector2D(-100, -180),
-		      {1440, 1440});
+		Rect(Tree, Stage, TEXT("MenuTint"), {0, 0}, {1920, 1080}, Glass.CopyWithNewOpacity(bSettings ? 0.38f : 0.15f));
+		Frame(Tree, Stage, TEXT("ScreenFrame"), {26, 26}, {1868, 1028});
+		Place(Stage, Label(Tree, TEXT("Title"), MazeText::Widget(TEXT("Title")), 50), {88, 74}, {460, 90});
+		Place(
+		    Stage,
+		    Label(Tree, TEXT("BrandSubtitle"), NSLOCTEXT("Maze.Glass", "BrandSubtitle", "Л А Б И Р И Н Т"), 12, Muted),
+		    {94, 163},
+		    {420, 28});
+		Rect(Tree, Stage, TEXT("FooterRule"), {48, 960}, {1824, 1}, Line);
 		Place(Stage,
-		      Label(Tree, TEXT("BrandMark"), FText::AsCultureInvariant(TEXT("L /")), 28, Accent),
-		      {92, 68},
-		      {200, 60});
-		Place(Stage,
-		      Label(Tree, TEXT("Subtitle"), MazeText::Subtitle(bSettings, bPause), 22, Muted),
-		      bSettings ? FVector2D(805, 160) : FVector2D(148, 585),
-		      {920, 50});
+		      Label(Tree, TEXT("VersionText"), MazeText::Widget(TEXT("VersionText")), 11, Muted),
+		      {1560, 1010},
+		      {250, 24});
 
 		if (bSettings)
 		{
 			Place(Stage,
-			      Label(Tree, TEXT("SettingsHeading"), NSLOCTEXT("Maze.Arc", "SettingsHeading", "НАСТРОЙКИ"), 54),
-			      {805, 80},
-			      {1000, 90});
+			      Label(Tree, TEXT("SettingsHeading"), NSLOCTEXT("Maze.Glass", "Settings", "НАСТРОЙКИ"), 27),
+			      {88, 231},
+			      {430, 50});
 			Settings(Tree, Stage, Plate);
+			Tree->FindWidget(TEXT("VersionText"))->SetVisibility(ESlateVisibility::Collapsed);
 		}
 		else
 		{
-			Place(Stage, Label(Tree, TEXT("Title"), MazeText::Widget(TEXT("Title")), 76), {142, 446}, {470, 120});
+			if (bPause)
+			{
+				Place(Stage,
+				      Label(Tree, TEXT("MenuHeading"), NSLOCTEXT("Maze.Glass", "Pause", "ПАУЗА"), 24),
+				      {88, 412},
+				      {540, 48});
+				Rect(Tree, Stage, TEXT("HeadingRule"), {88, 470}, {520, 1}, Line);
+			}
+
+			float Y = 512;
 
 			if (bPause)
 			{
@@ -657,33 +641,9 @@ namespace MazeArcUI
 				       TEXT("ResumeButton"),
 				       MazeText::Widget(TEXT("ResumeButtonLabel")),
 				       Plate,
-				       {605, 180},
-				       {515, 125},
-				       -12);
-				Button(Tree,
-				       Stage,
-				       TEXT("SettingsButton"),
-				       MazeText::Widget(TEXT("SettingsButtonLabel")),
-				       Plate,
-				       {800, 395},
-				       {515, 125},
-				       -4);
-				Button(Tree,
-				       Stage,
-				       TEXT("MainMenuButton"),
-				       NSLOCTEXT("Maze.Arc", "MainMenu", "ГЛАВНОЕ МЕНЮ"),
-				       Plate,
-				       {800, 610},
-				       {515, 125},
-				       4);
-				Button(Tree,
-				       Stage,
-				       TEXT("QuitButton"),
-				       MazeText::Widget(TEXT("QuitButtonLabel")),
-				       Plate,
-				       {605, 825},
-				       {515, 125},
-				       12);
+				       {88, Y},
+				       {540, 72});
+				Y += 88;
 			}
 			else
 			{
@@ -692,34 +652,43 @@ namespace MazeArcUI
 				       TEXT("NewGameButton"),
 				       MazeText::Widget(TEXT("NewGameButtonLabel")),
 				       Plate,
-				       {710, 260},
-				       {535, 130},
-				       -10);
-				Button(Tree,
-				       Stage,
-				       TEXT("SettingsButton"),
-				       MazeText::Widget(TEXT("SettingsButtonLabel")),
-				       Plate,
-				       {865, 475},
-				       {535, 130});
-				Button(Tree,
-				       Stage,
-				       TEXT("QuitButton"),
-				       MazeText::Widget(TEXT("QuitButtonLabel")),
-				       Plate,
-				       {710, 690},
-				       {535, 130},
-				       10);
+				       {88, Y},
+				       {540, 72});
+				Y += 88;
 			}
 
+			Button(Tree,
+			       Stage,
+			       TEXT("SettingsButton"),
+			       MazeText::Widget(TEXT("SettingsButtonLabel")),
+			       Plate,
+			       {88, Y},
+			       {540, 72});
+			Y += 88;
+
+			if (bPause)
+			{
+				Button(Tree,
+				       Stage,
+				       TEXT("MainMenuButton"),
+				       NSLOCTEXT("Maze.Glass", "Main", "ГЛАВНОЕ МЕНЮ"),
+				       Plate,
+				       {88, Y},
+				       {540, 72});
+				Y += 88;
+			}
+
+			Button(
+			    Tree, Stage, TEXT("QuitButton"), MazeText::Widget(TEXT("QuitButtonLabel")), Plate, {88, Y}, {540, 72});
 			Place(Stage,
 			      Label(Tree,
 			            TEXT("NavigationHint"),
-			            NSLOCTEXT("Maze.Arc", "Navigation", "TAB   ВЫБОР     /     ENTER   ПОДТВЕРДИТЬ"),
-			            17,
+			            NSLOCTEXT(
+			                "Maze.Glass", "Navigation", "TAB  ВЫБОР     /     ENTER  ПОДТВЕРДИТЬ     /     ESC  НАЗАД"),
+			            12,
 			            Muted),
-			      {112, 988},
-			      {1000, 40});
+			      {90, 1004},
+			      {1270, 32});
 		}
 
 		SyncWidgetGuids(Blueprint);
@@ -728,11 +697,11 @@ namespace MazeArcUI
 
 		if (Blueprint->Status != BS_Error && Save(Blueprint))
 		{
-			UE_LOG(LogTemp, Display, TEXT("Laby arc UI saved: %s"), *Blueprint->GetPathName());
+			UE_LOG(LogTemp, Display, TEXT("Laby glass UI saved: %s"), *Blueprint->GetPathName());
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("Laby arc UI compilation/save failed: %s"), *Blueprint->GetPathName());
+			UE_LOG(LogTemp, Error, TEXT("Laby glass UI compilation/save failed: %s"), *Blueprint->GetPathName());
 		}
 	}
 
@@ -782,32 +751,34 @@ namespace MazeArcUI
 
 		auto* Vitals = Make<UBorder>(Tree, TEXT("VitalsPanel"));
 
-		Vitals->SetBrush(Brush(Shell));
+		Vitals->SetBrush(Solid(Glass.CopyWithNewOpacity(0.36f)));
 		Vitals->SetPadding(FMargin(0));
-		Place(Content, Vitals, {30, -58}, {420, 158});
+		Place(Content, Vitals, {42, -66}, {352, 112});
 		Anchor(Vitals, {0, 1}, {0, 1});
 
 		auto* VitalsItems = Make<UCanvasPanel>(Tree, TEXT("VitalsItems"));
 
 		Vitals->SetContent(VitalsItems);
 
-		auto* Mark = Label(Tree, TEXT("VitalsMark"), FText::AsCultureInvariant(TEXT("I /")), 28, Accent);
-
-		Place(VitalsItems, Mark, {27, 63}, {46, 46});
-
 		for (int32 I = 0; I < 2; ++I)
 		{
 			const bool bHealth = I == 0;
 			const TCHAR* TextName = bHealth ? TEXT("HealthText") : TEXT("StaminaText");
-			auto* Caption = Label(Tree, TextName, MazeText::Widget(TextName), 12, Ink);
+			auto* Caption = Label(Tree, TextName, MazeText::Widget(TextName), 11, bHealth ? Ink : Accent);
 
-			Place(VitalsItems, Caption, {87, 38.0 + I * 49}, {288, 23});
+			Place(VitalsItems, Caption, {16, 12.0 + I * 50}, {242, 24});
+
+			const TCHAR* ValueName = bHealth ? TEXT("HealthValueText") : TEXT("StaminaValueText");
+			auto* Value = Label(Tree, ValueName, FText::AsNumber(100), 14, bHealth ? Ink : Accent);
+
+			Value->SetJustification(ETextJustify::Right);
+			Place(VitalsItems, Value, {272, 8.0 + I * 50}, {64, 28});
 
 			auto* Bar = Make<UProgressBar>(Tree, bHealth ? TEXT("HealthBar") : TEXT("StaminaBar"));
 			FProgressBarStyle Style;
 			FSlateBrush Track = *FCoreStyle::Get().GetBrush("WhiteBrush");
 
-			Track.TintColor = FLinearColor(0.025f, 0.03f, 0.032f);
+			Track.TintColor = Line.CopyWithNewOpacity(0.55f);
 			Style.SetBackgroundImage(Track);
 
 			FSlateBrush FillBrush = *FCoreStyle::Get().GetBrush("WhiteBrush");
@@ -815,9 +786,10 @@ namespace MazeArcUI
 			Style.SetFillImage(FillBrush);
 			Bar->SetWidgetStyle(Style);
 			Bar->SetBarFillStyle(EProgressBarFillStyle::Scale);
+			Bar->SetBorderPadding(FVector2D::ZeroVector);
 			Bar->SetPercent(1.f);
-			Bar->SetFillColorAndOpacity(bHealth ? FLinearColor(0.65f, 0.72f, 0.66f) : Accent);
-			Place(VitalsItems, Bar, {87, 65.0 + I * 49}, {278, 4});
+			Bar->SetFillColorAndOpacity(bHealth ? Ink : Accent);
+			Place(VitalsItems, Bar, {16, 40.0 + I * 50}, {320, 3});
 		}
 
 		auto* Hint = Label(
@@ -853,29 +825,30 @@ namespace MazeArcUI
 		{
 			auto* Panel = Make<UBorder>(Tree, bDeath ? TEXT("DeathPanel") : TEXT("ExitPanel"));
 
-			Panel->SetBrush(Brush(Shell));
+			Panel->SetBrush(Solid(Glass));
 			Panel->SetPadding(FMargin(0));
-			Place(Content, Panel, {0, 0}, {680, 188});
+			Place(Content, Panel, {0, 0}, {720, 214});
 			Anchor(Panel, {0.5, 0.5}, {0.5, 0.5});
 
 			auto* Items = Make<UCanvasPanel>(Tree, bDeath ? TEXT("DeathItems") : TEXT("ExitItems"));
 
 			Panel->SetContent(Items);
+			Frame(Tree, Items, bDeath ? TEXT("DeathFrame") : TEXT("ExitFrame"), {0, 0}, {720, 214});
 
 			auto* Title = Label(Tree,
 			                    bDeath ? TEXT("DeathText") : TEXT("ExitText"),
 			                    MazeText::Widget(bDeath ? TEXT("DeathText") : TEXT("ExitText")),
 			                    30,
-			                    bDeath ? FLinearColor(0.8f, 0.39f, 0.28f) : Ink);
+			                    bDeath ? Ink : Accent);
 
 			Title->SetJustification(ETextJustify::Center);
-			Place(Items, Title, {50, 58}, {580, 49});
+			Place(Items, Title, {40, 64}, {640, 49});
 
 			auto* Message = Label(
 			    Tree, bDeath ? TEXT("DeathHint") : TEXT("ExitHint"), MazeText::Widget(TEXT("DeathHint")), 13, Muted);
 
 			Message->SetJustification(ETextJustify::Center);
-			Place(Items, Message, {50, 114}, {580, 26});
+			Place(Items, Message, {40, 136}, {640, 26});
 			Panel->SetVisibility(ESlateVisibility::Collapsed);
 		}
 
@@ -890,11 +863,11 @@ namespace MazeArcUI
 			if (Default)
 			{
 				Default->StaminaColor = Accent;
-				Default->ExhaustedColor = FLinearColor(0.9f, 0.35f, 0.2f);
+				Default->ExhaustedColor = Muted;
 			}
 
 			if (Save(Blueprint))
-				UE_LOG(LogTemp, Display, TEXT("Laby arc HUD rebuilt and saved."));
+				UE_LOG(LogTemp, Display, TEXT("Laby glass HUD rebuilt and saved."));
 		}
 	}
 
@@ -940,7 +913,7 @@ namespace MazeArcUI
 		if (auto* Slot = Cast<UCanvasPanelSlot>(Full->Slot))
 		{
 			Slot->SetAnchors(FAnchors(0, 0, 1, 1));
-			Slot->SetOffsets(FMargin(40));
+			Slot->SetOffsets(FMargin(26));
 		}
 
 		SyncWidgetGuids(Blueprint);
@@ -948,22 +921,33 @@ namespace MazeArcUI
 		FKismetEditorUtilities::CompileBlueprint(Blueprint);
 
 		if (Blueprint->Status != BS_Error && Save(Blueprint))
-			UE_LOG(LogTemp, Display, TEXT("Laby arc exploration map bounds saved."));
+			UE_LOG(LogTemp, Display, TEXT("Laby glass exploration map bounds saved."));
 	}
 
 	void Apply()
 	{
 		if (!GEditor || GEditor->PlayWorld)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Laby arc UI authoring is editor-only and does not run during Play."));
+			UE_LOG(LogTemp, Warning, TEXT("Laby glass UI authoring is editor-only and does not run during Play."));
 
 			return;
 		}
 
-		UTexture2D* Backdrop = Texture(TEXT("T_MenuBackdrop"), 0, 1024, 576);
-		UTexture2D* Shell = Texture(TEXT("T_ArcShell"), 1, 1024, 1024);
-		UTexture2D* Plate = Texture(TEXT("T_ArcButton"), 2, 512, 128);
-		UTexture2D* HUDShell = Texture(TEXT("T_HUDShell"), 3, 512, 256);
+		UTexture2D* Backdrop = LoadObject<UTexture2D>(nullptr, TEXT("/Game/UI/Glass/T_MenuBackdrop"));
+
+		if (!Backdrop)
+		{
+			UE_LOG(LogTemp,
+			       Error,
+			       TEXT("Import ArtSource/UI/Glass/MenuBackdrop.png as /Game/UI/Glass/T_MenuBackdrop first."));
+
+			return;
+		}
+
+		UTexture2D* Shell = nullptr;
+		UTexture2D* Plate = nullptr;
+		UTexture2D* HUDShell = nullptr;
+
 		const TCHAR* Names[] = {TEXT("WBP_MainMenu"), TEXT("WBP_PauseMenu"), TEXT("WBP_Settings")};
 
 		for (int32 I = 0; I < UE_ARRAY_COUNT(Names); ++I)
@@ -972,7 +956,7 @@ namespace MazeArcUI
 
 			if (!Blueprint)
 			{
-				UE_LOG(LogTemp, Error, TEXT("Laby arc UI asset missing: %s"), Names[I]);
+				UE_LOG(LogTemp, Error, TEXT("Laby glass UI asset missing: %s"), Names[I]);
 				continue;
 			}
 
@@ -989,10 +973,51 @@ namespace MazeArcUI
 		if (!GEditor || GEditor->PlayWorld)
 			return;
 
-		const FString Folder = FPaths::ProjectSavedDir() / TEXT("UI/ArcPreview");
+		const FString Folder = FPaths::ProjectSavedDir() / TEXT("UI/GlassPreview");
 
 		IFileManager::Get().MakeDirectory(*Folder, true);
 
+		const auto Render = [&](const TCHAR* Name, TSharedRef<SWidget> Widget, FVector2D Size)
+		{
+			FWidgetRenderer Renderer(false);
+			TStrongObjectPtr<UTextureRenderTarget2D> Target(NewObject<UTextureRenderTarget2D>());
+			Target->ClearColor = FLinearColor::Transparent;
+			Target->InitCustomFormat(FMath::RoundToInt(Size.X), FMath::RoundToInt(Size.Y), PF_FloatRGBA, true);
+			Target->UpdateResourceImmediate(true);
+			Renderer.DrawWidget(Target.Get(), Widget, Size, 0.f);
+
+			// ScaleBox caches its allocated size during arrangement. Paint a second
+			// layout pass so smaller previews include the same fitted layout as a viewport.
+			Widget->Invalidate(EInvalidateWidgetReason::Layout);
+			Renderer.DrawWidget(Target.Get(), Widget, Size, 0.f);
+
+			// Keep linear light at float precision until encoding display sRGB once.
+			// An 8-bit linear target loses shadow detail in the dark glass/backdrop.
+			TArray<FFloat16Color> LinearPixels;
+			TArray<FColor> Pixels;
+			TArray64<uint8> Bytes;
+
+			if (Target->GameThread_GetRenderTargetResource()->ReadFloat16Pixels(LinearPixels))
+			{
+				Pixels.Reserve(LinearPixels.Num());
+
+				for (const FFloat16Color& Pixel : LinearPixels)
+					Pixels.Add(FLinearColor(Pixel).ToFColorSRGB());
+
+				FImageUtils::PNGCompressImageArray(Target->SizeX, Target->SizeY, Pixels, Bytes);
+
+				if (!Bytes.IsEmpty() && FFileHelper::SaveArrayToFile(Bytes, *(Folder / (FString(Name) + TEXT(".png")))))
+				{
+					UE_LOG(LogTemp, Display, TEXT("Laby glass static preview: %s"), Name);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("Laby glass preview could not be saved: %s"), Name);
+				}
+			}
+		};
+		UTexture2D* Backdrop = LoadObject<UTexture2D>(nullptr, TEXT("/Game/UI/Glass/T_MenuBackdrop"));
+		const FSlateBrush BackgroundBrush = Brush(Backdrop);
 		const TCHAR* Names[] = {TEXT("WBP_MainMenu"),
 		                        TEXT("WBP_PauseMenu"),
 		                        TEXT("WBP_Settings"),
@@ -1000,12 +1025,17 @@ namespace MazeArcUI
 		                        TEXT("SettingsGame"),
 		                        TEXT("WBP_HUD"),
 		                        TEXT("WBP_ExplorationMap"),
-		                        TEXT("Minimap")};
+		                        TEXT("Minimap"),
+		                        TEXT("Death"),
+		                        TEXT("Exit"),
+		                        TEXT("MainMenu1280")};
 
 		for (int32 I = 0; I < UE_ARRAY_COUNT(Names); ++I)
 		{
 			const TCHAR* AssetName = I == 3 || I == 4 ? TEXT("WBP_Settings")
 			                         : I == 7         ? TEXT("WBP_ExplorationMap")
+			                         : I == 10        ? TEXT("WBP_MainMenu")
+			                         : I >= 8         ? TEXT("WBP_HUD")
 			                                          : Names[I];
 			UClass* Class =
 			    LoadClass<UUserWidget>(nullptr, *FString::Printf(TEXT("/Game/UI/%s.%s_C"), AssetName, AssetName));
@@ -1015,52 +1045,89 @@ namespace MazeArcUI
 
 			TStrongObjectPtr<UUserWidget> Widget(NewObject<UUserWidget>(GetTransientPackage(), Class));
 
-			if (I >= 6)
-				Widget->SetDesignerFlags(EWidgetDesignFlags::Designing);
-
+			Widget->SetDesignerFlags(EWidgetDesignFlags::Designing);
 			Widget->Initialize();
+
+			if (I >= 2 && I <= 4)
+			{
+				const int32 Page = I - 2;
+
+				CastChecked<UWidgetSwitcher>(Widget->GetWidgetFromName(TEXT("SettingsPages")))
+				    ->SetActiveWidgetIndex(Page);
+
+				const TCHAR* Tabs[] = {TEXT("VideoTabButton"), TEXT("ControlsTabButton"), TEXT("GameTabButton")};
+				const FText Titles[] = {NSLOCTEXT("Maze.Glass", "Video", "ВИДЕО"),
+				                        NSLOCTEXT("Maze.Glass", "Controls", "УПРАВЛЕНИЕ"),
+				                        NSLOCTEXT("Maze.Glass", "Game", "ИГРА")};
+
+				CastChecked<UTextBlock>(Widget->GetWidgetFromName(TEXT("SettingsSectionTitle")))->SetText(Titles[Page]);
+
+				for (int32 Tab = 0; Tab < 3; ++Tab)
+				{
+					CastChecked<UTextBlock>(Widget->GetWidgetFromName(*(FString(Tabs[Tab]) + TEXT("Label"))))
+					    ->SetColorAndOpacity(Tab == Page ? Accent : Ink);
+					Widget->GetWidgetFromName(*(FString(Tabs[Tab]) + TEXT("Indicator")))
+					    ->SetVisibility(Tab == Page ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden);
+				}
+
+				for (const TCHAR* ComboName : {TEXT("QualityCombo"), TEXT("ShadowsCombo"), TEXT("FrameLimitCombo")})
+					CastChecked<UComboBoxString>(Widget->GetWidgetFromName(ComboName))->SetSelectedIndex(2);
+			}
+
+			if (I == 8 || I == 9)
+				Widget->GetWidgetFromName(I == 8 ? TEXT("DeathPanel") : TEXT("ExitPanel"))
+				    ->SetVisibility(ESlateVisibility::HitTestInvisible);
+
+			// Designer visibility normally ignores runtime Collapsed/Hidden. Respect the
+			// chosen preview state on these transient instances, without altering assets.
+			Widget->WidgetTree->ForEachWidget(
+			    [](UWidget* Item)
+			    {
+				    Item->bHiddenInDesigner = Item->GetVisibility() == ESlateVisibility::Collapsed ||
+				                              Item->GetVisibility() == ESlateVisibility::Hidden;
+			    });
 
 			const TSharedRef<SWidget> SlateWidget = Widget->TakeWidget();
 
-			if (I == 3 || I == 4)
-			{
-				auto* Pages = Cast<UWidgetSwitcher>(Widget->GetWidgetFromName(TEXT("SettingsPages")));
-
-				if (Pages)
-					Pages->SetActiveWidgetIndex(I - 2);
-
-				const TCHAR* Tabs[] = {TEXT("VideoTabButton"), TEXT("ControlsTabButton"), TEXT("GameTabButton")};
-
-				for (int32 Tab = 0; Tab < 3; ++Tab)
-					if (auto* Button = Cast<UButton>(Widget->GetWidgetFromName(Tabs[Tab])))
-						Button->SetBackgroundColor(Tab == I - 2 ? FLinearColor(0.8f, 0.68f, 0.45f)
-						                                        : FLinearColor(0.48f, 0.51f, 0.54f));
-			}
-
 			Widget->ForceLayoutPrepass();
 
-			// A fresh widget per view avoids stale ScaleBox/invalidation geometry across virtual windows.
-			FWidgetRenderer Renderer(false);
-			const FVector2D Size = I == 7 ? FVector2D(640, 640) : FVector2D(1920, 1080);
-			TStrongObjectPtr<UTextureRenderTarget2D> Target(Renderer.DrawWidget(SlateWidget, Size));
-			FBufferArchive Bytes;
+			const FVector2D Size = I == 7    ? FVector2D(640, 640)
+			                       : I == 10 ? FVector2D(1280, 720)
+			                                 : FVector2D(1920, 1080);
+			const TSharedRef<SOverlay> Surface =
+			    SNew(SOverlay) + SOverlay::Slot()[SNew(SImage).Image(&BackgroundBrush)] + SOverlay::Slot()[SlateWidget];
+			TStrongObjectPtr<UUserWidget> Mini;
 
-			if (Target.IsValid() && FImageUtils::ExportRenderTarget2DAsPNG(Target.Get(), Bytes))
+			if (I == 5)
 			{
-				FFileHelper::SaveArrayToFile(Bytes, *(Folder / (FString(Names[I]) + TEXT(".png"))));
-				UE_LOG(LogTemp, Display, TEXT("Laby arc static preview: %s"), Names[I]);
+				UClass* MapClass =
+				    LoadClass<UUserWidget>(nullptr, TEXT("/Game/UI/WBP_ExplorationMap.WBP_ExplorationMap_C"));
+
+				Mini.Reset(NewObject<UUserWidget>(GetTransientPackage(), MapClass));
+				Mini->SetDesignerFlags(EWidgetDesignFlags::Designing);
+				Mini->Initialize();
+				Surface->AddSlot()
+				    .HAlign(HAlign_Right)
+				    .VAlign(VAlign_Bottom)[SNew(SBox).WidthOverride(640).HeightOverride(640)[Mini->TakeWidget()]];
 			}
 
+			Render(Names[I], Surface, Size);
+
 			Widget->ReleaseSlateResources(true);
+
+			if (Mini.IsValid())
+				Mini->ReleaseSlateResources(true);
 		}
+
+		Render(TEXT("Loading"), MazeInterfaceStyle::MakeLoadingScreen(), {1920, 1080});
 	}
 
 	FAutoConsoleCommand ApplyCommand(
-	    TEXT("laby.UI.ApplyArcStyle"),
-	    TEXT("Explicitly author the arc menu Widget Blueprints and restyle the existing HUD. Does not start Play."),
+	    TEXT("laby.UI.ApplyGlassStyle"),
+	    TEXT("Explicitly author the glass menu Widget Blueprints and restyle the existing HUD. Does not start Play."),
 	    FConsoleCommandDelegate::CreateStatic(&Apply));
 	FAutoConsoleCommand PreviewCommand(
-	    TEXT("laby.UI.PreviewArcStyle"),
-	    TEXT("Render menu designer previews into Saved/UI/ArcPreview without starting gameplay."),
+	    TEXT("laby.UI.PreviewGlassStyle"),
+	    TEXT("Render menu designer previews into Saved/UI/GlassPreview without starting gameplay."),
 	    FConsoleCommandDelegate::CreateStatic(&Preview));
 }

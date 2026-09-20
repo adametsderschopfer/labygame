@@ -3,34 +3,34 @@
 
 namespace
 {
-	const TCHAR* Section = TEXT("Maze.InterfacePreferences");
+	const TCHAR* InterfacePreferencesSection = TEXT("Maze.InterfacePreferences");
 }
 
 FMazeInterfacePreferences FMazeInterfacePreferences::Read()
 {
 	FMazeInterfacePreferences Value;
 
-	GConfig->GetFloat(Section, TEXT("FieldOfView"), Value.FieldOfView, GGameUserSettingsIni);
+	GConfig->GetFloat(InterfacePreferencesSection, TEXT("FieldOfView"), Value.FieldOfView, GGameUserSettingsIni);
 	Value.FieldOfView = FMath::IsFinite(Value.FieldOfView) ? FMath::Clamp(Value.FieldOfView, 70.f, 110.f) : 95.f;
-	GConfig->GetBool(Section, TEXT("InvertMouseY"), Value.bInvertMouseY, GGameUserSettingsIni);
-	GConfig->GetBool(Section, TEXT("ShowCompass"), Value.bShowCompass, GGameUserSettingsIni);
-	GConfig->GetBool(Section, TEXT("ShowCrosshair"), Value.bShowCrosshair, GGameUserSettingsIni);
-	GConfig->GetBool(Section, TEXT("CompactHUD"), Value.bCompactHUD, GGameUserSettingsIni);
-	GConfig->GetBool(Section, TEXT("CameraMotion"), Value.bCameraMotion, GGameUserSettingsIni);
+	GConfig->GetBool(InterfacePreferencesSection, TEXT("InvertMouseY"), Value.bInvertMouseY, GGameUserSettingsIni);
+	GConfig->GetBool(InterfacePreferencesSection, TEXT("ShowCompass"), Value.bShowCompass, GGameUserSettingsIni);
+	GConfig->GetBool(InterfacePreferencesSection, TEXT("ShowCrosshair"), Value.bShowCrosshair, GGameUserSettingsIni);
+	GConfig->GetBool(InterfacePreferencesSection, TEXT("CompactHUD"), Value.bCompactHUD, GGameUserSettingsIni);
+	GConfig->GetBool(InterfacePreferencesSection, TEXT("CameraMotion"), Value.bCameraMotion, GGameUserSettingsIni);
 
 	return Value;
 }
 
 void FMazeInterfacePreferences::Save() const
 {
-	GConfig->SetFloat(Section,
+	GConfig->SetFloat(InterfacePreferencesSection,
 	                  TEXT("FieldOfView"),
 	                  FMath::IsFinite(FieldOfView) ? FMath::Clamp(FieldOfView, 70.f, 110.f) : 95.f,
 	                  GGameUserSettingsIni);
-	GConfig->SetBool(Section, TEXT("InvertMouseY"), bInvertMouseY, GGameUserSettingsIni);
-	GConfig->SetBool(Section, TEXT("ShowCompass"), bShowCompass, GGameUserSettingsIni);
-	GConfig->SetBool(Section, TEXT("ShowCrosshair"), bShowCrosshair, GGameUserSettingsIni);
-	GConfig->SetBool(Section, TEXT("CompactHUD"), bCompactHUD, GGameUserSettingsIni);
-	GConfig->SetBool(Section, TEXT("CameraMotion"), bCameraMotion, GGameUserSettingsIni);
+	GConfig->SetBool(InterfacePreferencesSection, TEXT("InvertMouseY"), bInvertMouseY, GGameUserSettingsIni);
+	GConfig->SetBool(InterfacePreferencesSection, TEXT("ShowCompass"), bShowCompass, GGameUserSettingsIni);
+	GConfig->SetBool(InterfacePreferencesSection, TEXT("ShowCrosshair"), bShowCrosshair, GGameUserSettingsIni);
+	GConfig->SetBool(InterfacePreferencesSection, TEXT("CompactHUD"), bCompactHUD, GGameUserSettingsIni);
+	GConfig->SetBool(InterfacePreferencesSection, TEXT("CameraMotion"), bCameraMotion, GGameUserSettingsIni);
 	GConfig->Flush(false, GGameUserSettingsIni);
 }

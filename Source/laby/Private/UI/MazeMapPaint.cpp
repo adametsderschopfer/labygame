@@ -1,16 +1,94 @@
 #include "MazeMapPaint.h"
 #include "Maze/MazeLayout.h"
+#include "UI/MazeInterfaceStyle.h"
 #include "Fonts/FontMeasure.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Rendering/DrawElements.h"
 #include "Rendering/SlateRenderer.h"
 #include "Styling/CoreStyle.h"
 
+namespace
+{
+	// A schematic floor ribbon for one known cell. Open sides meet their neighbours
+	// without internal seams; inset walls leave a readable dark gutter between rooms.
+	void CorridorContour(uint8 Walls, float Step, TArray<FVector2D>& Points)
+	{
+		const double R = Step * 0.34;
+		const double H = Step * 0.5;
+		const double Bevel = FMath::Min(Step * 0.07, 3.0);
+		TArray<FVector2D, TInlineAllocator<16>> Corners;
+
+		Corners.Add({-R, -R});
+
+		if (!(Walls & 1))
+		{
+			Corners.Add({-R, -H});
+			Corners.Add({R, -H});
+		}
+
+		Corners.Add({R, -R});
+
+		if (!(Walls & 2))
+		{
+			Corners.Add({H, -R});
+			Corners.Add({H, R});
+		}
+
+		Corners.Add({R, R});
+
+		if (!(Walls & 4))
+		{
+			Corners.Add({R, H});
+			Corners.Add({-R, H});
+		}
+
+		Corners.Add({-R, R});
+
+		if (!(Walls & 8))
+		{
+			Corners.Add({-H, R});
+			Corners.Add({-H, -R});
+		}
+
+		Points.Reset();
+
+		for (int32 I = 0; I < Corners.Num(); ++I)
+		{
+			const FVector2D P = Corners[I];
+
+			if (FMath::IsNearlyEqual(FMath::Abs(P.X), H) || FMath::IsNearlyEqual(FMath::Abs(P.Y), H))
+			{
+				Points.Add(P);
+				continue;
+			}
+
+			const FVector2D Before = (Corners[(I + Corners.Num() - 1) % Corners.Num()] - P).GetSafeNormal();
+			const FVector2D After = (Corners[(I + 1) % Corners.Num()] - P).GetSafeNormal();
+
+			if (FVector2D::DotProduct(Before, After) < -0.99)
+				Points.Add(P);
+			else
+			{
+				Points.Add(P + Before * Bevel);
+				Points.Add(P + After * Bevel);
+			}
+		}
+	}
+}
+
 FSlateRect MazeMapContentRect(const FMazeMapPaintView& View)
 {
-	const FVector2D Inset = View.bFull ? FVector2D(36, 88) : FVector2D(28, 28);
+	if (!View.bFull)
+		return FSlateRect(View.Origin + FVector2D(24, 24), View.Origin + View.Size - FVector2D(24, 24));
 
-	return FSlateRect(View.Origin + Inset, View.Origin + View.Size - Inset);
+	const float Sidebar = FMath::Clamp(float(View.Size.X * 0.24), 190.f, 350.f);
+	const float Width = FMath::Max(64.f, float(View.Size.X) - Sidebar - 100.f);
+	const float Height = FMath::Max(64.f, float(View.Size.Y) - 170.f);
+	const float Side = FMath::Min(Width, Height);
+	const FVector2D Origin =
+	    View.Origin + FVector2D(Sidebar + 50.f + (Width - Side) * 0.5f, 45.f + (Height - Side) * 0.5f);
+
+	return FSlateRect(Origin, Origin + FVector2D(Side, Side));
 }
 
 int32 PaintMazeMap(const FGeometry& Geometry,
@@ -19,10 +97,12 @@ int32 PaintMazeMap(const FGeometry& Geometry,
                    const FLinearColor& Tint,
                    const FMazeMapPaintView& View)
 {
-	const FLinearColor Ink(0.7f, 0.73f, 0.73f), Muted(0.29f, 0.32f, 0.33f);
-	const FLinearColor Accent(0.86f, 0.65f, 0.32f), Wall(0.42f, 0.46f, 0.47f);
-	const FLinearColor StartColor(0.38f, 0.58f, 0.66f), ExitColor(0.5f, 0.7f, 0.52f);
-	const FLinearColor Danger(0.74f, 0.34f, 0.22f);
+	using namespace MazeInterfaceStyle;
+
+	const FLinearColor Wall = Ink.CopyWithNewOpacity(0.48f);
+	const FLinearColor StartColor = Muted, ExitColor = Accent;
+	const FLinearColor Danger = Ink;
+
 	const FSlateRect Content = MazeMapContentRect(View);
 	const FVector2D MapOrigin(Content.Left, Content.Top),
 	    MapSize(Content.Right - Content.Left, Content.Bottom - Content.Top);
@@ -47,9 +127,60 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 		FSlateDrawElement::MakeLines(
 		    Elements, Layer, Geometry.ToPaintGeometry(), Points, ESlateDrawEffect::None, Color * Tint, true, Width);
 	};
-	auto Line = [&](FVector2D A, FVector2D B, FLinearColor Color, float Width = 1.f)
+	auto Stroke = [&](FVector2D A, FVector2D B, FLinearColor Color, float Width = 1.f)
 	{
 		Path({A, B}, Color, Width);
+	};
+	const auto Resource =
+	    FSlateApplication::Get().GetRenderer()->GetResourceHandle(*FCoreStyle::Get().GetBrush("WhiteBrush"));
+	TArray<FSlateVertex> Vertices;
+	TArray<SlateIndex> Indices;
+
+	Vertices.Reserve(4096);
+	Indices.Reserve(12288);
+
+	const auto FlushPolygons = [&](int32 DrawLayer)
+	{
+		if (Indices.IsEmpty())
+			return;
+
+		FSlateDrawElement::MakeCustomVerts(Elements, DrawLayer, Resource, Vertices, Indices, nullptr, 0, 0);
+		Vertices.Reset();
+		Indices.Reset();
+	};
+	// Every contour here is star-shaped about Pivot. Batch the triangle fans so a
+	// zoomed-out map needs neither a draw element per cell nor a SceneCapture.
+	const auto Polygon = [&](FVector2D Pivot,
+	                         const TArray<FVector2D>& Points,
+	                         FLinearColor Color,
+	                         int32 DrawLayer,
+	                         float EdgeOpacity = 1.f)
+	{
+		if (Vertices.Num() + Points.Num() + 1 > 60000)
+			FlushPolygons(DrawLayer);
+
+		const SlateIndex Base = Vertices.Num();
+		const auto Vertex = [&](FVector2D P, float Opacity)
+		{
+			FLinearColor VertexColor = Color * Tint;
+			VertexColor.A *= Opacity;
+
+			return FSlateVertex::Make<ESlateVertexRounding::Disabled>(Geometry.GetAccumulatedRenderTransform(),
+			                                                          FVector2f(P),
+			                                                          FVector2f::ZeroVector,
+			                                                          VertexColor.ToFColorSRGB());
+		};
+		Vertices.Add(Vertex(Pivot, 1.f));
+
+		for (const FVector2D& P : Points)
+			Vertices.Add(Vertex(P, EdgeOpacity));
+
+		for (int32 I = 0; I < Points.Num(); ++I)
+		{
+			Indices.Add(Base);
+			Indices.Add(Base + 1 + I);
+			Indices.Add(Base + 1 + (I + 1) % Points.Num());
+		}
 	};
 	auto Text = [&](const FText& Value,
 	                FVector2D P,
@@ -58,7 +189,7 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 	                bool bCentered = false,
 	                float MaxWidth = 0.f)
 	{
-		FSlateFontInfo Font = FCoreStyle::GetDefaultFontStyle("Regular", FontSize);
+		FSlateFontInfo Font = MazeInterfaceStyle::Font(FontSize, 80);
 		FVector2D Extent = Measure->Measure(Value, Font);
 
 		if (MaxWidth > 0 && Extent.X > MaxWidth)
@@ -95,15 +226,15 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 	++Layer;
 
 	if (View.bFull)
-		Box(FVector2D::ZeroVector, Geometry.GetLocalSize(), FLinearColor(0.004f, 0.006f, 0.008f, 0.94f));
+	{
+		Box(FVector2D::ZeroVector, Geometry.GetLocalSize(), Glass.CopyWithNewOpacity(0.94f));
+		Outline(View.Origin, View.Size, MazeInterfaceStyle::Line);
+	}
+	else
+		Box(View.Origin, View.Size, Glass.CopyWithNewOpacity(0.8f));
 
-	Box(View.Origin + FVector2D(4, 7), View.Size, FLinearColor(0, 0, 0, 0.65f));
-	Box(View.Origin, View.Size, FLinearColor(0.028f, 0.032f, 0.035f, 0.98f));
-	Box(View.Origin + FVector2D(2, 2), View.Size - FVector2D(4, 4), FLinearColor(0.013f, 0.016f, 0.019f, 0.98f));
-	Outline(View.Origin, View.Size, Muted, 9);
-	Line(
-	    View.Origin + FVector2D(11, 1), View.Origin + FVector2D(View.Size.X - 11, 1), FLinearColor(0.46f, 0.49f, 0.5f));
-	Box(MapOrigin, MapSize, FLinearColor(0.006f, 0.009f, 0.011f));
+	Outline(View.Origin, View.Size, MazeInterfaceStyle::Line, View.bFull ? 0 : 6);
+	Box(MapOrigin, MapSize, Glass.CopyWithNewOpacity(0.7f));
 
 	++Layer;
 	Elements.PushClip(FSlateClippingZone(Geometry.MakeChild(MapSize, FSlateLayoutTransform(MapOrigin))));
@@ -113,12 +244,12 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 
 	for (float X = MapOrigin.X + FMath::Fmod(FMath::Fmod(Offset.X - MapOrigin.X, Grid) + Grid, Grid); X < Content.Right;
 	     X += Grid)
-		Line({X, Content.Top}, {X, Content.Bottom}, FLinearColor(0.016f, 0.021f, 0.024f));
+		Stroke({X, Content.Top}, {X, Content.Bottom}, MazeInterfaceStyle::Line.CopyWithNewOpacity(0.24f));
 
 	for (float Y = MapOrigin.Y + FMath::Fmod(FMath::Fmod(Offset.Y - MapOrigin.Y, Grid) + Grid, Grid);
 	     Y < Content.Bottom;
 	     Y += Grid)
-		Line({Content.Left, Y}, {Content.Right, Y}, FLinearColor(0.016f, 0.021f, 0.024f));
+		Stroke({Content.Left, Y}, {Content.Right, Y}, MazeInterfaceStyle::Line.CopyWithNewOpacity(0.24f));
 
 	const FMazeLayout* Layout = View.Layout;
 	auto Seen = [&](int32 Index)
@@ -133,7 +264,17 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 		const int32 MaxX = FMath::Clamp(FMath::CeilToInt((Content.Right - Offset.X) / View.Step), 0, Layout->Size - 1);
 		const int32 MaxY = FMath::Clamp(FMath::CeilToInt((Content.Bottom - Offset.Y) / View.Step), 0, Layout->Size - 1);
 
+		const int32 FloorLayer = ++Layer;
+
 		++Layer;
+
+		TArray<FVector2D> Contour;
+		TArray<FVector2D> Floor;
+
+		Contour.Reserve(24);
+		Floor.Reserve(24);
+
+		TArray<TPair<FVector2D, FVector2D>> WallEdges;
 
 		for (int32 Y = MinY; Y <= MaxY; ++Y)
 			for (int32 X = MinX; X <= MaxX; ++X)
@@ -143,41 +284,115 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 				if (!Seen(Index))
 					continue;
 
-				const FVector2D P = Offset + FVector2D(X, Y) * View.Step;
-				Box(P, FVector2D(View.Step, View.Step), FLinearColor(0.04f, 0.05f, 0.054f));
-			}
+				const FVector2D C = Offset + FVector2D(X + 0.5, Y + 0.5) * View.Step;
+				CorridorContour(Layout->Walls[Index], View.Step, Contour);
+				Floor.Reset();
 
-		++Layer;
+				for (const FVector2D& P : Contour)
+					Floor.Add(C + P);
 
-		for (int32 Y = MinY; Y <= MaxY; ++Y)
-			for (int32 X = MinX; X <= MaxX; ++X)
-			{
-				const int32 Index = Y * Layout->Size + X;
+				Polygon(C, Floor, Muted.CopyWithNewOpacity(Layout->HasFloor(Index) ? 0.3f : 0.06f), FloorLayer);
 
-				if (!Seen(Index))
-					continue;
+				for (int32 I = 0; I < Contour.Num(); ++I)
+				{
+					const FVector2D A = Contour[I], B = Contour[(I + 1) % Contour.Num()];
+					const double H = View.Step * 0.5;
+					const bool bVertical = FMath::IsNearlyEqual(A.X, B.X) && FMath::IsNearlyEqual(FMath::Abs(A.X), H);
+					const bool bHorizontal = FMath::IsNearlyEqual(A.Y, B.Y) && FMath::IsNearlyEqual(FMath::Abs(A.Y), H);
 
-				const FVector2D P = Offset + FVector2D(X, Y) * View.Step;
-				const uint8 Walls = Layout->Walls[Index];
-				const float Width = View.bFull ? FMath::Clamp(View.Step * 0.065f, 1.f, 2.5f) : 1.5f;
+					if (bVertical || bHorizontal)
+					{
+						const int32 NX = X + (bVertical ? FMath::Sign(A.X) : 0);
+						const int32 NY = Y + (bHorizontal ? FMath::Sign(A.Y) : 0);
 
-				if (Walls & 1)
-					Line(P, P + FVector2D(View.Step, 0), Wall, Width);
+						if (NX >= 0 && NX < Layout->Size && NY >= 0 && NY < Layout->Size &&
+						    Seen(NY * Layout->Size + NX))
+							continue;
 
-				if (Walls & 2)
-					Line(P + FVector2D(View.Step, 0), P + FVector2D(View.Step, View.Step), Wall, Width);
+						// A faint dashed cut marks the limit of surveyed floor; never draw
+						// the neighbouring unseen cell or pretend this frontier is a wall.
+						for (int32 Dash = 0; Dash < 3; ++Dash)
+							Stroke(C + FMath::Lerp(A, B, Dash / 3.0),
+							       C + FMath::Lerp(A, B, (Dash + 0.45) / 3.0),
+							       Muted.CopyWithNewOpacity(0.45f));
 
-				if (Walls & 4)
-					Line(P + FVector2D(0, View.Step), P + FVector2D(View.Step, View.Step), Wall, Width);
+						continue;
+					}
 
-				if (Walls & 8)
-					Line(P, P + FVector2D(0, View.Step), Wall, Width);
+					WallEdges.Emplace(C + A, C + B);
+				}
 
 				if (!Layout->HasFloor(Index))
 				{
-					Line(P + FVector2D(0.28, 0.28) * View.Step, P + FVector2D(0.72, 0.72) * View.Step, Danger);
-					Line(P + FVector2D(0.72, 0.28) * View.Step, P + FVector2D(0.28, 0.72) * View.Step, Danger);
+					const double R = FMath::Clamp(View.Step * 0.18, 2.0, 6.0);
+					Path({C + FVector2D(0, -R),
+					      C + FVector2D(R, 0),
+					      C + FVector2D(0, R),
+					      C + FVector2D(-R, 0),
+					      C + FVector2D(0, -R)},
+					     Danger.CopyWithNewOpacity(0.7f));
+					Stroke(C - FVector2D(R * 0.5, 0), C + FVector2D(R * 0.5, 0), Danger);
 				}
+			}
+
+		FlushPolygons(FloorLayer);
+
+		// Join across cell boundaries before drawing. A single continuous Slate path
+		// avoids the repeated antialiased end caps of the old per-cell wall strokes.
+		const auto Key = [&](FVector2D P)
+		{
+			const FVector2D Local = (P - Offset) / View.Step * 1024;
+
+			return FIntPoint(FMath::RoundToInt(Local.X), FMath::RoundToInt(Local.Y));
+		};
+		TMap<FIntPoint, int32> Next;
+		TSet<FIntPoint> Ends;
+		TArray<bool> Used;
+
+		Used.Init(false, WallEdges.Num());
+
+		for (int32 I = 0; I < WallEdges.Num(); ++I)
+		{
+			Next.Add(Key(WallEdges[I].Key), I);
+			Ends.Add(Key(WallEdges[I].Value));
+		}
+
+		TArray<FVector2D> Joined;
+
+		for (int32 Pass = 0; Pass < 2; ++Pass)
+			for (int32 First = 0; First < WallEdges.Num(); ++First)
+			{
+				if (Used[First] || (Pass == 0 && Ends.Contains(Key(WallEdges[First].Key))))
+					continue;
+
+				Joined.Reset();
+				Joined.Add(WallEdges[First].Key);
+				int32 Current = First;
+
+				while (!Used[Current])
+				{
+					Used[Current] = true;
+					const FVector2D P = WallEdges[Current].Value;
+
+					if (Joined.Num() >= 2)
+					{
+						const FVector2D A = (Joined.Last() - Joined[Joined.Num() - 2]).GetSafeNormal();
+						const FVector2D B = (P - Joined.Last()).GetSafeNormal();
+
+						if (FVector2D::DotProduct(A, B) > 0.9999)
+							Joined.Pop(EAllowShrinking::No);
+					}
+
+					Joined.Add(P);
+					const int32* Following = Next.Find(Key(P));
+
+					if (!Following)
+						break;
+
+					Current = *Following;
+				}
+
+				Path(Joined, Wall, FMath::Clamp(View.Step * 0.035f, 0.7f, 1.2f));
 			}
 
 		++Layer;
@@ -212,15 +427,34 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 	const float Angle = FMath::DegreesToRadians(View.Yaw);
 	const FVector2D Forward(FMath::Cos(Angle), FMath::Sin(Angle)), Right(-Forward.Y, Forward.X);
 	const FVector2D Player = Offset + View.Player * View.Step;
-	const TArray<FVector2D> Arrow{Player + Forward * 10,
-	                              Player - Forward * 6 + Right * 5,
-	                              Player - Forward * 3,
-	                              Player - Forward * 6 - Right * 5,
-	                              Player + Forward * 10};
+	const TArray<FVector2D> Arrow{
+	    Player + Forward * 10, Player - Forward * 6 + Right * 5, Player - Forward * 6 - Right * 5};
+	TArray<FVector2D> Fan;
 
-	Path(Arrow, FLinearColor(0.01f, 0.012f, 0.015f), 5.f);
+	Fan.Add(Player);
+
+	for (int32 I = -12; I <= 12; ++I)
+	{
+		const float A = Angle + FMath::DegreesToRadians(I * 2.5f);
+
+		Fan.Add(Player + FVector2D(FMath::Cos(A), FMath::Sin(A)) * (View.bFull ? 64 : 38));
+	}
+
+	Polygon(Player, Fan, Accent.CopyWithNewOpacity(0.28f), Layer, 0.f);
+	FlushPolygons(Layer);
 	++Layer;
-	Path(Arrow, Accent, 2.f);
+	Path({Arrow[0], Arrow[1], Arrow[2], Arrow[0]}, Glass, 3.f);
+	++Layer;
+	Polygon(Player, Arrow, Accent, Layer);
+	FlushPolygons(Layer);
+
+	if (View.bFull && Player.X > Content.Left + 20 && Player.X < Content.Right - 170 && Player.Y > Content.Top + 55 &&
+	    Player.Y < Content.Bottom - 20)
+	{
+		Path({Player + FVector2D(10, -10), Player + FVector2D(36, -37), Player + FVector2D(151, -37)}, Muted);
+		Text(NSLOCTEXT("Maze.Glass", "YouAreHere", "ВЫ ЗДЕСЬ"), Player + FVector2D(45, -62), 12, Ink);
+	}
+
 	Elements.PopClip();
 
 	++Layer;
@@ -236,10 +470,10 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 
 	if (View.bCompass)
 	{
-		const FVector2D Positions[] = {{MapMiddle.X, Content.Top - 14},
-		                               {Content.Right + 14, MapMiddle.Y},
-		                               {MapMiddle.X, Content.Bottom + 14},
-		                               {Content.Left - 14, MapMiddle.Y}};
+		const FVector2D Positions[] = {{MapMiddle.X, Content.Top - (View.bFull ? 32 : 14)},
+		                               {Content.Right + (View.bFull ? 32 : 14), MapMiddle.Y},
+		                               {MapMiddle.X, Content.Bottom + (View.bFull ? 32 : 14)},
+		                               {Content.Left - (View.bFull ? 32 : 14), MapMiddle.Y}};
 		const TCHAR* Names[] = {TEXT("N"), TEXT("E"), TEXT("S"), TEXT("W")};
 
 		for (int32 I = 0; I < 4; ++I)
@@ -252,18 +486,18 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 
 			const double T = I / 10.0;
 
-			Line({Content.Left + MapSize.X * T, Content.Top - 5},
-			     {Content.Left + MapSize.X * T, Content.Top - 2},
-			     Muted);
-			Line({Content.Left + MapSize.X * T, Content.Bottom + 2},
-			     {Content.Left + MapSize.X * T, Content.Bottom + 5},
-			     Muted);
-			Line({Content.Left - 5, Content.Top + MapSize.Y * T},
-			     {Content.Left - 2, Content.Top + MapSize.Y * T},
-			     Muted);
-			Line({Content.Right + 2, Content.Top + MapSize.Y * T},
-			     {Content.Right + 5, Content.Top + MapSize.Y * T},
-			     Muted);
+			Stroke({Content.Left + MapSize.X * T, Content.Top - 5},
+			       {Content.Left + MapSize.X * T, Content.Top - 2},
+			       Muted);
+			Stroke({Content.Left + MapSize.X * T, Content.Bottom + 2},
+			       {Content.Left + MapSize.X * T, Content.Bottom + 5},
+			       Muted);
+			Stroke({Content.Left - 5, Content.Top + MapSize.Y * T},
+			       {Content.Left - 2, Content.Top + MapSize.Y * T},
+			       Muted);
+			Stroke({Content.Right + 2, Content.Top + MapSize.Y * T},
+			       {Content.Right + 5, Content.Top + MapSize.Y * T},
+			       Muted);
 		}
 
 		// Project camera bearing onto the rectangular rim, independent of panning and zooming.
@@ -274,57 +508,117 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 		Path({Mark - Forward * 10 + Right * 5, Mark, Mark - Forward * 10 - Right * 5}, Accent, 2.f);
 	}
 
-	const FText Heading = FText::AsCultureInvariant(
-	    FString::Printf(TEXT("%03d°"), FMath::RoundToInt(FRotator::ClampAxis(View.Yaw + 90.f)) % 360));
-
 	if (View.bFull)
 	{
-		Text(NSLOCTEXT("Maze.Map", "Title", "КАРТА ЛАБИРИНТА"),
-		     View.Origin + FVector2D(36, 22),
-		     26,
-		     Ink,
-		     false,
-		     View.Size.X - 170);
-		Text(View.bPreview ? NSLOCTEXT("Maze.Map", "Preview", "ПРЕДПРОСМОТР ОФОРМЛЕНИЯ")
-		                   : NSLOCTEXT("Maze.Map", "DiscoveredOnly", "ТОЛЬКО ИССЛЕДОВАННЫЕ УЧАСТКИ"),
-		     View.Origin + FVector2D(36, 57),
-		     11,
-		     Muted,
-		     false,
-		     View.Size.X - 170);
+		const float Sidebar = FMath::Clamp(float(View.Size.X * 0.24), 190.f, 350.f);
+		const FVector2D Left = View.Origin + FVector2D(36, 38);
+		const float TextWidth = Sidebar - 52;
 
-		if (View.bCompass)
-			Text(Heading, View.Origin + FVector2D(View.Size.X - 73, 42), 20, Accent, true);
+		Text(NSLOCTEXT("Maze.Glass", "Brand", "LABY"), Left, 38, Ink);
+		Text(NSLOCTEXT("Maze.Glass", "BrandSubtitle", "Л А Б И Р И Н Т"), Left + FVector2D(2, 61), 10, Muted);
+		Text(NSLOCTEXT("Maze.Map", "Title", "КАРТА ЛАБИРИНТА"), Left + FVector2D(0, 139), 20, Ink, false, TextWidth);
+		Stroke(Left + FVector2D(0, 181), Left + FVector2D(TextWidth, 181), MazeInterfaceStyle::Line);
+		Text(NSLOCTEXT("Maze.Glass", "LegendTitle", "ОБОЗНАЧЕНИЯ"), Left + FVector2D(0, 229), 12, Muted);
 
-		const float Bottom = View.Origin.Y + View.Size.Y - 50;
+		const FText Labels[] = {NSLOCTEXT("Maze.Glass", "YouAreHere", "ВЫ ЗДЕСЬ"),
+		                        NSLOCTEXT("Maze.Glass", "Explored", "ИССЛЕДОВАНО"),
+		                        NSLOCTEXT("Maze.Glass", "Unknown", "НЕИЗВЕСТНО"),
+		                        NSLOCTEXT("Maze.Glass", "Start", "НАЧАЛО"),
+		                        NSLOCTEXT("Maze.Glass", "Exit", "ВЫХОД"),
+		                        NSLOCTEXT("Maze.Glass", "Gap", "ПРОВАЛ")};
 
-		Text(NSLOCTEXT("Maze.Map", "Legend", "▲ ВЫ     ◇ НАЧАЛО     □ ВЫХОД     × ПРОВАЛ"),
+		for (int32 I = 0; I < UE_ARRAY_COUNT(Labels); ++I)
+		{
+			const FVector2D P = Left + FVector2D(9, 291 + I * 53);
+
+			if (I == 0)
+			{
+				Polygon(P, {P + FVector2D(7, 0), P + FVector2D(-5, 5), P + FVector2D(-5, -5)}, Accent, Layer);
+				FlushPolygons(Layer);
+			}
+			else if (I == 1)
+			{
+				Box(P - FVector2D(9, 4), {18, 8}, Muted.CopyWithNewOpacity(0.3f));
+				Stroke(P + FVector2D(-9, -4), P + FVector2D(9, -4), Wall);
+				Stroke(P + FVector2D(-9, 4), P + FVector2D(9, 4), Wall);
+			}
+			else if (I == 2)
+				for (int32 D = 0; D < 3; ++D)
+					Stroke(P + FVector2D(-9 + D * 7, 0), P + FVector2D(-6 + D * 7, 0), Muted);
+
+			else if (I == 4)
+			{
+				Outline(P - FVector2D(5, 5), {10, 10}, ExitColor);
+				Box(P - FVector2D(2, 2), {4, 4}, ExitColor);
+			}
+			else
+			{
+				Path({P + FVector2D(0, -5),
+				      P + FVector2D(5, 0),
+				      P + FVector2D(0, 5),
+				      P + FVector2D(-5, 0),
+				      P + FVector2D(0, -5)},
+				     I == 5 ? Danger : StartColor);
+
+				if (I == 5)
+					Stroke(P - FVector2D(2.5, 0), P + FVector2D(2.5, 0), Danger);
+			}
+
+			Text(Labels[I], Left + FVector2D(38, 282 + I * 53), 12, Ink, false, TextWidth - 40);
+		}
+
+		if (View.bPreview)
+			Text(NSLOCTEXT("Maze.Glass", "StaticPreview", "МАКЕТ / ПРИМЕР ДАННЫХ"),
+			     Left + FVector2D(0, 650),
+			     9,
+			     Muted,
+			     false,
+			     TextWidth);
+
+		// Coordinates describe the current world grid, not fabricated unexplored corridors.
+		const int32 Stride = FMath::Max(1, FMath::CeilToInt(36.f / View.Step));
+		const int32 FirstX = FMath::CeilToInt((Content.Left - Offset.X) / View.Step / Stride);
+		const int32 FirstY = FMath::CeilToInt((Content.Top - Offset.Y) / View.Step / Stride);
+
+		for (int32 I = FirstX; Offset.X + I * Stride * View.Step < Content.Right; ++I)
+		{
+			const float X = Offset.X + I * Stride * View.Step;
+
+			Text(FText::AsNumber(I * Stride), {X, Content.Top - 12}, 8, Muted, true);
+			Text(FText::AsNumber(I * Stride), {X, Content.Bottom + 12}, 8, Muted, true);
+		}
+
+		for (int32 I = FirstY; Offset.Y + I * Stride * View.Step < Content.Bottom; ++I)
+		{
+			const float Y = Offset.Y + I * Stride * View.Step;
+
+			Text(FText::AsNumber(I * Stride), {Content.Left - 12, Y}, 8, Muted, true);
+			Text(FText::AsNumber(I * Stride), {Content.Right + 12, Y}, 8, Muted, true);
+		}
+
+		const float Bottom = View.Origin.Y + View.Size.Y - 61;
+
+		Stroke({View.Origin.X + 24, Bottom - 22},
+		       {View.Origin.X + View.Size.X - 24, Bottom - 22},
+		       MazeInterfaceStyle::Line);
+		Text(NSLOCTEXT(
+		         "Maze.Glass", "MapNavigation", "КОЛЕСО  МАСШТАБ     /     ЛКМ  ПЕРЕМЕСТИТЬ     /     HOME  К ИГРОКУ"),
 		     {View.Origin.X + 36, Bottom},
-		     13,
+		     12,
 		     Ink,
 		     false,
-		     View.Size.X - 72);
-		Text(NSLOCTEXT("Maze.Map",
-		               "Navigation",
-		               "ЛКМ — перемещение     КОЛЕСО — масштаб     HOME — к игроку     M / ESC — закрыть"),
-		     {View.Origin.X + 36, Bottom + 25},
+		     View.Size.X - 300);
+		Text(NSLOCTEXT("Maze.Glass", "MapClose", "M / ESC  ЗАКРЫТЬ"),
+		     {View.Origin.X + View.Size.X - 220, Bottom},
 		     12,
-		     Muted,
-		     false,
-		     View.Size.X - 72);
+		     Accent);
 	}
 	else
-	{
-		Text(NSLOCTEXT("Maze.Map", "MinimapTitle", "НАВИГАЦИЯ"), View.Origin + FVector2D(1, -25), 12, Ink);
-
-		if (View.bCompass)
-			Text(Heading, View.Origin + FVector2D(View.Size.X - 52, -25), 12, Accent);
-
-		Text(NSLOCTEXT("Maze.Map", "OpenMap", "M   /   ОТКРЫТЬ КАРТУ"),
-		     View.Origin + FVector2D(1, View.Size.Y + 10),
+		Text(NSLOCTEXT("Maze.Glass", "MapHint", "M   КАРТА"),
+		     View.Origin + FVector2D(View.Size.X * 0.5, View.Size.Y + 22),
 		     11,
-		     Muted);
-	}
+		     Ink,
+		     true);
 
 	return Layer;
 }

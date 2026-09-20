@@ -229,11 +229,13 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 	Visible(this, TEXT("Crosshair"), Preferences.bShowCrosshair);
 	Visible(this, TEXT("HealthText"), !Preferences.bCompactHUD);
 	Visible(this, TEXT("StaminaText"), !Preferences.bCompactHUD);
+	Visible(this, TEXT("HealthValueText"), !Preferences.bCompactHUD);
+	Visible(this, TEXT("StaminaValueText"), !Preferences.bCompactHUD);
 
 	const auto* Controller = GetOwningPlayer<AMazePlayerController>();
 
 	// Hide the content, not the root: the widget must keep ticking while a menu is open.
-	Visible(this, TEXT("HUDContent"), !Controller || !Controller->IsMenuOpen());
+	Visible(this, TEXT("HUDContent"), !Controller || (!Controller->IsMenuOpen() && !Controller->IsMapOpen()));
 
 	const auto* Player = Controller ? Cast<AMazeCharacter>(Controller->GetPawn()) : nullptr;
 
@@ -248,15 +250,12 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 
 		bDead = !FMazeVitalsSystem::IsAlive(Vitals);
 		ReachedExit = Player->GetReachedExit();
-		Text(this,
-		     TEXT("HealthText"),
-		     FText::Format(NSLOCTEXT("Maze.HUD", "Health", "СОСТОЯНИЕ   {Value}"),
-		                   FFormatNamedArguments{{TEXT("Value"), FMath::CeilToInt(Vitals.Health)}}));
+		Text(this, TEXT("HealthValueText"), FText::AsNumber(FMath::CeilToInt(Vitals.Health)));
+		Text(this, TEXT("StaminaValueText"), FText::AsNumber(FMath::CeilToInt(Vitals.Stamina)));
 		Text(this,
 		     TEXT("StaminaText"),
-		     FText::Format(Vitals.bExhausted ? NSLOCTEXT("Maze.HUD", "StaminaRecovering", "ВОССТАНОВЛЕНИЕ   {Value}")
-		                                     : NSLOCTEXT("Maze.HUD", "Stamina", "ВЫНОСЛИВОСТЬ   {Value}"),
-		                   FFormatNamedArguments{{TEXT("Value"), FMath::CeilToInt(Vitals.Stamina)}}));
+		     Vitals.bExhausted ? NSLOCTEXT("Maze.HUD", "StaminaRecovering", "ВОССТАНОВЛЕНИЕ")
+		                       : MazeText::Widget(TEXT("StaminaText")));
 
 		if (auto* Bar = Cast<UProgressBar>(GetWidgetFromName(TEXT("HealthBar"))))
 			Bar->SetPercent(FMath::Clamp(Vitals.Health / FMazeVitals::Maximum, 0.f, 1.f));

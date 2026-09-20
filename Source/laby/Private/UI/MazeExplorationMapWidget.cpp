@@ -3,6 +3,7 @@
 #include "Player/MazeCharacter.h"
 #include "Player/MazePlayerController.h"
 #include "MazeMapPaint.h"
+#include "Maze/MazeLayout.h"
 #include "UI/MazeInterfacePreferences.h"
 #include "Input/Reply.h"
 
@@ -81,8 +82,7 @@ int32 UMazeExplorationMapWidget::NativePaint(const FPaintArgs& Args,
 	if (Side <= 64)
 		return Layer;
 
-	View.Size = View.bFull ? FVector2D(FMath::Min(ViewSize.X - 64, 1520.0), FMath::Min(ViewSize.Y - 64, 960.0))
-	                       : FVector2D(Side, Side);
+	View.Size = View.bFull ? FVector2D(ViewSize.X - 52, ViewSize.Y - 52) : FVector2D(Side, Side);
 	View.Origin = View.bFull ? (ViewSize - View.Size) * 0.5 : ViewSize - View.Size - FVector2D(36, 64);
 
 	// Both panels retain editable layout bounds in the Widget Blueprint.
@@ -105,7 +105,66 @@ int32 UMazeExplorationMapWidget::NativePaint(const FPaintArgs& Args,
 	View.Step = View.bFull ? Zoom : 20.f;
 
 	if (View.bPreview)
+	{
+		// A fixed designer illustration, never produced by gameplay generation or stored in ECS.
+		FMazeLayout Illustration;
+
+		Illustration.Size = 20;
+		Illustration.Walls.Init(15, 400);
+		Illustration.Holes.Init(0, 400);
+
+		TArray<uint8> Seen;
+
+		Seen.Init(0, 400);
+
+		const FIntPoint Route[] = {{10, 10},
+		                           {6, 10},
+		                           {6, 6},
+		                           {10, 6},
+		                           {10, 3},
+		                           {13, 3},
+		                           {13, 8},
+		                           {16, 8},
+		                           {16, 13},
+		                           {12, 13},
+		                           {12, 16},
+		                           {8, 16},
+		                           {8, 13},
+		                           {4, 13},
+		                           {4, 10},
+		                           {6, 10}};
+
+		for (int32 I = 1; I < UE_ARRAY_COUNT(Route); ++I)
+		{
+			FIntPoint A = Route[I - 1];
+			const FIntPoint End = Route[I];
+
+			Seen[A.Y * 20 + A.X] = 1;
+
+			while (A != End)
+			{
+				const FIntPoint D(FMath::Sign(End.X - A.X), FMath::Sign(End.Y - A.Y));
+				const FIntPoint B = A + D;
+				const int32 Direction = D.X > 0 ? 1 : D.X < 0 ? 3 : D.Y > 0 ? 2 : 0;
+
+				Illustration.Walls[A.Y * 20 + A.X] &= ~(1 << Direction);
+				Illustration.Walls[B.Y * 20 + B.X] &= ~(1 << ((Direction + 2) % 4));
+				Seen[B.Y * 20 + B.X] = 1;
+				A = B;
+			}
+		}
+
+		View.Player = View.Center = FVector2D(10.5, 10.5);
+		View.Start = FVector2D(8.5, 16.5);
+		View.Layout = &Illustration;
+		View.Seen = Seen;
+
+		const FSlateRect Content = MazeMapContentRect(View);
+
+		View.Step = View.bFull ? (Content.Right - Content.Left) / 20.f : 20.f;
+
 		return PaintMazeMap(Geometry, Elements, Layer, Style.GetColorAndOpacityTint(), View);
+	}
 
 	const auto Session = ECS->ReadSession();
 	const auto Maze = ECS->ReadMaze(Session.Maze);
@@ -191,14 +250,23 @@ FReply UMazeExplorationMapWidget::NativeOnMouseWheel(const FGeometry& Geometry, 
 	if (!Controller || !Controller->IsMapOpen())
 		return Super::NativeOnMouseWheel(Geometry, Event);
 
-	FVector2D MapMiddle = Geometry.GetLocalSize() * 0.5;
+	FMazeMapPaintView View;
+
+	View.bFull = true;
+	View.Origin = FVector2D(26, 26);
+	View.Size = Geometry.GetLocalSize() - FVector2D(52, 52);
 
 	if (const auto* Bounds = GetWidgetFromName(TEXT("FullMapBounds")))
 	{
 		const auto& BoundsGeometry = Bounds->GetPaintSpaceGeometry();
 
-		MapMiddle = Geometry.AbsoluteToLocal(BoundsGeometry.LocalToAbsolute(BoundsGeometry.GetLocalSize() * 0.5));
+		View.Origin = Geometry.AbsoluteToLocal(BoundsGeometry.LocalToAbsolute(FVector2D::ZeroVector));
+		View.Size =
+		    Geometry.AbsoluteToLocal(BoundsGeometry.LocalToAbsolute(BoundsGeometry.GetLocalSize())) - View.Origin;
 	}
+
+	const FSlateRect Content = MazeMapContentRect(View);
+	const FVector2D MapMiddle((Content.Left + Content.Right) * 0.5, (Content.Top + Content.Bottom) * 0.5);
 
 	const FVector2D CursorOffset = Geometry.AbsoluteToLocal(Event.GetScreenSpacePosition()) - MapMiddle;
 	const FVector2D Anchor = Center + CursorOffset / Zoom;

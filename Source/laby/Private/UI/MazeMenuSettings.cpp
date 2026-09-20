@@ -1,4 +1,5 @@
 #include "UI/MazeWidgets.h"
+#include "UI/MazeInterfaceStyle.h"
 #include "UI/MazeInterfacePreferences.h"
 #include "Player/MazePlayerController.h"
 #include "World/MazeOnlineGameInstance.h"
@@ -128,10 +129,23 @@ void UMazeMenuWidget::SelectSettingsSection(int32 Index)
 
 	const TCHAR* Buttons[] = {TEXT("VideoTabButton"), TEXT("ControlsTabButton"), TEXT("GameTabButton")};
 
+	const FText Titles[] = {NSLOCTEXT("Maze.Glass", "Video", "ВИДЕО"),
+	                        NSLOCTEXT("Maze.Glass", "Controls", "УПРАВЛЕНИЕ"),
+	                        NSLOCTEXT("Maze.Glass", "Game", "ИГРА")};
+
+	Index = FMath::Clamp(Index, 0, 2);
+
+	if (auto* Heading = Find<UTextBlock>(this, TEXT("SettingsSectionTitle")))
+		Heading->SetText(Titles[Index]);
+
 	for (int32 I = 0; I < UE_ARRAY_COUNT(Buttons); ++I)
-		if (auto* Button = Find<UButton>(this, Buttons[I]))
-			Button->SetBackgroundColor(I == Index ? FLinearColor(0.8f, 0.68f, 0.45f)
-			                                      : FLinearColor(0.48f, 0.51f, 0.54f));
+	{
+		if (auto* Label = Find<UTextBlock>(this, *(FString(Buttons[I]) + TEXT("Label"))))
+			Label->SetColorAndOpacity(I == Index ? MazeInterfaceStyle::Accent : MazeInterfaceStyle::Ink);
+
+		if (auto* Indicator = GetWidgetFromName(*(FString(Buttons[I]) + TEXT("Indicator"))))
+			Indicator->SetVisibility(I == Index ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden);
+	}
 }
 
 void UMazeMenuWidget::ShowVideoSettings()

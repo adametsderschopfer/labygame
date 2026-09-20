@@ -1,4 +1,5 @@
 #include "World/MazeOnlineGameInstance.h"
+#include "UI/MazeInterfaceStyle.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Framework/Application/SlateApplication.h"
@@ -10,34 +11,6 @@
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Text/STextBlock.h"
 
-namespace
-{
-	TSharedRef<SWidget> MakeLoadingScreen()
-	{
-		// MoviePlayer renders while the game thread is blocked. Keep this tree free of UObjects/UMG bindings.
-		return SNew(SBorder)
-		    .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-		    .BorderBackgroundColor(FLinearColor(0.015f, 0.025f, 0.04f, 1.f))
-		    .HAlign(HAlign_Center)
-		    .VAlign(
-		        VAlign_Center)[SNew(SVerticalBox) +
-		                       SVerticalBox::Slot()
-		                           .AutoHeight()
-		                           .HAlign(HAlign_Center)
-		                           .Padding(0, 0, 0, 28)[SNew(STextBlock)
-		                                                     .Text(NSLOCTEXT("Maze.Widgets", "Title", "L A B Y"))
-		                                                     .Font(FCoreStyle::GetDefaultFontStyle("Bold", 44))
-		                                                     .ColorAndOpacity(FLinearColor(0.35f, 0.85f, 0.9f))] +
-		                       SVerticalBox::Slot()
-		                           .AutoHeight()
-		                           .HAlign(HAlign_Center)
-		                           .Padding(0, 0, 0, 18)[SNew(STextBlock)
-		                                                     .Text(NSLOCTEXT("Maze.Loading", "Loading", "Loading..."))
-		                                                     .Font(FCoreStyle::GetDefaultFontStyle("Regular", 22))] +
-		                       SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)[SNew(SThrobber)]];
-	}
-}
-
 void UMazeOnlineGameInstance::BeginLoadingScreen(const FWorldContext& LoadingWorldContext, const FString& MapName)
 {
 	if (LoadingWorldContext.OwningGameInstance != this || IsDedicatedServerInstance() ||
@@ -45,7 +18,7 @@ void UMazeOnlineGameInstance::BeginLoadingScreen(const FWorldContext& LoadingWor
 		return;
 
 	ClearLoadingScreen();
-	LoadingScreen = MakeLoadingScreen();
+	LoadingScreen = MazeInterfaceStyle::MakeLoadingScreen();
 
 	if (LoadingWorldContext.WorldType != EWorldType::PIE && IsMoviePlayerEnabled() && GetMoviePlayer()->IsInitialized())
 	{
