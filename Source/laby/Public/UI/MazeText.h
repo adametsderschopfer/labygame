@@ -18,7 +18,7 @@ namespace MazeText
 		    {TEXT("NewGameButtonLabel"), NSLOCTEXT("Maze.Widgets", "NewGameButtonLabel", "НАЧАТЬ ИГРУ")},
 		    {TEXT("SettingsButtonLabel"), NSLOCTEXT("Maze.Widgets", "SettingsButtonLabel", "НАСТРОЙКИ")},
 		    {TEXT("QuitButtonLabel"), NSLOCTEXT("Maze.Widgets", "QuitButtonLabel", "ВЫЙТИ ИЗ ИГРЫ")},
-		    {TEXT("VersionText"), NSLOCTEXT("Maze.Widgets", "VersionText", "ALPHA 0.0.0.1")},
+		    {TEXT("VersionText"), NSLOCTEXT("Maze.Widgets", "VersionText", "ALPHA 0.0.0.2")},
 		    {TEXT("HealthText"), NSLOCTEXT("Maze.Widgets", "HealthText", "ЗДОРОВЬЕ")},
 		    {TEXT("StaminaText"), NSLOCTEXT("Maze.Widgets", "StaminaText", "ВЫНОСЛИВОСТЬ")},
 		    {TEXT("DeathText"), NSLOCTEXT("Maze.Widgets", "DeathText", "СВЯЗЬ ПОТЕРЯНА")},
