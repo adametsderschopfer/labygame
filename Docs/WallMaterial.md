@@ -26,6 +26,22 @@ variation and analytically derived bevel/crown normals fade out when tiles
 become subpixel; finer glaze and grout detail fade by their own frequencies.
 No texture downloads, generated bitmap maps or tessellation are used.
 
+The ceramic builder also exposes restrained cosmetic aging: `WearRoughness`
+(0.025) adds subtle matte variation at the same deposits, and `DirtStrength` (0.045) blends `DirtColor`
+into sparse, soft deposits with radii of 1.6–4.2 cm and subtly mottled opacity.
+Jittered spot centers use rotated world coordinates independently of tile edges;
+neighboring sampling cells are included to avoid clipping spots at boundaries.
+There is no joint-distance multiplier or connected noise threshold in the dirt
+mask. Small deposits fade as the pixel footprint grows. `ChipChance` (0.12),
+`ChipSizeCm` (1.3) and `BrokenCornerChance` (0.015) expose `CeramicBodyColor`
+at sparse corners, with a shallow recessed normal and a rough ceramic finish.
+Larger broken corners are shading only, not missing geometry or loose debris.
+Setting both chances to zero disables chips; zero dirt/wear strengths disable
+their respective layers. These are parent defaults; instance overrides win.
+Tile-position hashes are stable across chunk recreation. Detail fades using
+the pixel footprint; no new textures, mesh sections, resource dependencies,
+ECS state or collision changes are introduced. Shader cost is not profiled.
+
 `AMazeWorld::BeginPlay` assigns the instance on rendering worlds. This is a
 presentation resource owned by the wall component, with no ECS state or new
 gameplay rules. The existing `/Game/Materials` packaging directory includes it

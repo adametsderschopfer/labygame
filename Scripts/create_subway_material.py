@@ -58,6 +58,11 @@ for name, value in {
     "GroutRoughness": 0.85,
     "ShadeVariation": 0.04,
     "TileFinishVariation": 0.045,
+    "WearRoughness": 0.025,
+    "DirtStrength": 0.045,
+    "ChipChance": 0.12,
+    "ChipSizeCm": 1.3,
+    "BrokenCornerChance": 0.015,
 }.items():
     inputs[name] = node(unreal.MaterialExpressionScalarParameter,
                         parameter_name=name, default_value=value, group="Subway Tiles")
@@ -65,6 +70,8 @@ for name, value in {
     "TileColor": (0.78, 0.77, 0.73, 1.0),
     "TileOrigin": (0.0, 0.0, 320.0, 1.0),
     "GroutColor": (0.035, 0.038, 0.04, 1.0),
+    "DirtColor": (0.42, 0.40, 0.35, 1.0),
+    "CeramicBodyColor": (0.36, 0.29, 0.21, 1.0),
 }.items():
     inputs[name] = node(unreal.MaterialExpressionVectorParameter,
                         parameter_name=name, default_value=unreal.LinearColor(*value),
@@ -171,6 +178,56 @@ float groutHeight = (grain.x - 0.5) * grainAmplitude;
 float2 gradient = faceGradient * (surfaceHeight - groutHeight) * bevelFade +
                   face * (crownGradient * crownHeight + glaze.yz * 1.7 * glazeAmplitude) +
                   (1.0 - face) * grain.yz * 18.0 * grainAmplitude;
+
+// Sparse chipped corners expose a matte ceramic body. Stable tile hashes keep
+// cosmetic wear identical when a visual chunk is unloaded and recreated.
+float2 cornerSide = float2(step(0.5, filter.Hash(id + 112.1)),
+                           step(0.5, filter.Hash(id + 219.7)));
+float2 cornerDirection = 1.0 - 2.0 * cornerSide;
+float2 cornerDistance = lerp(frac(grid), 1.0 - frac(grid), cornerSide) * size;
+float broken = step(filter.Hash(id + 345.6), saturate(BrokenCornerChance));
+float chipped = max(broken, step(filter.Hash(id + 91.8), saturate(ChipChance)));
+float chipSize = clamp(ChipSizeCm, 0.0, min(size.x, size.y) * 0.18) *
+                 lerp(0.55, 1.35, filter.Hash(id + 47.2)) * lerp(1.0, 2.6, broken);
+float3 fracture = filter.Noise(p * 3.1);
+float fractureFade = 1.0 - smoothstep(0.15, 0.7, pixelCm * 3.1);
+float cut = chipSize - dot(cornerDistance, float2(1.0, 1.25)) +
+            (fracture.x - 0.5) * 0.3 * fractureFade;
+float cutWidth = max(0.12, pixelCm * 1.5);
+float cutT = saturate(0.5 + cut / cutWidth);
+float chip = cutT * cutT * (3.0 - 2.0 * cutT) * chipped * resolved;
+float2 cutGradient = -cornerDirection * float2(1.0, 1.25) +
+                     fracture.yz * 0.93 * fractureFade;
+float2 chipGradient = 6.0 * cutT * (1.0 - cutT) / cutWidth *
+                      cutGradient * chipped * resolved;
+float chipDepth = min(0.09, max(0.0, ReliefCm) * 0.75);
+gradient -= chipDepth * (chipGradient * face + chip * faceGradient * bevelFade);
+
+// Isolated soft deposits, independent of tile edges. Check neighboring cells
+// so a spot crossing a sampling-cell boundary is never clipped into a stripe.
+float2 soilPosition = float2(p.x * 0.8 - p.y * 0.6, p.x * 0.6 + p.y * 0.8);
+float2 soilCell = floor(soilPosition / 18.0);
+float soilPatch = 0.0;
+float soilFade = 1.0 - smoothstep(0.7, 3.0, pixelCm);
+float soilDetail = filter.Noise(soilPosition * 0.37 + 31.7).x;
+[unroll]
+for (int sy = -1; sy <= 1; ++sy)
+{
+    [unroll]
+    for (int sx = -1; sx <= 1; ++sx)
+    {
+        float2 spotId = soilCell + float2(sx, sy);
+        float present = step(0.65, filter.Hash(spotId + 83.2));
+        float2 center = (spotId + 0.15 + 0.7 * float2(filter.Hash(spotId + 17.9),
+                                                     filter.Hash(spotId + 61.4))) * 18.0;
+        float radius = lerp(1.6, 4.2, filter.Hash(spotId + 145.7));
+        float distanceToSpot = length(soilPosition - center);
+        float deposit = 1.0 - smoothstep(radius * 0.2, radius, distanceToSpot);
+        soilPatch = max(soilPatch, deposit * present);
+    }
+}
+soilPatch *= (0.75 + 0.25 * soilDetail) * soilFade;
+float dirt = saturate(DirtStrength) * soilPatch;
 // Analytic slopes retain the rounded profile even at subpixel bevel widths;
 // no screen-space height differences across adjacent tiles, UVs or tangents.
 float3 U = axis.z > max(axis.x, axis.y) ? float3(1, 0, 0) :
@@ -179,13 +236,17 @@ float3 V = axis.z > max(axis.x, axis.y) ? float3(0, 1, 0) : float3(0, 0, 1);
 WorldNormal = normalize(N - (U * gradient.x + V * gradient.y) * resolved);
 float finish = (filter.Hash(id + 71.3) - 0.5) * TileFinishVariation * resolved;
 float glazeRoughness = TileRoughness + finish + (glaze.x - 0.5) * 0.035 * glazeFade;
+glazeRoughness += saturate(WearRoughness) * soilPatch;
+glazeRoughness = lerp(glazeRoughness, 0.88, saturate(chip + dirt));
 float groutRoughness = GroutRoughness + (grain.x - 0.5) * 0.12 * grainFade;
 Roughness = clamp(lerp(groutRoughness, glazeRoughness, mask), 0.06, 1.0);
 Occlusion = lerp(1.0, lerp(0.8, 1.0, face), resolved);
 float3 groutColor = GroutColor.rgb * (1.0 + (groutMottle.x - 0.5) * 0.25 * mottleFade);
 float warmth = (filter.Hash(id + 23.7) - 0.5) * ShadeVariation * resolved;
 float3 tileTint = TileColor.rgb * (1.0 + variation) + float3(0.08, 0.025, -0.06) * warmth;
-return lerp(saturate(groutColor), saturate(tileTint), mask);
+tileTint = lerp(tileTint, CeramicBodyColor.rgb * (0.9 + grain.x * 0.2 * grainFade), chip);
+float3 ceramic = lerp(saturate(groutColor), saturate(tileTint), mask);
+return lerp(ceramic, DirtColor.rgb, dirt);
 """,
 )
 for name, source in inputs.items():
