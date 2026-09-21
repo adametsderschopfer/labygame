@@ -66,7 +66,6 @@ public:
 	FMazeDiagnosticsSnapshot ReadDiagnostics() const;
 	void SetSessionStarted(bool bStarted);
 	void SetMenu(bool bOpen, bool bSettings = false);
-	void ToggleMinimap();
 	void SetMapOpen(bool bOpen);
 	const FMazeExplorationFragment* ReadExploration(FMassEntityHandle Entity) const;
 	FMazeRoomFragment ReadRoom() const;

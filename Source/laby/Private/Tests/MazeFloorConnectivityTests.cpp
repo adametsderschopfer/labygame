@@ -63,7 +63,7 @@ bool FMazeFloorConnectivityTest::RunTest(const FString& Parameters)
 			for (const auto& Room : Layout.Rooms)
 			{
 				TestTrue(TEXT("Rooms stay inside the boundary"),
-				         Room.Min.X > 0 && Room.Min.Y > 0 && Room.Max.X < Size && Room.Max.Y < Size);
+				         Room.Min.X >= 0 && Room.Min.Y >= 0 && Room.Max.X <= Size && Room.Max.Y <= Size);
 
 				for (int32 Y = Room.Min.Y; Y < Room.Max.Y; ++Y)
 					for (int32 X = Room.Min.X; X < Room.Max.X; ++X)

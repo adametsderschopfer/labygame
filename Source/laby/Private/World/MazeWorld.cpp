@@ -210,17 +210,6 @@ void AMazeWorld::Build()
 	for (auto* Label : OldLabels)
 		Label->DestroyComponent();
 
-	auto* StartLabel = NewObject<UTextRenderComponent>(this);
-
-	StartLabel->SetupAttachment(RootComponent);
-	StartLabel->SetRelativeLocation(StartLocation() - GetActorLocation() + FVector(0, 0, -95));
-	StartLabel->SetRelativeRotation(FRotator(90, 0, 0));
-	StartLabel->SetText(NSLOCTEXT("Maze.World", "Start", "A / START"));
-	StartLabel->SetTextRenderColor(FColor(50, 160, 255));
-	StartLabel->SetHorizontalAlignment(EHTA_Center);
-	StartLabel->SetWorldSize(60);
-	StartLabel->RegisterComponent();
-
 	for (int32 I = 0; I < Data->ExitPositions.Num(); ++I)
 	{
 		auto* Label = NewObject<UTextRenderComponent>(this);

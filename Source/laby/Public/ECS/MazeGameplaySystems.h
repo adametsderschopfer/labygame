@@ -57,8 +57,10 @@ struct FMazeGenerationSystem
 		FloorRect(-Apron, Span, Span + 2 * Apron, Apron);
 		FloorRect(-Apron, 0, Apron, Span);
 		FloorRect(Span, 0, Apron, Span);
-		Data->Start =
-		    FVector((Data->Layout.Size / 2 + 0.5f) * Maze.Cell, (Data->Layout.Size / 2 + 0.5f) * Maze.Cell, 100.f);
+		const int32 StartCell = Data->Layout.Start();
+		Data->Start = FVector((StartCell % Data->Layout.Size + 0.5f) * Maze.Cell,
+		                      (StartCell / Data->Layout.Size + 0.5f) * Maze.Cell,
+		                      100.f);
 		const FVector Outward[] = {FVector(0, -1, 0), FVector(1, 0, 0), FVector(0, 1, 0)};
 
 		for (int32 Slot = 0; Slot < 4; ++Slot)

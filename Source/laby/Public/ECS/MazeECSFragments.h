@@ -184,8 +184,6 @@ struct FMazeSessionFragment : public FMassFragment
 	UPROPERTY()
 	bool bSessionStarted = false;
 	UPROPERTY()
-	bool bMinimapVisible = true;
-	UPROPERTY()
 	bool bMapOpen = false;
 };
 

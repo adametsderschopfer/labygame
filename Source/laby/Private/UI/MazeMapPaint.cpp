@@ -505,7 +505,24 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 		    1.0 / FMath::Max(FMath::Abs(Forward.X) / (MapSize.X * 0.5), FMath::Abs(Forward.Y) / (MapSize.Y * 0.5));
 		const FVector2D Mark = MapMiddle + Forward * Reach;
 
-		Path({Mark - Forward * 10 + Right * 5, Mark, Mark - Forward * 10 - Right * 5}, Accent, 2.f);
+		// Three round bearing dots follow the same compass rim as the former chevron.
+		for (int32 Dot = 0; Dot < 3; ++Dot)
+		{
+			const FVector2D Center = Mark - Forward * (Dot * 7.0);
+			const double Radius = Dot == 0 ? 3.0 : 2.0;
+			TArray<FVector2D> Circle;
+
+			for (int32 Segment = 0; Segment < 16; ++Segment)
+			{
+				const double SegmentAngle = 2.0 * PI * Segment / 16.0;
+
+				Circle.Add(Center + FVector2D(FMath::Cos(SegmentAngle), FMath::Sin(SegmentAngle)) * Radius);
+			}
+
+			Polygon(Center, Circle, Accent.CopyWithNewOpacity(1.f - Dot * 0.25f), Layer);
+		}
+
+		FlushPolygons(Layer);
 	}
 
 	if (View.bFull)
@@ -614,11 +631,7 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 		     Accent);
 	}
 	else
-		Text(NSLOCTEXT("Maze.Glass", "MapHint", "M   КАРТА"),
-		     View.Origin + FVector2D(View.Size.X * 0.5, View.Size.Y + 22),
-		     11,
-		     Ink,
-		     true);
+		Text(NSLOCTEXT("Maze.Glass", "MapHint", "M   КАРТА"), View.Origin + FVector2D(0, -26), 11, Ink);
 
 	return Layer;
 }

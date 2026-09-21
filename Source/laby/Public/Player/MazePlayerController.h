@@ -45,19 +45,6 @@ public:
 		return ReadSession().bMenuOpen;
 	}
 
-	bool IsMinimapVisible() const
-	{
-#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
-
-		return ReadSession().bMinimapVisible;
-
-#else
-
-		return false;
-
-#endif
-	}
-
 	UFUNCTION(BlueprintCallable, Category = "Maze|UI")
 	void ShowMenu(bool Settings = false);
 	UFUNCTION(BlueprintCallable, Category = "Maze|UI")
@@ -65,7 +52,6 @@ public:
 
 private:
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
-	void ToggleMinimap();
 	void ToggleDevelopmentCamera();
 #endif
 	void RemoveMenuWidget();

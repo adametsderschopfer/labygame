@@ -195,46 +195,20 @@ namespace
 		auto* Bars = Make<UVerticalBox>(Tree, TEXT("VitalsItems"));
 
 		Vitals->SetContent(Bars);
-		Row(Bars, Label(Tree, TEXT("HealthText"), MazeText::Widget(TEXT("HealthText")), 14), FMargin(0, 0, 0, 6));
-
-		auto* Health = Make<UProgressBar>(Tree, TEXT("HealthBar"));
-
-		Health->SetPercent(1.f);
-		Health->SetFillColorAndOpacity(FLinearColor(0.9f, 0.22f, 0.25f));
-		Row(Bars, Health, FMargin(0, 0, 0, 14));
 		Row(Bars, Label(Tree, TEXT("StaminaText"), MazeText::Widget(TEXT("StaminaText")), 14), FMargin(0, 0, 0, 6));
 
 		auto* Stamina = Make<UProgressBar>(Tree, TEXT("StaminaBar"));
 
 		Stamina->SetPercent(1.f);
 		Stamina->SetFillColorAndOpacity(FLinearColor(0.2f, 0.85f, 0.65f));
-		Row(Bars, Stamina, FMargin(0));
-		Place(Content,
-		      Label(Tree, TEXT("DeveloperHint"), MazeText::Widget(TEXT("DeveloperHint")), 14),
-		      {24, -62},
-		      {400, 22},
-		      {0, 1});
-		Place(Content,
-		      Label(Tree, TEXT("SessionText"), MazeText::Widget(TEXT("SessionText")), 14),
-		      {24, -40},
-		      {600, 24},
-		      {0, 1});
+		Row(Bars, Stamina, FMargin(0, 0, 0, 14));
+		Row(Bars, Label(Tree, TEXT("HealthText"), MazeText::Widget(TEXT("HealthText")), 14), FMargin(0, 0, 0, 6));
 
-		auto* Map = Panel(Tree, TEXT("MinimapPanel"));
+		auto* Health = Make<UProgressBar>(Tree, TEXT("HealthBar"));
 
-		Place(Content, Map, {-20, 20}, {324, 384}, {1, 0}, {1, 0});
-
-		auto* MapItems = Make<UVerticalBox>(Tree, TEXT("MinimapItems"));
-
-		Map->SetContent(MapItems);
-		Row(MapItems, Label(Tree, TEXT("MapTitle"), MazeText::Widget(TEXT("MapTitle")), 14), FMargin(0, 0, 0, 8));
-
-		auto* MapSize = Make<USizeBox>(Tree, TEXT("MapSize"));
-
-		MapSize->SetHeightOverride(292);
-		MapSize->SetContent(Make<UMazeMinimapWidget>(Tree, TEXT("Minimap")));
-		Row(MapItems, MapSize, FMargin(0, 0, 0, 10));
-		Row(MapItems, Label(Tree, TEXT("MapLegend"), MazeText::Widget(TEXT("MapLegend")), 14), FMargin(0));
+		Health->SetPercent(1.f);
+		Health->SetFillColorAndOpacity(FLinearColor(0.9f, 0.22f, 0.25f));
+		Row(Bars, Health, FMargin(0));
 
 		for (bool bDeath : {true, false})
 		{

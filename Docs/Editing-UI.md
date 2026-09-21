@@ -9,7 +9,7 @@
 
 | Ассет | Назначение |
 | --- | --- |
-| WBP_HUD | Новый HUD: прицел, индикаторы состояния, сообщения и отдельная отладочная карта F7 |
+| WBP_HUD | HUD: прицел, выносливость над здоровьем, сообщения и версия |
 | WBP_ExplorationMap | Игровая мини-карта с компасом и открытая карта M |
 | WBP_MainMenu | Главное меню |
 | WBP_PauseMenu | Меню паузы |
@@ -39,20 +39,18 @@ HUD — пересоздать при следующем запуске игры
 | HealthText, StaminaText | Text Block: подписи показателей; выносливость показывает восстановление |
 | HealthValueText, StaminaValueText | Text Block: числовые значения из ECS |
 | HealthBar, StaminaBar | Progress Bar: заполнение из ECS |
-| VersionText, SessionText, DeveloperHint | Text Block: версия, сеанс, подсказка разработчика |
+| VersionText | Text Block: ALPHA и версия проекта |
 | DeathPanel, ExitPanel | Контейнеры сообщений; по умолчанию Collapsed |
 | ExitText | Text Block: номер достигнутого выхода |
-| MinimapPanel | Контейнер отладочной карты, переключаемый F7 в development-сборках |
 | MinimapBounds, FullMapBounds | В WBP_ExplorationMap: границы игровой мини-карты и открытой карты |
 
 Runtime обновляет текст значений и заполнение полосок. Для смены цветов выносливости
 используйте `Stamina Color` и `Exhausted Color` в Class Defaults HUD.
 Цвет здоровья задаётся на `HealthBar` в Designer.
 
-Элемент `Minimap` имеет нативный класс `MazeMinimapWidget`. Его можно перемещать и
-масштабировать через контейнер `MinimapPanel`, менять цвета в категории `Maze | Style`.
-Это отладочная карта F7; игровой вид карты находится в `WBP_ExplorationMap`.
-Линии лабиринта рисуются из готовых ECS-данных во время игры; в Designer они не отображаются.
+Карта разработчика F7 удалена вместе с нативным классом и состоянием переключения.
+Игровая карта остаётся в WBP_ExplorationMap; подсказка M КАРТА находится над
+мини-картой слева. На рамке компаса направление обозначают три круглые точки.
 Для оформления сообщений о смерти/выходе временно включите их Visibility в Designer,
 затем верните Collapsed; во время игры видимость управляется состоянием ECS.
 

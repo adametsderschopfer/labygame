@@ -142,9 +142,9 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 			}
 		}
 
-		// Convex outside corners only: slim rounded metal tile termination.
-		if (FMath::Abs(JA.X) > 0.5 && FMath::Abs(JA.Y) > 0.5 && FVector::DotProduct(JA, U) < -0.5 &&
-		    !FinishedCorners.Contains(Key(A)))
+		// Only right-angle convex joins receive quarter-circle metal trim; chamfers use the mitered cove.
+		if (FMath::IsNearlyEqual(JA.SizeSquared(), 2.0) && FMath::Abs(JA.X) > 0.5 && FMath::Abs(JA.Y) > 0.5 &&
+		    FVector::DotProduct(JA, U) < -0.5 && !FinishedCorners.Contains(Key(A)))
 		{
 			FinishedCorners.Add(Key(A));
 

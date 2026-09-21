@@ -23,7 +23,9 @@ void UMazeAssetManager::ModifyCook(TConstArrayView<const ITargetPlatform*> Targe
 		const FName Package(*Path.GetLongPackageName());
 
 		if (PackagesToNeverCook.Contains(Package))
+		{
 			UE_LOG(LogTemp, Error, TEXT("Required location package is excluded from cook: %s"), *Package.ToString());
+		}
 		else
 			PackagesToCook.AddUnique(Package);
 	};

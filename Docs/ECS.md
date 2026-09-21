@@ -1,5 +1,48 @@
 # ECS игровой логики
 
+## Угловая входная комната
+
+`FMazeLayout` резервирует комнату 3×3 клетки в углу X=0, Y=Size и проход
+длиной две клетки в сторону +X. Случайная генерация обходит этот участок;
+`CarveEntrance` соединяет комнату с остальным лабиринтом единственным входом.
+Случайные комнаты и провалы не затрагивают вход и его клеточный запас.
+Старт находится в центре комнаты; `FMazeGenerationSystem` выводит координаты
+старта и четырёх мест игроков из `Layout.Start()`, без отдельного центра карты.
+
+Владелец — прежний Generation-фрагмент и immutable payload. Генерация остаётся
+синхронной до PlayerStart; сервер и клиенты используют общий реплицируемый seed.
+Регенерация публикует новую revision и сбрасывает прежние зависимые кэши.
+Новых фрагментов, правил сессии, тиков или ресурсов нет; lifecycle не меняется.
+Проверены штатные FRandomStream и PCG в установленной UE 5.8: FRandomStream
+сохранён, перенос клеточной топологии в PCG не нужен для этого изменения и
+потребовал бы дополнительной интеграции с владельцем данных ECS.
+
+Комната и проход укладываются в стандартный чанк 8×8. Их размеры не требуют
+увеличения LoadRadius=2; полная коллизия остаётся резидентной. Манифест локаций
+и ассеты не меняются. Изменение применяется при следующей генерации после
+компиляции. Play и автоматические тесты для этой правки не запускались.
+
+## Скошенные углы стен
+
+`FMazeSurface::Build` выводит срезы под 45 градусов на всю высоту примерно
+у трети выпуклых углов. Единые параметры — `ChamferInsetCm` (15 см) и
+`ChamferFraction` в `MazeSurface.h`; отступ ограничен 40% меньшего размера
+участка стены. Общие грани и соприкасающиеся по диагонали участки не срезаются.
+Локальный seeded stream от seed генерации и координат угла даёт одинаковый
+выбор независимо от порядка загрузки чанков.
+
+Владелец входных данных — прежний Generation-фрагмент. Коллизия через
+`BuildMazeCollision`, визуальные чанки и их halo используют один алгоритм
+и seed. Плинтус следует срезам; четвертькруглая металлическая отделка остаётся
+только на прямоугольных стыках. Топология проходов и клеточная карта не меняются.
+Срезы не расширяют границы чанков и дальность обзора по коридорам;
+резидентная физика и бюджеты стриминга сохраняются.
+
+Новых фрагментов, UObject-полей, правил authority или тиков нет. Производная
+геометрия пересоздаётся по прежней generation revision и освобождается по
+прежним правилам чанков/EndPlay. Сервер и клиенты используют реплицируемый seed.
+Изменение применяется при следующем создании лабиринта.
+
 ## Подготовка локаций и потоковое представление
 
 Актуальный порядок и ограничения описаны в [Streaming.md](Streaming.md).
@@ -109,7 +152,7 @@ Owner-only FirstPersonBody получает ровно ту же позу чер
 и освобождается с компонентами. Камера не прикреплена к анимированной голове.
 
 В Development F6 переключает локальное представление первого/третьего лица,
-рядом с F7 мини-карты. Флаг принадлежит адаптеру персонажа, не влияет на
+для отладочной камеры. Флаг принадлежит адаптеру персонажа, не влияет на
 доступность игровых действий, не реплицируется и сбрасывается при UnPossessed
 или создании нового персонажа. SpringArm движка разрешает столкновения камеры
 со стенами; новой физической системы нет. Компоненты и обработчик исключены
@@ -216,11 +259,11 @@ Actor/Character, PlayerController, GameMode и HUD служат адаптера
 - Discovery is local navigation data. Clients compute their own mask from the replicated topology and local pose; server health and exit rules remain independent. `ReadExploration` validates the entity, maze handle and revision and returns const data for immediate painting only. Widgets never retain fragment pointers.
 - `Session.bMapOpen` is local interface state, like the existing menu (split-screen is unsupported). `SetMapOpen` invokes the system transition; the controller clears only its own character input, changes focus and blocks its movement/look. Other server players remain unaffected. Zoom and pan belong to widget presentation only.
 - `WBP_ExplorationMap` owns the new minimap slot. The editor module creates the missing Blueprint on startup. `UMazeExplorationMapWidget` renders discovered cells in the bottom-right corner and uses the same mask in fullscreen mode. M/Esc close, drag pans, wheel zooms, Home recenters. EndPlay removes the widget. A native layout fallback handles an absent asset.
-- The existing `UMazeMinimapWidget` remains the complete DEVELOPMENT MAP, toggled with F7. Shipping/Test hide it and disable its native rendering. It does not use exploration data.
+- The development map and its F7 binding have been removed. Only the exploration minimap and M map remain.
 
 ## Потолок и освещение лабиринта
 
-- Размер клетки в `FMazeGenerationFragment` — 462,5 см при толщине стены 50 см: чистая ширина коридора уменьшена с 825 до 412,5 см. Общий масштаб сетки также уменьшает физические размеры комнат; их ширина в топологии остаётся 2–4 клетки, стартовой — 2 клетки. Геометрия, точки появления и карта используют размер клетки из ECS; новый масштаб применяется при следующей генерации.
+- Размер клетки в `FMazeGenerationFragment` — 462,5 см при толщине стены 50 см: чистая ширина коридора уменьшена с 825 до 412,5 см. Общий масштаб сетки также уменьшает физические размеры комнат; их ширина в топологии остаётся 2–4 клетки, угловой стартовой — 3 клетки. Геометрия, точки появления и карта используют размер клетки из ECS; новый масштаб применяется при следующей генерации.
 
 - `FMazeGenerationSystem` формирует `CeilingTransform` в неизменяемом `FMazeGeneratedData` вместе со стенами и полом. Нижняя грань потолка совпадает с `WallHeight` (320 см), толщина равна `WallThickness`; плита закрывает весь лабиринт, включая комнаты и провалы пола, до внешних краёв стен.
 - `AMazeWorld` применяет готовый transform к компоненту потолка с коллизией `BlockAll`. Геометрия обновляется вместе с новой ревизией лабиринта; компонент живёт и уничтожается вместе с Actor. Сервер и клиенты получают одинаковую геометрию из реплицируемого seed, отдельного изменяемого состояния потолка нет.
@@ -244,3 +287,17 @@ Actor/Character, PlayerController, GameMode и HUD служат адаптера
 - Адаптер проверяет контроллер и блокировку ввода. Subsystem проверяет authority, pause, сущность, здоровье, input-enabled pose и старт комнаты. FMazeItemSystem выполняет переход синхронно один раз для экипированного фонарика.
 - ReadHeadlampEnabled учитывает слот и bEnabled. ReplicatedItems остаётся зеркалом; OnRep применяет snapshot к клиентскому ECS. Таймеров, очереди нажатий и дополнительных тиков нет.
 - EndPlay очищает сущность/зеркало. Пауза и меню блокируют переключение, сохраняя питание. Новое отражаемое поле и RPC требуют полной сборки. Тесты и Play не запускались.
+
+## Упрощение HUD и удаление карты разработчика
+
+Удалены UMazeMinimapWidget, переключатель F7, API ToggleMinimap и
+FMazeSessionFragment::bMinimapVisible. Замещающего состояния нет. Игровая карта
+на M сохраняет прежние exploration-фрагменты, authority, порядок систем и cleanup.
+HUD больше не перебирает Actors для вывода seed/размера; из служебного текста
+остаётся только ALPHA с версией проекта. В Widget Blueprint и обоих авторах
+макетов выносливость расположена над здоровьем. Подсказка M КАРТА рисуется
+над мини-картой с выравниванием влево; направление компаса обозначают три точки.
+Синий TextRender A / START больше не создаётся; очистка старых labels при
+генерации сохранена. Новых gameplay-состояний и правил нет.
+Удаление отражаемого класса и поля Mass требует полной сборки с закрытым
+редактором; Live Coding, Play и тесты для этой правки не запускались.

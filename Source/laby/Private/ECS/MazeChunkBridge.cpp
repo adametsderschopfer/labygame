@@ -11,7 +11,7 @@ TSharedPtr<const FMazeSurface> UMazeECSSubsystem::BuildMazeCollision(FMassEntity
 
 	auto Surface = MakeShared<FMazeSurface>();
 
-	Surface->Build(Maze.Data->Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight);
+	Surface->Build(Maze.Data->Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight, FIntRect(), Maze.Seed);
 
 	return Surface;
 }

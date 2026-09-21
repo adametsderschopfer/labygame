@@ -479,16 +479,6 @@ void UMazeECSSubsystem::SetMapOpen(bool bOpen)
 		FMazeExplorationSystem::SetOpen(*Session, bOpen);
 }
 
-void UMazeECSSubsystem::ToggleMinimap()
-{
-#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
-
-	if (auto* Session = FindFragment<FMazeSessionFragment>(SessionEntity); Session && !Session->bMenuOpen)
-		Session->bMinimapVisible = !Session->bMinimapVisible;
-
-#endif
-}
-
 FMazeRoomFragment UMazeECSSubsystem::ReadRoom() const
 {
 	const auto* Room = FindFragment<FMazeRoomFragment>(SessionEntity);

@@ -91,7 +91,6 @@ void AMazePlayerController::SetupInputComponent()
 	InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &AMazePlayerController::ToggleMenu).bExecuteWhenPaused =
 	    true;
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
-	InputComponent->BindKey(EKeys::F7, IE_Pressed, this, &AMazePlayerController::ToggleMinimap);
 	InputComponent->BindKey(EKeys::F6, IE_Pressed, this, &AMazePlayerController::ToggleDevelopmentCamera);
 #endif
 }
@@ -104,12 +103,6 @@ void AMazePlayerController::ToggleDevelopmentCamera()
 
 	if (auto* MazePawn = Cast<AMazeCharacter>(GetPawn()))
 		MazePawn->ToggleDevelopmentCamera();
-}
-
-void AMazePlayerController::ToggleMinimap()
-{
-	if (ECSSubsystem)
-		ECSSubsystem->ToggleMinimap();
 }
 
 #endif

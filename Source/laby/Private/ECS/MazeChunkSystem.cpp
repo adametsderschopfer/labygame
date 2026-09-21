@@ -22,14 +22,14 @@ TSharedPtr<const FMazeChunkData, ESPMode::ThreadSafe> FMazeChunkSystem::Build(co
 	auto Result = MakeShared<FMazeChunkData, ESPMode::ThreadSafe>();
 
 	Result->Coordinate = Chunk;
-	Result->Walls.Build(Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight, Cells);
+	Result->Walls.Build(Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight, Cells, Maze.Seed);
 
 	// One-cell halo supplies neighboring face normals for seamless cove/corner joins.
 	const FIntRect Halo(FIntPoint(FMath::Max(0, Cells.Min.X - 1), FMath::Max(0, Cells.Min.Y - 1)),
 	                    FIntPoint(FMath::Min(Layout.Size, Cells.Max.X + 1), FMath::Min(Layout.Size, Cells.Max.Y + 1)));
 	FMazeSurface Context;
 
-	Context.Build(Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight, Halo);
+	Context.Build(Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight, Halo, Maze.Seed);
 	Result->Interior =
 	    FMazeInterior::Build(Layout, Context, Maze.Cell, Maze.WallThickness, Maze.WallHeight, Maze.Seed, Cells);
 

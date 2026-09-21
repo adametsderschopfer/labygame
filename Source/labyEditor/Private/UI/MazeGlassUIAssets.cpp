@@ -762,7 +762,7 @@ namespace MazeGlassUI
 
 		for (int32 I = 0; I < 2; ++I)
 		{
-			const bool bHealth = I == 0;
+			const bool bHealth = I == 1;
 			const TCHAR* TextName = bHealth ? TEXT("HealthText") : TEXT("StaminaText");
 			auto* Caption = Label(Tree, TextName, MazeText::Widget(TextName), 11, bHealth ? Ink : Accent);
 
@@ -790,35 +790,6 @@ namespace MazeGlassUI
 			Bar->SetPercent(1.f);
 			Bar->SetFillColorAndOpacity(bHealth ? Ink : Accent);
 			Place(VitalsItems, Bar, {16, 40.0 + I * 50}, {320, 3});
-		}
-
-		auto* Hint = Label(
-		    Tree, TEXT("HUDHint"), NSLOCTEXT("Maze.Arc", "HUDHint", "ESC   ПАУЗА     /     M   КАРТА"), 11, Muted);
-
-		Place(Content, Hint, {57, -35}, {440, 20});
-		Anchor(Hint, {0, 1}, {0, 1});
-
-		// Keep the explicit F7 developer view available separately from the exploration map.
-		auto* DevMap = Make<UBorder>(Tree, TEXT("MinimapPanel"));
-
-		DevMap->SetBrushColor(FLinearColor(0.015f, 0.019f, 0.022f, 0.95f));
-		DevMap->SetPadding(FMargin(18));
-		Place(Content, DevMap, {-34, 30}, {312, 312});
-		Anchor(DevMap, {1, 0}, {1, 0});
-
-		auto* Map = Make<UMazeMinimapWidget>(Tree, TEXT("Minimap"));
-
-		Map->WallColor = Ink;
-		Map->PlayerColor = Accent;
-		DevMap->SetContent(Map);
-		DevMap->SetVisibility(ESlateVisibility::Collapsed);
-
-		for (const TCHAR* Name : {TEXT("SessionText"), TEXT("DeveloperHint")})
-		{
-			auto* LabelWidget = Label(Tree, Name, MazeText::Widget(Name), 11, Muted);
-
-			Place(Content, LabelWidget, {34, FName(Name) == FName(TEXT("SessionText")) ? 62.0 : 82.0}, {720, 20});
-			LabelWidget->SetVisibility(ESlateVisibility::Collapsed);
 		}
 
 		for (bool bDeath : {true, false})

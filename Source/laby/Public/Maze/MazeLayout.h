@@ -6,6 +6,8 @@
 struct FMazeLayout
 {
 	static constexpr int32 DefaultSize = 80;
+	static constexpr int32 EntranceRoomSize = 3;
+	static constexpr int32 EntrancePassageLength = 2;
 	int32 Size = DefaultSize;
 	TArray<uint8> Walls;
 	TArray<int32> Exits;
@@ -69,7 +71,7 @@ struct FMazeLayout
 
 	int32 Start() const
 	{
-		return (Size / 2) * Size + Size / 2;
+		return (Size - 1 - EntranceRoomSize / 2) * Size + EntranceRoomSize / 2;
 	}
 
 	void Generate(int32 Seed, int32 InSize = DefaultSize)
@@ -80,9 +82,14 @@ struct FMazeLayout
 		Exits.Reset();
 		TArray<bool> Visited;
 		Visited.Init(false, Walls.Num());
+
+		for (int32 C = 0; C < Walls.Num(); ++C)
+			Visited[C] = IsEntranceCell(C % Size, C / Size);
+
 		TArray<int32> Stack;
-		Stack.Add(Start());
-		Visited[Start()] = true;
+		const int32 PassageEnd = (Start() / Size) * Size + EntranceRoomSize + EntrancePassageLength;
+		Stack.Add(PassageEnd);
+		Visited[PassageEnd] = true;
 		const int32 DX[] = {0, 1, 0, -1};
 		const int32 DY[] = {-1, 0, 1, 0};
 
@@ -116,7 +123,7 @@ struct FMazeLayout
 		// A few loops shorten excessive dead ends without losing the maze character.
 		for (int32 Y = 1; Y < Size - 1; ++Y)
 			for (int32 X = 1; X < Size - 1; ++X)
-				if (Random.FRand() < 0.07f)
+				if (!IsEntranceCell(X, Y) && !IsEntranceCell(X + 1, Y) && Random.FRand() < 0.07f)
 				{
 					int32 C = Y * Size + X;
 					Walls[C] &= ~2;
@@ -130,6 +137,10 @@ struct FMazeLayout
 	}
 
 private:
+	bool IsEntranceCell(int32 X, int32 Y) const;
+	bool OverlapsEntrance(const FIntRect& Room) const;
+	void CarveEntrance();
+
 	void CarveRoom(const FIntRect& Room)
 	{
 		Rooms.Add(Room);
@@ -157,8 +168,7 @@ private:
 	{
 		Rooms.Reset();
 		Holes.Init(0, Walls.Num());
-		const int32 Center = Size / 2;
-		CarveRoom(FIntRect(Center - 1, Center - 1, Center + 1, Center + 2));
+		CarveEntrance();
 		const int32 TargetRooms = FMath::Max(2, Size * Size / 350);
 
 		for (int32 Attempt = 0; Attempt < TargetRooms * 20 && Rooms.Num() < TargetRooms; ++Attempt)
@@ -176,7 +186,7 @@ private:
 				           Room.Max.Y >= Other.Min.Y;
 			    });
 
-			if (!bOverlaps)
+			if (!bOverlaps && !OverlapsEntrance(Room))
 				CarveRoom(Room);
 		}
 
@@ -184,7 +194,7 @@ private:
 
 		for (int32 Y = 1; Y < Size - 1; ++Y)
 			for (int32 X = 1; X < Size - 1; ++X)
-				if (FMath::Abs(X - Center) > 2 || FMath::Abs(Y - Center) > 2)
+				if (!OverlapsEntrance(FIntRect(X, Y, X + 1, Y + 1)))
 					Candidates.Add(Y * Size + X);
 
 		for (int32 I = Candidates.Num() - 1; I > 0; --I)

@@ -5,16 +5,12 @@
 #include "Player/MazeCharacter.h"
 #include "Player/MazePlayerController.h"
 #include "ECS/MazeVitalsSystem.h"
-#include "World/MazeWorld.h"
 #include "Components/Button.h"
 #include "Components/ProgressBar.h"
 #include "Components/Slider.h"
 #include "Components/TextBlock.h"
-#include "EngineUtils.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/ConfigCacheIni.h"
-#include "Rendering/DrawElements.h"
-#include "Styling/CoreStyle.h"
 
 namespace
 {
@@ -211,9 +207,6 @@ void UMazeHUDWidget::NativeConstruct()
 	     TEXT("VersionText"),
 	     FText::Format(NSLOCTEXT("Maze.HUD", "Version", "ALPHA {Version}"),
 	                   FFormatNamedArguments{{TEXT("Version"), FText::AsCultureInvariant(Version)}}));
-#if UE_BUILD_SHIPPING || UE_BUILD_TEST
-	Visible(this, TEXT("DeveloperHint"), false);
-#endif
 	NativeTick(FGeometry(), 0.f);
 }
 
@@ -270,21 +263,6 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 	Visible(this, TEXT("DeathPanel"), bDead);
 	Visible(this, TEXT("ExitPanel"), !bDead && ReachedExit != 0);
 	Text(this, TEXT("ExitText"), NSLOCTEXT("Maze.Widgets", "ExitText", "ВЫХОД НАЙДЕН"));
-	Visible(this, TEXT("MinimapPanel"), !bDead && (!Controller || Controller->IsMinimapVisible()));
-	Visible(this, TEXT("SessionText"), !bDead && Controller && Controller->IsMinimapVisible());
-	Visible(this, TEXT("DeveloperHint"), !bDead && Controller && Controller->IsMinimapVisible());
-
-	for (TActorIterator<AMazeWorld> It(GetWorld()); It; ++It)
-	{
-		if (const auto Data = It->GetGeneratedData())
-			Text(this,
-			     TEXT("SessionText"),
-			     FText::Format(NSLOCTEXT("Maze.HUD", "Session", "SESSION {Seed} | {Size} x {Size} | START A"),
-			                   FFormatNamedArguments{{TEXT("Seed"), FText::AsCultureInvariant(LexToString(It->Seed))},
-			                                         {TEXT("Size"), Data->Layout.Size}}));
-
-		break;
-	}
 }
 
 int32 UMazeHUDWidget::NativePaint(const FPaintArgs& Args,
@@ -296,127 +274,4 @@ int32 UMazeHUDWidget::NativePaint(const FPaintArgs& Args,
                                   bool bParentEnabled) const
 {
 	return Super::NativePaint(Args, Geometry, CullingRect, Elements, Layer, Style, bParentEnabled);
-}
-
-int32 UMazeMinimapWidget::NativePaint(const FPaintArgs& Args,
-                                      const FGeometry& Geometry,
-                                      const FSlateRect& CullingRect,
-                                      FSlateWindowElementList& Elements,
-                                      int32 Layer,
-                                      const FWidgetStyle& Style,
-                                      bool bParentEnabled) const
-{
-	Layer = Super::NativePaint(Args, Geometry, CullingRect, Elements, Layer, Style, bParentEnabled);
-#if UE_BUILD_SHIPPING || UE_BUILD_TEST
-
-	return Layer;
-
-#endif
-
-	if (!GetWorld() || IsDesignTime())
-		return Layer;
-
-	const auto* Controller = GetOwningPlayer();
-
-	for (TActorIterator<AMazeWorld> It(GetWorld()); It; ++It)
-	{
-		const auto Data = It->GetGeneratedData();
-
-		if (!Data || Data->Layout.Size <= 0 || Data->Layout.Walls.Num() != Data->Layout.Size * Data->Layout.Size)
-			break;
-
-		const FMazeLayout& Layout = Data->Layout;
-		const float Size = FMath::Min(Geometry.GetLocalSize().X, Geometry.GetLocalSize().Y);
-		const float Step = Size / Layout.Size;
-
-		++Layer;
-
-		auto Line = [&](FVector2D A, FVector2D B, FLinearColor Color, float Width = 1.f)
-		{
-			TArray<FVector2D> Points{A, B};
-			FSlateDrawElement::MakeLines(Elements,
-			                             Layer,
-			                             Geometry.ToPaintGeometry(),
-			                             Points,
-			                             ESlateDrawEffect::None,
-			                             Color * Style.GetColorAndOpacityTint(),
-			                             true,
-			                             Width);
-		};
-		auto Marker = [&](FVector2D P, FLinearColor Color)
-		{
-			Line(P - FVector2D(3, 0), P + FVector2D(3, 0), Color, 6.f);
-		};
-
-		for (int32 Y = 0; Y < Layout.Size; ++Y)
-			for (int32 X = 0; X < Layout.Size; ++X)
-			{
-				const uint8 W = Layout.Walls[Y * Layout.Size + X];
-				const float PX = X * Step, PY = Y * Step;
-
-				if (!Layout.HasFloor(Y * Layout.Size + X))
-				{
-					const FLinearColor HoleColor(1.f, 0.3f, 0.1f);
-					Line({PX + Step * 0.2f, PY + Step * 0.2f}, {PX + Step * 0.8f, PY + Step * 0.8f}, HoleColor);
-					Line({PX + Step * 0.8f, PY + Step * 0.2f}, {PX + Step * 0.2f, PY + Step * 0.8f}, HoleColor);
-				}
-
-				if (W & 1)
-					Line({PX, PY}, {PX + Step, PY}, WallColor);
-
-				if (W & 8)
-					Line({PX, PY}, {PX, PY + Step}, WallColor);
-
-				if (X == Layout.Size - 1 && (W & 2))
-					Line({PX + Step, PY}, {PX + Step, PY + Step}, WallColor);
-
-				if (Y == Layout.Size - 1 && (W & 4))
-					Line({PX, PY + Step}, {PX + Step, PY + Step}, WallColor);
-			}
-
-		auto Project = [&](FVector World)
-		{
-			const FVector Local = World - It->GetActorLocation();
-
-			return FVector2D(FMath::Clamp(Local.X / It->GetCellSize() * Step, 0.f, Size),
-			                 FMath::Clamp(Local.Y / It->GetCellSize() * Step, 0.f, Size));
-		};
-
-		++Layer;
-		Marker(Project(It->StartLocation()), StartColor);
-
-		for (int32 I = 0; I < Layout.Exits.Num(); ++I)
-		{
-			const int32 Cell = Layout.Exits[I];
-			FVector2D P((Cell % Layout.Size + 0.5f) * Step, (Cell / Layout.Size + 0.5f) * Step);
-
-			if (I == 0)
-				P.Y = 0;
-
-			if (I == 1)
-				P.X = Size;
-
-			if (I == 2)
-				P.Y = Size;
-
-			Marker(P, ExitColor);
-		}
-
-		if (Controller && Controller->GetPawn())
-		{
-			const FVector2D P = Project(Controller->GetPawn()->GetActorLocation());
-			const float Angle = FMath::DegreesToRadians(Controller->GetControlRotation().Yaw);
-			const FVector2D Direction(FMath::Cos(Angle), FMath::Sin(Angle)), Side(-Direction.Y, Direction.X);
-			const FVector2D Tip = P + Direction * 8, A = P - Direction * 5 + Side * 4, B = P - Direction * 5 - Side * 4;
-
-			++Layer;
-			Line(Tip, A, PlayerColor, 2);
-			Line(Tip, B, PlayerColor, 2);
-			Line(A, B, PlayerColor, 2);
-		}
-
-		break;
-	}
-
-	return Layer;
 }
