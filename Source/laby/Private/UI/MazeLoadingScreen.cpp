@@ -61,9 +61,18 @@ void UMazeOnlineGameInstance::EndLoadingScreen(UWorld* LoadedWorld)
 
 		UpdatePreparationScreen(
 		    LoadedWorld, Location && !Location->IsReady(), Location ? Location->GetFailure() : FString());
+
+		if (Location && !Location->IsReady() && Location->GetFailure().IsEmpty())
+			UpdateLoadingStatus(LoadedWorld, Location->ReadPreparationStatus());
 	}
 	else
 		ClearLoadingScreen();
+}
+
+void UMazeOnlineGameInstance::UpdateLoadingStatus(UWorld* World, const FMazePreparationStatus& Preparation)
+{
+	if (World && World->GetGameInstance() == this && LoadingScreen && !bShowingPreparationError)
+		MazeInterfaceStyle::UpdateLoadingScreen(LoadingScreen.ToSharedRef(), Preparation);
 }
 
 void UMazeOnlineGameInstance::ClearLoadingScreen()
@@ -107,7 +116,12 @@ void UMazeOnlineGameInstance::UpdatePreparationScreen(UWorld* World, bool bPrepa
 		LoadingViewport->RemoveViewportWidgetContent(LoadingScreen.ToSharedRef());
 
 	if (Failure.IsEmpty())
-		LoadingScreen = MazeInterfaceStyle::MakeLoadingScreen();
+	{
+		// Preserve elapsed time, but use a separate widget while MoviePlayer releases its Slate tree.
+		LoadingScreen = MazeInterfaceStyle::MakeLoadingScreen(bShowingPreparationError ? nullptr : LoadingScreen);
+
+		bShowingPreparationError = false;
+	}
 	else
 	{
 		// Details are in the log; never expose internal resource paths as product UI.

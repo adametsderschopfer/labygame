@@ -4,6 +4,7 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "RenderCommandFence.h"
 #include "World/MazeLocationSettings.h"
+#include "World/MazePreparationStatus.h"
 #include "MazeLocationSubsystem.generated.h"
 
 struct FStreamableHandle;
@@ -23,7 +24,9 @@ public:
 		return true;
 	}
 
-	void ReportReady(UObject* Participant, bool bReady);
+	void ReportReady(UObject* Participant, bool bReady, int32 Completed = 0, int32 Total = 0);
+	void ReportBlockingStage(EMazePreparationStage Stage);
+	FMazePreparationStatus ReadPreparationStatus() const;
 	void RemoveParticipant(UObject* Participant);
 	bool AreAssetsReady() const
 	{
@@ -57,7 +60,13 @@ protected:
 private:
 	TSharedPtr<FStreamableHandle> AssetLoad;
 	TArray<FSoftObjectPath> Dependencies;
-	TMap<TWeakObjectPtr<UObject>, bool> Participants;
+	struct FParticipant
+	{
+		bool bReady = false;
+		int32 Completed = 0;
+		int32 Total = 0;
+	};
+	TMap<TWeakObjectPtr<UObject>, FParticipant> Participants;
 	EMazeLocationMode Mode = EMazeLocationMode::Whole;
 	FString Failure;
 	int32 StableFrames = 0;

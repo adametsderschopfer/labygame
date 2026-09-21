@@ -161,6 +161,9 @@ void AMazeWorld::Build()
 	check(ECSSubsystem);
 
 	const auto OldData = GetGeneratedData();
+	auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>();
+
+	Location->ReportBlockingStage(EMazePreparationStage::Topology);
 
 	if (!MazeEntity.IsSet())
 		MazeEntity = ECSSubsystem->CreateMaze(Seed, GetActorLocation());
@@ -177,6 +180,8 @@ void AMazeWorld::Build()
 		return;
 
 	const auto& Layout = Data->Layout;
+
+	Location->ReportBlockingStage(EMazePreparationStage::Collision);
 
 	Walls->ClearAllMeshSections();
 	Floor->ClearInstances();
@@ -201,6 +206,8 @@ void AMazeWorld::Build()
 		                         TArray<FColor>(),
 		                         TArray<FProcMeshTangent>(),
 		                         true);
+
+	Location->ReportBlockingStage(EMazePreparationStage::Geometry);
 
 	// Labels are local visual components; topology alone is replicated.
 	TArray<UTextRenderComponent*> OldLabels;

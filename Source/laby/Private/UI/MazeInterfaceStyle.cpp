@@ -109,30 +109,3 @@ TSharedRef<SWidget> MazeInterfaceStyle::MakeCursor()
 {
 	return SNew(SMazeCursor);
 }
-
-TSharedRef<SWidget> MazeInterfaceStyle::MakeLoadingScreen()
-{
-	// MoviePlayer can draw while the game thread loads. No UObject assets or bindings here.
-	return SNew(SBorder)
-	    .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-	    .BorderBackgroundColor(FLinearColor(0.002f, 0.006f, 0.004f))
-	    .HAlign(HAlign_Center)
-	    .VAlign(VAlign_Center)[SNew(SBox).WidthOverride(
-	        440)[SNew(SVerticalBox) +
-	             SVerticalBox::Slot().AutoHeight().Padding(
-	                 0, 0, 0, 18)[SNew(STextBlock)
-	                                  .Text(NSLOCTEXT("Maze.Glass", "Brand", "LABY"))
-	                                  .Font(Font(44, 500))
-	                                  .ColorAndOpacity(Ink)] +
-	             SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 56)[SNew(SBox).HeightOverride(
-	                 1)[SNew(SBorder)
-	                        .Padding(0)
-	                        .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-	                        .BorderBackgroundColor(Line)]] +
-	             SVerticalBox::Slot().AutoHeight().Padding(
-	                 0, 0, 0, 18)[SNew(STextBlock)
-	                                  .Text(NSLOCTEXT("Maze.Loading", "LoadingGlass", "ЗАГРУЗКА ЛАБИРИНТА"))
-	                                  .Font(Font(18, 160))
-	                                  .ColorAndOpacity(Ink)] +
-	             SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Left)[SNew(SThrobber).NumPieces(3)]]];
-}

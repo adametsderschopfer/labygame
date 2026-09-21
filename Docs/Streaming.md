@@ -165,6 +165,37 @@ to the location manifest; cook and initial preload then follow automatically.
 Future large feature-specific bundles should use native Asset Manager bundles,
 with the same readiness contract, instead of pinning every asset of every level.
 
+## Loading screen observations
+
+The loading screen names map loading, ECS topology generation, resident collision
+preparation, resource loading, local visual chunk preparation, World Partition
+streaming, PSO preparation, and the first-frame fence wait. AMazeWorld reports the
+boundaries of synchronous calls through the resource subsystem; ECS still owns
+gameplay generation and collision data.
+
+`ReadPreparationStatus` returns detached observations: native
+`FStreamableHandle::GetLoadedCount` for resources, required/resident chunk counts
+reported by the adapter, and the existing
+`FShaderPipelineCache::NumPrecompilesRemaining` readiness counter. In UE 5.8 this
+includes active PSO precache requests, not just a bundled pipeline cache. Shader
+work overlapping resource/geometry work appears as a separate remaining count.
+The progress bar measures only the current counted stage; unknown totals use an
+indeterminate bar. There is no estimated overall percentage or ETA.
+
+The existing native Slate/MoviePlayer path is retained because blocking map loads
+cannot safely tick a Widget Blueprint. A mutex protects copied presentation
+values read by the loading thread; no widget binding queries UObjects, fragments,
+or the world. The viewport receives a separate widget at handover, preserving
+elapsed wall time without assigning a widget to two Slate parents. Travel and
+teardown reset presentation; generation and participant cleanup reset counts.
+Gameplay authority, readiness conditions, scheduling and budgets are unchanged.
+Startup before GameInstance/PreLoadMap remains outside this screen's coverage.
+
+The first-launch/driver-change hint explains possible graphics preparation delays
+without diagnosing every slow launch as shader compilation. Shipping compilation
+and packaging check integration; appearance and cold-start duration still require
+a user-run check. Play, automation tests and performance captures are not run.
+
 ## Diagnostics and verification
 
 `MazeDiagnosticsToolset.ReadSnapshots` enriches detached ECS snapshots with

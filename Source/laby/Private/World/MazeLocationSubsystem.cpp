@@ -53,12 +53,16 @@ void UMazeLocationSubsystem::Fail(const FString& Reason)
 	UE_LOG(LogTemp, Error, TEXT("Location preparation failed: %s"), *Failure);
 }
 
-void UMazeLocationSubsystem::ReportReady(UObject* Participant, bool bParticipantReady)
+void UMazeLocationSubsystem::ReportReady(UObject* Participant, bool bParticipantReady, int32 Completed, int32 Total)
 {
 	if (!IsValid(Participant) || Participant->GetWorld() != GetWorld())
 		return;
 
-	Participants.FindOrAdd(Participant) = bParticipantReady;
+	auto& Entry = Participants.FindOrAdd(Participant);
+
+	Entry.bReady = bParticipantReady;
+	Entry.Total = FMath::Max(0, Total);
+	Entry.Completed = FMath::Clamp(Completed, 0, Entry.Total);
 
 	if (!bParticipantReady)
 	{
@@ -66,6 +70,66 @@ void UMazeLocationSubsystem::ReportReady(UObject* Participant, bool bParticipant
 		bFenceStarted = false;
 		bReady = false;
 	}
+}
+
+void UMazeLocationSubsystem::ReportBlockingStage(EMazePreparationStage Stage)
+{
+	if (auto* Online = GetWorld()->GetGameInstance<UMazeOnlineGameInstance>())
+	{
+		FMazePreparationStatus Status;
+
+		Status.Stage = Stage;
+		Online->UpdateLoadingStatus(GetWorld(), Status);
+	}
+}
+
+FMazePreparationStatus UMazeLocationSubsystem::ReadPreparationStatus() const
+{
+	FMazePreparationStatus Status;
+
+	Status.PendingPSOs = PendingPSOs;
+
+	if (!bAssetsReady)
+	{
+		Status.Stage = EMazePreparationStage::Assets;
+
+		if (AssetLoad)
+			AssetLoad->GetLoadedCount(Status.Completed, Status.Total);
+
+		return Status;
+	}
+
+	bool bPendingParticipants = Mode == EMazeLocationMode::Procedural && Participants.IsEmpty();
+
+	for (const auto& Pair : Participants)
+		if (Pair.Key.IsValid())
+		{
+			bPendingParticipants |= !Pair.Value.bReady;
+			Status.Completed += Pair.Value.Completed;
+			Status.Total += Pair.Value.Total;
+		}
+
+	if (bPendingParticipants)
+	{
+		Status.Stage = EMazePreparationStage::Geometry;
+
+		return Status;
+	}
+
+	Status.Completed = Status.Total = 0;
+
+	if (Mode == EMazeLocationMode::WorldPartition)
+		if (const auto* Partition = GetWorld()->GetSubsystem<UWorldPartitionSubsystem>();
+		    Partition && !Partition->IsStreamingCompleted())
+		{
+			Status.Stage = EMazePreparationStage::WorldStreaming;
+
+			return Status;
+		}
+
+	Status.Stage = PendingPSOs > 0 ? EMazePreparationStage::Shaders : EMazePreparationStage::Finalizing;
+
+	return Status;
 }
 
 void UMazeLocationSubsystem::RemoveParticipant(UObject* Participant)
@@ -97,7 +161,7 @@ void UMazeLocationSubsystem::Tick(float DeltaSeconds)
 		if (!It.Key().IsValid())
 			It.RemoveCurrent();
 		else
-			bComplete &= It.Value();
+			bComplete &= It.Value().bReady;
 	}
 
 	if (Mode == EMazeLocationMode::WorldPartition)
@@ -141,7 +205,12 @@ void UMazeLocationSubsystem::Tick(float DeltaSeconds)
 	}
 
 	if (auto* Online = GetWorld()->GetGameInstance<UMazeOnlineGameInstance>())
+	{
 		Online->UpdatePreparationScreen(GetWorld(), !bReady, Failure);
+
+		if (!bReady && Failure.IsEmpty())
+			Online->UpdateLoadingStatus(GetWorld(), ReadPreparationStatus());
+	}
 }
 
 void UMazeLocationSubsystem::Deinitialize()

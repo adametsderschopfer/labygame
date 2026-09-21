@@ -174,13 +174,13 @@ void AMazeWorld::UpdateChunks()
 			View->Destroy();
 	}
 
-	bool bAllPresent = true;
+	int32 Present = 0;
 
 	for (FIntPoint Coordinate : Wanted)
-		bAllPresent &= ChunkViews.Contains(Coordinate);
+		Present += ChunkViews.Contains(Coordinate) ? 1 : 0;
 
 	// First entry waits for the entire preload area. Later movement only gates a missing current chunk.
-	if (bAllPresent)
+	if (Present == Wanted.Num())
 		bInitialChunksReady = true;
 
 	bool bCurrentPresent = true;
@@ -188,5 +188,6 @@ void AMazeWorld::UpdateChunks()
 	for (FIntPoint Source : Sources)
 		bCurrentPresent &= ChunkViews.Contains(Source);
 
-	GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->ReportReady(this, bInitialChunksReady && bCurrentPresent);
+	GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->ReportReady(
+	    this, bInitialChunksReady && bCurrentPresent, Present, Wanted.Num());
 }

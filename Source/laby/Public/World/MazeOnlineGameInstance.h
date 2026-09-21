@@ -4,6 +4,7 @@
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Interfaces/OnlineIdentityInterface.h"
 #include "OnlineSessionSettings.h"
+#include "World/MazePreparationStatus.h"
 #include "MazeOnlineGameInstance.generated.h"
 
 // Persistent transport adapter. Authoritative room rules live in the world ECS.
@@ -20,6 +21,7 @@ public:
 	void JoinLocal(const FString& Address);
 	void LocalRoomReady();
 	void UpdatePreparationScreen(UWorld* World, bool bPreparing, const FString& Failure);
+	void UpdateLoadingStatus(UWorld* World, const FMazePreparationStatus& Preparation);
 	bool IsLocalRoom() const
 	{
 		return bLocalTransport;
