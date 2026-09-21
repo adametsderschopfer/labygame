@@ -73,6 +73,13 @@
 - Respect per-frame creation/eviction limits, hysteresis and profiling targets. New long sightlines, larger rooms, faster movement or teleport require an explicit streaming-radius/readiness review. Use standard scalability/texture streaming; do not force one hardware memory budget or promise FPS improvements without measurements.
 - Do not convert procedural maps to World Partition just by enabling a setting. Authored partitioned maps use native streaming sources and the common readiness contract. Resource registration does not automatically define a new location's gameplay or spawn rules.
 
+# Release archive names
+
+- Always package distributable Windows releases through `Scripts/Package-Release.ps1`.
+- Name the game archive `<ProjectName>-<ProjectVersion>-<identifier>.zip` and the source archive `<ProjectName>-<ProjectVersion>-<identifier>-Project.zip` beside it. Read name/version from `Config/DefaultGame.ini`; the identifier is the unique Git short hash requested at eight characters. Do not invent different names or substitute dates/platform/configuration in these archive names.
+- Commit changes before packaging so both archives match the identifier. The script rejects a dirty working tree, source changes during packaging and overwriting an existing release directory. `-Describe` prints names without building or writing files.
+- Shipping packaging builds the game target with `-skipbuildeditor`; it must not rebuild or terminate the open editor. It uses existing editor modules for cook, so changes requiring a new editor module must be applied safely before packaging. The script never runs the game, Play or tests.
+
 # Automatic code formatting
 
 - After every batch of source-code edits, and always before the final response for a code-changing task, run `powershell -NoProfile -ExecutionPolicy Bypass -File Scripts/Format-Code.ps1` from the project root. Do this without asking the user. Repeat if you edit source again afterward.
