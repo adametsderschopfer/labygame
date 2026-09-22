@@ -1,5 +1,6 @@
 #include "Player/MazePlayerController.h"
 #include "Player/MazeCharacter.h"
+#include "Player/MazeKeyBindings.h"
 #include "Camera/PlayerCameraManager.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "UI/MazeWidgets.h"
@@ -87,7 +88,11 @@ FMazeSessionFragment AMazePlayerController::ReadSession() const
 void AMazePlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
-	InputComponent->BindKey(EKeys::M, IE_Pressed, this, &AMazePlayerController::ToggleMap);
+
+	if (IsLocalController())
+		MazeKeyBindings::EnsureDefaults();
+
+	InputComponent->BindAction(TEXT("Map"), IE_Pressed, this, &AMazePlayerController::ToggleMap);
 	InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &AMazePlayerController::ToggleMenu).bExecuteWhenPaused =
 	    true;
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST

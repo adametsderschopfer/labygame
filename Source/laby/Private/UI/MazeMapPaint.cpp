@@ -1,4 +1,5 @@
 #include "MazeMapPaint.h"
+#include "Player/MazeKeyBindings.h"
 #include "Maze/MazeLayout.h"
 #include "UI/MazeInterfaceStyle.h"
 #include "Fonts/FontMeasure.h"
@@ -661,13 +662,18 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 		     Ink,
 		     false,
 		     View.Size.X - 300);
-		Text(NSLOCTEXT("Maze.Glass", "MapClose", "M / ESC  ЗАКРЫТЬ"),
+		Text(FText::Format(NSLOCTEXT("Maze.Glass", "MapCloseKey", "{0} / ESC  ЗАКРЫТЬ"),
+		                   MazeKeyBindings::GetKey(TEXT("Map")).GetDisplayName()),
 		     {View.Origin.X + View.Size.X - 220, Bottom},
 		     12,
 		     Accent);
 	}
 	else
-		Text(NSLOCTEXT("Maze.Glass", "MapHint", "M   КАРТА"), View.Origin + FVector2D(0, -26), 11, Ink);
+		Text(FText::Format(NSLOCTEXT("Maze.Glass", "MapHintKey", "{0}   КАРТА"),
+		                   MazeKeyBindings::GetKey(TEXT("Map")).GetDisplayName()),
+		     View.Origin + FVector2D(0, -26),
+		     11,
+		     Ink);
 
 	return Layer;
 }

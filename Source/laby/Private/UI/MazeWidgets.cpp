@@ -6,6 +6,9 @@
 #include "Player/MazePlayerController.h"
 #include "ECS/MazeVitalsSystem.h"
 #include "Components/Button.h"
+#include "Components/CheckBox.h"
+#include "Components/ComboBoxString.h"
+#include "Components/InputKeySelector.h"
 #include "Components/ProgressBar.h"
 #include "Components/Slider.h"
 #include "Components/TextBlock.h"
@@ -81,12 +84,6 @@ void UMazeMenuWidget::NativeConstruct()
 	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("GameTabButton"))))
 		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ShowGameSettings);
 
-	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("ApplyButton"))))
-		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ApplySettings);
-
-	if (auto* Slider = Cast<USlider>(GetWidgetFromName(TEXT("FieldOfViewSlider"))))
-		Slider->OnValueChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeFieldOfView);
-
 	if (auto* Slider = Cast<USlider>(GetWidgetFromName(TEXT("RenderScaleSlider"))))
 		Slider->OnValueChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeRenderScale);
 
@@ -103,11 +100,14 @@ void UMazeMenuWidget::NativeConstruct()
 
 	Text(this, TEXT("SensitivityText"), SensitivityText(Sensitivity));
 	ReadSettingsIntoControls();
+	BindSettingsEvents();
 	SelectSettingsSection(0);
 }
 
 void UMazeMenuWidget::NativeDestruct()
 {
+	KeyLabelScroll.Reset();
+
 	if (WidgetTree)
 		WidgetTree->ForEachWidget(
 		    [this](UWidget* Widget)
@@ -117,6 +117,15 @@ void UMazeMenuWidget::NativeDestruct()
 
 			    if (auto* Slider = Cast<USlider>(Widget))
 				    Slider->OnValueChanged.RemoveAll(this);
+
+			    if (auto* Check = Cast<UCheckBox>(Widget))
+				    Check->OnCheckStateChanged.RemoveAll(this);
+
+			    if (auto* Combo = Cast<UComboBoxString>(Widget))
+				    Combo->OnSelectionChanged.RemoveAll(this);
+
+			    if (auto* Selector = Cast<UInputKeySelector>(Widget))
+				    Selector->OnKeySelected.RemoveAll(this);
 		    });
 
 	Super::NativeDestruct();
@@ -124,6 +133,10 @@ void UMazeMenuWidget::NativeDestruct()
 
 FReply UMazeMenuWidget::NativeOnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent& Event)
 {
+	// Escape cancels key capture before it can close the settings menu.
+	if (IsSelectingBinding())
+		return FReply::Unhandled();
+
 	if (Event.GetKey() == EKeys::Escape)
 	{
 		if (auto* Controller = GetOwningPlayer<AMazePlayerController>())
@@ -169,19 +182,9 @@ void UMazeMenuWidget::Quit()
 void UMazeMenuWidget::ChangeSensitivity(float Value)
 {
 	Text(this, TEXT("SensitivityText"), SensitivityText(FMath::Clamp(Value, 0.1f, 3.f)));
-}
 
-void UMazeMenuWidget::SaveSensitivity()
-{
-	ApplySettings();
-}
-
-void UMazeMenuWidget::ResetSensitivity()
-{
-	if (auto* Slider = Cast<USlider>(GetWidgetFromName(TEXT("SensitivitySlider"))))
-		Slider->SetValue(1.f);
-
-	ChangeSensitivity(1.f);
+	if (!bReadingSettings && FMath::IsFinite(Value))
+		GetMutableDefault<UMazePreferences>()->SetSensitivity(Value);
 }
 
 void UMazeHUDWidget::NativeConstruct()

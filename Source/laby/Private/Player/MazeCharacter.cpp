@@ -11,6 +11,7 @@
 #include "Components/SpotLightComponent.h"
 #include "Camera/CameraComponent.h"
 #include "UI/MazeInterfacePreferences.h"
+#include "Player/MazeKeyBindings.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -364,14 +365,14 @@ void AMazeCharacter::Tick(float DeltaSeconds)
 	// Input focus and physics are observations, not gameplay state owned by the Actor.
 	if (const auto* PC = Cast<APlayerController>(Controller); PC && IsLocallyControlled())
 	{
-		if (!PC->IsInputKeyDown(EKeys::LeftShift))
+		if (!MazeKeyBindings::IsHeld(*PC, TEXT("Sprint")))
 			SprintStop();
 
-		if (!PC->IsInputKeyDown(EKeys::SpaceBar))
+		if (!MazeKeyBindings::IsHeld(*PC, TEXT("Jump")))
 			JumpStop();
 
-		// Crouch is held input: refresh both states, even when the live input mapping cache is stale.
-		if (PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl))
+		// Poll the configured keys so focus changes and rebinding cannot leave held input stuck.
+		if (MazeKeyBindings::IsHeld(*PC, TEXT("Crouch")))
 			CrouchStart();
 		else
 			CrouchStop();
@@ -559,7 +560,7 @@ void AMazeCharacter::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindAction(TEXT("Crouch"), IE_Pressed, this, &AMazeCharacter::CrouchStart);
 	Input->BindAction(TEXT("Crouch"), IE_Released, this, &AMazeCharacter::CrouchStop);
 	Input->BindAction(TEXT("NewMaze"), IE_Pressed, this, &AMazeCharacter::RestartMaze);
-	Input->BindKey(EKeys::L, IE_Pressed, this, &AMazeCharacter::ToggleHeadlamp);
+	Input->BindAction(TEXT("Headlamp"), IE_Pressed, this, &AMazeCharacter::ToggleHeadlamp);
 }
 
 void AMazeCharacter::ToggleHeadlamp()

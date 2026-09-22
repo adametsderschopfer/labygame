@@ -1,4 +1,6 @@
 #include "UI/MazeWidgets.h"
+#include "Player/MazeKeyBindings.h"
+#include "Components/InputKeySelector.h"
 #include "UI/MazeText.h"
 #include "UI/MazeInterfaceStyle.h"
 #include "Sound/SoundBase.h"
@@ -460,70 +462,59 @@ namespace MazeGlassUI
 		            NSLOCTEXT("Maze.Arc", "BindingsTitle", "УПРАВЛЕНИЕ ПЕРСОНАЖЕМ"),
 		            18,
 		            Accent),
-		      {0, 238},
-		      {900, 40});
-		Place(Controls,
-		      Label(Tree,
-		            TEXT("BindingsMovement"),
-		            NSLOCTEXT("Maze.Arc",
-		                      "BindingsMovement",
-		                      "W A S D   Движение     /     SHIFT   Бег     /     SPACE   Прыжок"),
-		            18),
-		      {0, 300},
-		      {910, 50});
-		Place(
-		    Controls,
-		    Label(Tree,
-		          TEXT("BindingsActions"),
-		          NSLOCTEXT("Maze.Arc", "BindingsActions", "CTRL   Присесть     /     L   Фонарик     /     M   Карта"),
-		          18),
-		    {0, 365},
-		    {910, 50});
-		Place(Controls,
-		      Label(Tree,
-		            TEXT("BindingsMenu"),
-		            NSLOCTEXT("Maze.Arc", "BindingsMenu", "ESC   Меню     /     TAB и ENTER   Выбор пункта"),
-		            18),
-		      {0, 430},
-		      {910, 50});
+		      {0, 176},
+		      {900, 36});
 
-		Caption(Tree, Game, TEXT("FieldOfViewLabel"), NSLOCTEXT("Maze.Arc", "FOV", "Поле зрения"), 0);
-		Slider(Tree,
-		       Game,
-		       TEXT("FieldOfViewSlider"),
-		       TEXT("FieldOfViewText"),
-		       0,
-		       70,
-		       110,
-		       95,
-		       5,
-		       FText::AsCultureInvariant(TEXT("95°")));
-		Caption(Tree, Game, TEXT("CompassLabel"), NSLOCTEXT("Maze.Arc", "Compass", "Компас на карте"), 96);
-		Check(Tree, Game, TEXT("CompassCheck"), 96, true);
-		Caption(Tree, Game, TEXT("CrosshairLabel"), NSLOCTEXT("Maze.Arc", "Crosshair", "Точка в центре экрана"), 192);
-		Check(Tree, Game, TEXT("CrosshairCheck"), 192, true);
-		Caption(Tree, Game, TEXT("CompactHUDLabel"), NSLOCTEXT("Maze.Arc", "CompactHUD", "Компактные индикаторы"), 288);
-		Check(Tree, Game, TEXT("CompactHUDCheck"), 288, false);
+		int32 BindingIndex = 0;
+
+		for (const auto& Binding : MazeKeyBindings::Definitions())
+		{
+			const double X = (BindingIndex / 5) * 560.0;
+			const double Y = 224.0 + (BindingIndex % 5) * 52.0;
+			const FString Name = Binding.WidgetName().ToString();
+
+			Place(Controls, Label(Tree, *(Name + TEXT("Label")), Binding.Label, 18), {X, Y + 6}, {280, 38});
+
+			auto* Selector = Make<UInputKeySelector>(Tree, *Name);
+
+			Selector->SetAllowModifierKeys(false);
+			Selector->SetAllowGamepadKeys(false);
+			Selector->SetEscapeKeys({EKeys::Escape});
+			Selector->SetSelectedKey(FInputChord(Binding.DefaultKey));
+			Selector->SetKeySelectionText(NSLOCTEXT("Maze.Keys", "PressKey", "Нажмите клавишу"));
+			Selector->SetNoKeySpecifiedText(NSLOCTEXT("Maze.Keys", "Unbound", "Не назначено"));
+
+			FSlateBrush Base = *FCoreStyle::Get().GetBrush("WhiteBrush");
+
+			Base.TintColor = Glass;
+
+			FSlateBrush Hover = Base;
+
+			Hover.TintColor = Muted.CopyWithNewOpacity(0.18f);
+
+			FButtonStyle ButtonStyle = Selector->GetButtonStyle();
+
+			ButtonStyle.SetNormal(Base).SetHovered(Hover).SetPressed(Hover);
+			Selector->SetButtonStyle(ButtonStyle);
+
+			FTextBlockStyle TextStyle = Selector->GetTextStyle();
+
+			TextStyle.SetFont(MazeInterfaceStyle::Font(16, 120)).SetColorAndOpacity(Ink);
+			Selector->SetTextStyle(TextStyle);
+			Place(Controls, Selector, {X + 292, Y}, {220, 42});
+			++BindingIndex;
+		}
+
+		Place(Controls, Label(Tree, TEXT("KeyBindingStatus"), FText::GetEmpty(), 16, Accent), {0, 492}, {1100, 38});
+
+		Caption(Tree, Game, TEXT("CompassLabel"), NSLOCTEXT("Maze.Arc", "Compass", "Компас на карте"), 0);
+		Check(Tree, Game, TEXT("CompassCheck"), 0, true);
+		Caption(Tree, Game, TEXT("CrosshairLabel"), NSLOCTEXT("Maze.Arc", "Crosshair", "Точка в центре экрана"), 96);
+		Check(Tree, Game, TEXT("CrosshairCheck"), 96, true);
 		Caption(
-		    Tree, Game, TEXT("CameraMotionLabel"), NSLOCTEXT("Maze.Arc", "CameraMotion", "Покачивание камеры"), 384);
-		Check(Tree, Game, TEXT("CameraMotionCheck"), 384, true);
+		    Tree, Game, TEXT("CameraMotionLabel"), NSLOCTEXT("Maze.Arc", "CameraMotion", "Покачивание камеры"), 192);
+		Check(Tree, Game, TEXT("CameraMotionCheck"), 192, true);
 
-		Place(
-		    Stage,
-		    Label(Tree,
-		          TEXT("SettingsStatus"),
-		          NSLOCTEXT("Maze.Arc", "SettingsStatus", "Изменения сохраняются кнопкой «Применить». Назад — отмена."),
-		          18,
-		          Muted),
-		    {640, 858},
-		    {1120, 38});
-		Button(Tree,
-		       Stage,
-		       TEXT("ApplyButton"),
-		       NSLOCTEXT("Maze.Arc", "Apply", "ПРИМЕНИТЬ"),
-		       Plate,
-		       {1510, 980},
-		       {300, 58});
 		Button(
 		    Tree, Stage, TEXT("ResetButton"), NSLOCTEXT("Maze.Arc", "Reset", "ИСХОДНЫЕ"), Plate, {370, 980}, {300, 58});
 		Button(Tree, Stage, TEXT("BackButton"), NSLOCTEXT("Maze.Arc", "Back", "НАЗАД"), Plate, {80, 980}, {230, 58});

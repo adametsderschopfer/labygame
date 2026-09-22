@@ -1,4 +1,5 @@
 #include "UI/MazeExplorationMapWidget.h"
+#include "Player/MazeKeyBindings.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "Player/MazeCharacter.h"
 #include "Player/MazePlayerController.h"
@@ -192,7 +193,7 @@ FReply UMazeExplorationMapWidget::NativeOnKeyDown(const FGeometry& Geometry, con
 {
 	if (auto* Controller = GetOwningPlayer<AMazePlayerController>(); Controller && Controller->IsMapOpen())
 	{
-		if (Event.GetKey() == EKeys::M || Event.GetKey() == EKeys::Escape)
+		if (Event.GetKey() == MazeKeyBindings::GetKey(TEXT("Map")) || Event.GetKey() == EKeys::Escape)
 		{
 			if (!Event.IsRepeat())
 				Controller->ToggleMap();
@@ -213,6 +214,14 @@ FReply UMazeExplorationMapWidget::NativeOnKeyDown(const FGeometry& Geometry, con
 
 FReply UMazeExplorationMapWidget::NativeOnMouseButtonDown(const FGeometry& Geometry, const FPointerEvent& Event)
 {
+	if (auto* Controller = GetOwningPlayer<AMazePlayerController>();
+	    Controller && Controller->IsMapOpen() && Event.GetEffectingButton() == MazeKeyBindings::GetKey(TEXT("Map")))
+	{
+		Controller->ToggleMap();
+
+		return FReply::Handled().ReleaseMouseCapture();
+	}
+
 	if (const auto* Controller = GetOwningPlayer<AMazePlayerController>();
 	    Controller && Controller->IsMapOpen() && Event.GetEffectingButton() == EKeys::LeftMouseButton)
 		return FReply::Handled().CaptureMouse(TakeWidget());

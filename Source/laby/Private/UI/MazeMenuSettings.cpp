@@ -2,6 +2,9 @@
 #include "UI/MazeInterfaceStyle.h"
 #include "UI/MazeInterfacePreferences.h"
 #include "Player/MazePlayerController.h"
+#include "Player/MazeCharacter.h"
+#include "Player/MazeKeyBindings.h"
+#include "Components/InputKeySelector.h"
 #include "World/MazeOnlineGameInstance.h"
 #include "Components/Button.h"
 #include "Components/CheckBox.h"
@@ -61,7 +64,7 @@ namespace
 
 	void Status(UUserWidget* Widget, const FText& Value)
 	{
-		if (auto* Label = Find<UTextBlock>(Widget, TEXT("SettingsStatus")))
+		if (auto* Label = Find<UTextBlock>(Widget, TEXT("KeyBindingStatus")))
 			Label->SetText(Value);
 	}
 }
@@ -71,15 +74,13 @@ void UMazeMenuWidget::ReadSettingsIntoControls()
 	if (!GetWidgetFromName(TEXT("SettingsPages")))
 		return;
 
+	TGuardValue<bool> Reading(bReadingSettings, true);
 	const auto Preferences = FMazeInterfacePreferences::Read();
 
 	SetCheck(this, TEXT("InvertYCheck"), Preferences.bInvertMouseY);
 	SetCheck(this, TEXT("CompassCheck"), Preferences.bShowCompass);
 	SetCheck(this, TEXT("CrosshairCheck"), Preferences.bShowCrosshair);
-	SetCheck(this, TEXT("CompactHUDCheck"), Preferences.bCompactHUD);
 	SetCheck(this, TEXT("CameraMotionCheck"), Preferences.bCameraMotion);
-	SetSlider(this, TEXT("FieldOfViewSlider"), Preferences.FieldOfView);
-	ChangeFieldOfView(Preferences.FieldOfView);
 	SetSlider(this, TEXT("SensitivitySlider"), GetDefault<UMazePreferences>()->GetSensitivity());
 	ChangeSensitivity(GetDefault<UMazePreferences>()->GetSensitivity());
 
@@ -118,8 +119,7 @@ void UMazeMenuWidget::ReadSettingsIntoControls()
 		ChangeRenderScale(Scale);
 	}
 
-	Status(this,
-	       NSLOCTEXT("Maze.Settings", "ArcApplyHint", "Изменения сохраняются кнопкой «Применить». Назад — отмена."));
+	ReadKeyBindings();
 }
 
 void UMazeMenuWidget::SelectSettingsSection(int32 Index)
@@ -163,44 +163,131 @@ void UMazeMenuWidget::ShowGameSettings()
 	SelectSettingsSection(2);
 }
 
-void UMazeMenuWidget::ChangeFieldOfView(float Value)
-{
-	if (auto* Label = Find<UTextBlock>(this, TEXT("FieldOfViewText")))
-		Label->SetText(
-		    FText::Format(NSLOCTEXT("Maze.Settings", "ArcDegrees", "{0}°"), FText::AsNumber(FMath::RoundToInt(Value))));
-}
-
 void UMazeMenuWidget::ChangeRenderScale(float Value)
 {
 	if (auto* Label = Find<UTextBlock>(this, TEXT("RenderScaleText")))
 		Label->SetText(
 		    FText::Format(NSLOCTEXT("Maze.Settings", "ArcPercent", "{0}%"), FText::AsNumber(FMath::RoundToInt(Value))));
+
+	if (!bReadingSettings)
+		SaveVideoSettings();
 }
 
-void UMazeMenuWidget::ApplySettings()
+void UMazeMenuWidget::BindSettingsEvents()
 {
-	if (!GetWidgetFromName(TEXT("SettingsPages")))
+	for (const TCHAR* Name : {TEXT("InvertYCheck"),
+	                          TEXT("CompassCheck"),
+	                          TEXT("CrosshairCheck"),
+	                          TEXT("CameraMotionCheck"),
+	                          TEXT("VSyncCheck")})
+		if (auto* Check = Find<UCheckBox>(this, Name))
+			Check->OnCheckStateChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeCheckSetting);
+
+	for (const TCHAR* Name : {TEXT("ShadowsCombo"), TEXT("FrameLimitCombo")})
+		if (auto* Combo = Find<UComboBoxString>(this, Name))
+			Combo->OnSelectionChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeVideoOption);
+
+	if (auto* Combo = Find<UComboBoxString>(this, TEXT("QualityCombo")))
+		Combo->OnSelectionChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeQuality);
+
+	for (const auto& Binding : MazeKeyBindings::Definitions())
+		if (auto* Selector = Cast<UInputKeySelector>(GetWidgetFromName(Binding.WidgetName())))
+		{
+			// The menu paints a clipped, scrolling label over the native key-capture button.
+			Selector->SetTextBlockVisibility(ESlateVisibility::Hidden);
+			Selector->OnKeySelected.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeBinding);
+		}
+}
+
+void UMazeMenuWidget::ReadKeyBindings()
+{
+	TGuardValue<bool> Reading(bReadingSettings, true);
+
+	for (const auto& Binding : MazeKeyBindings::Definitions())
+		if (auto* Selector = Cast<UInputKeySelector>(GetWidgetFromName(Binding.WidgetName())))
+			Selector->SetSelectedKey(FInputChord(MazeKeyBindings::GetKey(Binding.Id)));
+}
+
+bool UMazeMenuWidget::IsSelectingBinding() const
+{
+	for (const auto& Binding : MazeKeyBindings::Definitions())
+		if (const auto* Selector = Cast<UInputKeySelector>(GetWidgetFromName(Binding.WidgetName()));
+		    Selector && Selector->GetIsSelectingKey())
+			return true;
+
+	return false;
+}
+
+void UMazeMenuWidget::ClearBindingInput()
+{
+	if (auto* Controller = GetOwningPlayer())
+	{
+		Controller->FlushPressedKeys();
+
+		if (auto* Character = Cast<AMazeCharacter>(Controller->GetPawn()))
+			Character->ClearLocalInput();
+	}
+}
+
+void UMazeMenuWidget::ChangeBinding(FInputChord SelectedKey)
+{
+	if (bReadingSettings)
 		return;
 
-	// Only this explicit action commits the controls' draft. Opening/closing never writes preferences.
-	auto Preferences = FMazeInterfacePreferences::Read();
+	for (const auto& Binding : MazeKeyBindings::Definitions())
+		if (const auto* Selector = Cast<UInputKeySelector>(GetWidgetFromName(Binding.WidgetName()));
+		    Selector && Selector->GetSelectedKey().Key != MazeKeyBindings::GetKey(Binding.Id))
+		{
+			FText Error;
 
-	Preferences.FieldOfView = SliderValue(this, TEXT("FieldOfViewSlider"), Preferences.FieldOfView);
-	Preferences.bInvertMouseY = Checked(this, TEXT("InvertYCheck"), Preferences.bInvertMouseY);
-	Preferences.bShowCompass = Checked(this, TEXT("CompassCheck"), Preferences.bShowCompass);
-	Preferences.bShowCrosshair = Checked(this, TEXT("CrosshairCheck"), Preferences.bShowCrosshair);
-	Preferences.bCompactHUD = Checked(this, TEXT("CompactHUDCheck"), Preferences.bCompactHUD);
-	Preferences.bCameraMotion = Checked(this, TEXT("CameraMotionCheck"), Preferences.bCameraMotion);
-	Preferences.Save();
-	GetMutableDefault<UMazePreferences>()->SetSensitivity(SliderValue(this, TEXT("SensitivitySlider"), 1.f));
+			if (MazeKeyBindings::SetKey(Binding.Id, Selector->GetSelectedKey().Key, Error))
+				ClearBindingInput();
+
+			Status(this, Error);
+			ReadKeyBindings();
+			break;
+		}
+}
+
+void UMazeMenuWidget::ChangeCheckSetting(bool bChecked)
+{
+	ApplySettings();
+}
+
+void UMazeMenuWidget::ChangeVideoOption(FString Selected, ESelectInfo::Type SelectionType)
+{
+	if (!bReadingSettings)
+		SaveVideoSettings();
+}
+
+void UMazeMenuWidget::ChangeQuality(FString Selected, ESelectInfo::Type SelectionType)
+{
+	if (bReadingSettings)
+		return;
 
 	if (auto* Video = UGameUserSettings::GetGameUserSettings())
 	{
 		const int32 Quality = Index(this, TEXT("QualityCombo"), 4);
 
 		if (Quality < 4)
+		{
 			Video->SetOverallScalabilityLevel(Quality);
+			Video->ApplyNonResolutionSettings();
+			Video->SaveSettings();
+		}
 
+		ReadSettingsIntoControls();
+	}
+}
+
+void UMazeMenuWidget::SaveVideoSettings()
+{
+	if (bReadingSettings || !GetWidgetFromName(TEXT("SettingsPages")))
+		return;
+
+	if (auto* Video = UGameUserSettings::GetGameUserSettings())
+	{
+		// Individual changes must not reapply the preset and overwrite other choices.
 		Video->SetShadowQuality(FMath::Clamp(Index(this, TEXT("ShadowsCombo"), Video->GetShadowQuality()), 0, 4));
 
 		const int32 Limit = Index(this, TEXT("FrameLimitCombo"), 5);
@@ -212,31 +299,56 @@ void UMazeMenuWidget::ApplySettings()
 		Video->SetResolutionScaleValueEx(SliderValue(this, TEXT("RenderScaleSlider"), 100.f));
 		Video->ApplyNonResolutionSettings();
 		Video->SaveSettings();
-	}
 
-	ReadSettingsIntoControls();
-	Status(this, NSLOCTEXT("Maze.Settings", "ArcApplied", "Настройки применены и сохранены."));
+		TGuardValue<bool> Reading(bReadingSettings, true);
+		const int32 Quality = Video->GetOverallScalabilityLevel();
+
+		SetIndex(this, TEXT("QualityCombo"), Quality >= 0 && Quality <= 3 ? Quality : 4);
+	}
+}
+
+void UMazeMenuWidget::ApplySettings()
+{
+	if (bReadingSettings)
+		return;
+
+	auto Preferences = FMazeInterfacePreferences::Read();
+
+	Preferences.bInvertMouseY = Checked(this, TEXT("InvertYCheck"), Preferences.bInvertMouseY);
+	Preferences.bShowCompass = Checked(this, TEXT("CompassCheck"), Preferences.bShowCompass);
+	Preferences.bShowCrosshair = Checked(this, TEXT("CrosshairCheck"), Preferences.bShowCrosshair);
+	Preferences.bCameraMotion = Checked(this, TEXT("CameraMotionCheck"), Preferences.bCameraMotion);
+	Preferences.Save();
+	GetMutableDefault<UMazePreferences>()->SetSensitivity(SliderValue(this, TEXT("SensitivitySlider"), 1.f));
+	SaveVideoSettings();
 }
 
 void UMazeMenuWidget::ResetSettings()
 {
-	// Restore the form only; do not reset platform/device settings until Apply is clicked.
-	SetIndex(this, TEXT("QualityCombo"), 2);
-	SetIndex(this, TEXT("ShadowsCombo"), 2);
-	SetIndex(this, TEXT("FrameLimitCombo"), 2);
-	SetCheck(this, TEXT("VSyncCheck"), false);
-	SetCheck(this, TEXT("InvertYCheck"), false);
-	SetCheck(this, TEXT("CompassCheck"), true);
-	SetCheck(this, TEXT("CrosshairCheck"), true);
-	SetCheck(this, TEXT("CompactHUDCheck"), false);
-	SetCheck(this, TEXT("CameraMotionCheck"), true);
-	SetSlider(this, TEXT("SensitivitySlider"), 1.f);
-	SetSlider(this, TEXT("FieldOfViewSlider"), 95.f);
-	SetSlider(this, TEXT("RenderScaleSlider"), 100.f);
-	ChangeSensitivity(1.f);
-	ChangeFieldOfView(95.f);
-	ChangeRenderScale(100.f);
-	Status(this, NSLOCTEXT("Maze.Settings", "ArcResetDraft", "Выбраны исходные значения. Нажмите «Применить»."));
+	{
+		TGuardValue<bool> Reading(bReadingSettings, true);
+
+		if (auto* Video = UGameUserSettings::GetGameUserSettings())
+			Video->SetOverallScalabilityLevel(2);
+
+		SetIndex(this, TEXT("QualityCombo"), 2);
+		SetIndex(this, TEXT("ShadowsCombo"), 2);
+		SetIndex(this, TEXT("FrameLimitCombo"), 2);
+		SetCheck(this, TEXT("VSyncCheck"), false);
+		SetCheck(this, TEXT("InvertYCheck"), false);
+		SetCheck(this, TEXT("CompassCheck"), true);
+		SetCheck(this, TEXT("CrosshairCheck"), true);
+		SetCheck(this, TEXT("CameraMotionCheck"), true);
+		SetSlider(this, TEXT("SensitivitySlider"), 1.f);
+		SetSlider(this, TEXT("RenderScaleSlider"), 100.f);
+		ChangeSensitivity(1.f);
+		ChangeRenderScale(100.f);
+	}
+	MazeKeyBindings::Reset();
+	ClearBindingInput();
+	ReadKeyBindings();
+	ApplySettings();
+	Status(this, FText::GetEmpty());
 }
 
 void UMazeMenuWidget::ReturnToMainMenu()

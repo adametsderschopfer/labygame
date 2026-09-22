@@ -145,22 +145,44 @@ UMG controls, ScaleBox и Slate. CommonUI не добавляется: марш�
 - Видео: общий уровень качества, тени, лимит FPS, масштаб рендера и VSync.
   Применяются существующие `UGameUserSettings::ApplyNonResolutionSettings` и SaveSettings.
   Разрешение и режим окна не переключаются.
-- Управление: чувствительность и инверсия Y, справка по фиксированным клавишам.
-  Переназначение клавиш не добавлено.
-- Игра: FOV, компас по краям карты, центральная точка, компактные показатели,
-  покачивание камеры. Отладочная камера не менялась.
+- Управление: чувствительность и инверсия Y; десять UInputKeySelector в двух
+  столбцах для движения, бега, прыжка, приседа, фонарика, карты и нового лабиринта.
+- Игра: компас по краям карты, центральная точка и покачивание камеры.
+  Поле зрения и компактные показатели убраны из меню.
 
-В контролах хранится черновик. «Применить» сохраняет, «Исходные» меняет черновик,
-«Назад»/Esc его отбрасывает. Чувствительность принадлежит UMazePreferences,
+Все разделы применяют и сохраняют изменения сразу. Кнопки «Применить» и пояснения
+про отмену нет; «Исходные» немедленно сбрасывает доступные настройки и клавиши.
+Программное заполнение контролов защищено от повторных обработчиков и записи.
+Чувствительность принадлежит UMazePreferences,
 остальные локальные параметры — Maze.InterfacePreferences в GameUserSettings.ini.
-Они не реплицируются и не дублируют игровой ECS-state. Единственное изменение
-файла предпочтений — уточнение имени константы INI-секции для совместимости unity build.
+Они не реплицируются и не дублируют игровой ECS-state. Скрытые прежние параметры
+FOV/CompactHUD сохраняют свои значения, меню их не перезаписывает.
+
+Привязками владеет штатный UInputSettings; MazeKeyBindings читает и обновляет
+именованные action/axis mappings и сохраняет их в пользовательский GInputIni.
+ForceRebuildKeymaps обновляет живой PlayerInput. При изменении сбрасываются
+нажатые клавиши контроллера и прежний ввод ECS. При первом локальном SetupInputComponent
+добавляются отсутствующие действия для старого пользовательского Input.ini.
+Esc отменяет захват клавиши; занятые и служебные клавиши отклоняются с текстом
+в KeyBindingStatus. Назначения карты учтены в открытии, закрытии и подсказках.
+Штатный Enhanced Input User Settings проверен в UE 5.8, но предназначен для
+player-mappable Input Actions/Contexts. Проект пока связывает именованные legacy
+action/axis mappings, поэтому здесь использован подходящий UInputSettings без
+параллельного контекста и миграции игрового ввода. UInputKeySelector также штатный.
 
 Существующие имена: MainMenuButton, VideoTabButton, ControlsTabButton, GameTabButton,
-ApplyButton, SettingsPages (WidgetSwitcher), QualityCombo, ShadowsCombo,
-FrameLimitCombo, RenderScaleSlider/Text, FieldOfViewSlider/Text, VSyncCheck,
-InvertYCheck, CompassCheck, CrosshairCheck, CompactHUDCheck, CameraMotionCheck,
-SettingsStatus. Добавлены SettingsSectionTitle и индикаторы вкладок с суффиксом
+SettingsPages (WidgetSwitcher), QualityCombo, ShadowsCombo,
+FrameLimitCombo, RenderScaleSlider/Text, VSyncCheck,
+InvertYCheck, CompassCheck, CrosshairCheck, CameraMotionCheck,
+Binding_<Id> (InputKeySelector), Binding_<Id>Label, KeyBindingStatus.
+
+Длинные названия клавиш рисует `MazeKeyLabelScroll.cpp` поверх штатного
+InputKeySelector, сохраняя его захват ввода и оформление кнопки. Текст обрезается
+границами поля и движется туда-обратно со скоростью 32 Slate-единицы/с, с паузой
+1 с у каждого края; короткие подписи остаются по центру. Это локальная анимация
+интерфейса на NativeTick, работающая и в меню паузы. Смена текста или ширины поля,
+уход с вкладки управления и уничтожение меню сбрасывают состояние прокрутки.
+Список Id находится в MazeKeyBindings::Definitions. SettingsSectionTitle и индикаторы вкладок с суффиксом
 Indicator. Нативные обработчики не дублируются Blueprint-графами.
 
 ## Карта и данные
