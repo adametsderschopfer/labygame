@@ -18,10 +18,17 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 		Maze.Generate(Seed);
 		TestEqual(TEXT("Default maze is 80 by 80"), Maze.Size, 80);
 		TestEqual(TEXT("Default maze has 6400 cells"), Maze.Walls.Num(), 6400);
-		TestTrue(TEXT("Default maze retains 50 base rooms and adds at most 25 bend rooms"),
-		         Maze.Rooms.Num() >= 50 && Maze.Rooms.Num() <= 75);
 
-		for (int32 I = 50; I < Maze.Rooms.Num(); ++I)
+		const int32 BaseSectors = FMath::DivideAndRoundUp(Maze.Size, FMazeRoomDefinition::SectorSide);
+		const int32 BendSectors = FMath::DivideAndRoundUp(Maze.Size, FMazeRoomDefinition::BendSectorSide);
+		const int32 MaxBaseRooms = 1 + BaseSectors * BaseSectors * FMazeRoomDefinition::RoomsPerSector;
+		const int32 MaxBendRooms = BendSectors * BendSectors * FMazeRoomDefinition::RoomsPerSector;
+
+		TestTrue(TEXT("Default maze retains sector coverage and respects room quotas"),
+		         Maze.Rooms.Num() >= 1 + BaseSectors * BaseSectors && Maze.Rooms.Num() <= MaxBaseRooms + MaxBendRooms);
+
+		// Base slots may be skipped when crowded; entries beyond their maximum are always bend rooms.
+		for (int32 I = MaxBaseRooms; I < Maze.Rooms.Num(); ++I)
 		{
 			const FIntRect& Room = Maze.Rooms[I];
 			const uint8 Open = ~Maze.Walls[Room.Min.Y * Maze.Size + Room.Min.X] & 15;
@@ -45,15 +52,24 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 			FoundTinyRoom |= Room.Width() == 1 && Room.Height() == 1;
 			FoundLargestRoom |=
 			    Room.Width() == FMazeRoomDefinition::MaxWidth && Room.Height() == FMazeRoomDefinition::MaxLength;
+
+			for (int32 J = 0; J < I; ++J)
+			{
+				const FIntRect& Other = Maze.Rooms[J];
+
+				TestTrue(TEXT("A corridor cell separates every pair of rooms"),
+				         Room.Min.X > Other.Max.X || Room.Max.X < Other.Min.X || Room.Min.Y > Other.Max.Y ||
+				             Room.Max.Y < Other.Min.Y);
+			}
 		}
 
-		for (int32 SectorY = 0; SectorY < 7; ++SectorY)
-			for (int32 SectorX = 0; SectorX < 7; ++SectorX)
+		for (int32 SectorY = 0; SectorY < BaseSectors; ++SectorY)
+			for (int32 SectorX = 0; SectorX < BaseSectors; ++SectorX)
 			{
-				const FIntRect Sector(SectorX * Maze.Size / 7,
-				                      SectorY * Maze.Size / 7,
-				                      (SectorX + 1) * Maze.Size / 7,
-				                      (SectorY + 1) * Maze.Size / 7);
+				const FIntRect Sector(SectorX * Maze.Size / BaseSectors,
+				                      SectorY * Maze.Size / BaseSectors,
+				                      (SectorX + 1) * Maze.Size / BaseSectors,
+				                      (SectorY + 1) * Maze.Size / BaseSectors);
 				int32 RoomCount = 0;
 
 				for (int32 I = 1; I < Maze.Rooms.Num(); ++I)

@@ -16,8 +16,9 @@ struct FMazeRoomDefinition
 	// Compact utility rooms are common; the previous largest rooms remain possible.
 	inline static constexpr FSizeRange SizeRanges[] = {
 	    {MinWidth, 2, MinLength, 2, 50}, {2, 3, 3, 5, 35}, {3, MaxWidth, 5, MaxLength, 15}};
-	// One room per spatial sector instead of unconstrained scatter across the map.
+	// Multiple separated rooms per sector; keep sectors large enough for 4x7 rooms.
 	static constexpr int32 SectorSide = 12;
+	static constexpr int32 RoomsPerSector = 3;
 	// Additional compact rooms selected from actual bends and nearby dead-end branches.
 	static constexpr int32 BendSectorSide = 16;
 	static constexpr float BendThroughFraction = 0.5f;

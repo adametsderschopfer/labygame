@@ -7,6 +7,8 @@ public class laby : ModuleRules
 	public laby(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+		// A shared .lc.obj can be consumed by another module before Live Coding links ours.
+		PrivatePCHHeaderFile = "Public/laby.h";
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core",
 			                                                "CoreUObject",

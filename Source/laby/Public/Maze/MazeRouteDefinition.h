@@ -12,5 +12,4 @@ struct FMazeRouteDefinition
 	static constexpr int32 ShapingPasses = 4;
 	static constexpr float BraidFraction = 0.4f;
 	static constexpr float TurnPreference = 0.65f;
-	static constexpr float DeadEndDetailFraction = 0.35f;
 };

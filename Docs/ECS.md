@@ -10,16 +10,18 @@
 пространства; прежний максимум сохранён. Старт остаётся 3×3. На малых картах
 диапазон ограничивается областью размещения; высоты пола и потолка не меняются.
 Распределение стратифицировано:
-`SectorSide=12` задаёт сетку областей с одной случайной комнатой в каждой.
-Базовый этап карты 80×80 использует 7×7 областей: 49 комнат плюс стартовая вместо
-прежних 18, рассеянных без контроля покрытия. Позиции и размеры внутри области
-зависят от seed. После неудачных случайных попыток проверяются все положения
-минимального прямоугольника; область пропускается только если он не помещается
-(это возможно рядом со стартом на маленьких картах). Между случайными комнатами
+`SectorSide=12` задаёт сетку областей с целевыми `RoomsPerSector=3` комнатами в каждой.
+Базовый этап карты 80×80 использует 7×7 областей: до 147 комнат плюс стартовая.
+Каждый из трёх проходов сначала обходит все области, сохраняя их покрытие и
+возможность больших комнат. Позиции и размеры внутри области зависят от seed.
+После неудачных случайных попыток проверяются все положения минимального
+прямоугольника; слот пропускается, если даже он не помещается. Соседние комнаты
+внутри одной области также проверяются на пересечение с запасом в одну клетку.
+Между случайными комнатами
 и границей карты остаётся коридор; входной участок также защищён. DFS и добавление
 петель обходят зарезервированные клетки. Затем комнаты раскрываются внутри:
-45% базовых случайных комнат получают два прохода на соседних стенах (22 из 49 на карте
-80×80), остальные и стартовая — один. Пол комнат и клетки
+45% фактически размещённых базовых случайных комнат получают два прохода на
+соседних стенах, остальные и стартовая — один. Пол комнат и клетки
 перед дверями исключены из кандидатов на провалы; остальные провалы сохраняют
 проверку связности всего оставшегося пола. Параметры собраны в `FMazeRoomDefinition`.
 
@@ -72,8 +74,8 @@ payload. Тупики остаются частью лабиринта; прос
 В существующий тест добавлена проверка комнаты в каждой из 49 областей, без запуска.
 Форматирование и статическая проверка diff выполнены; изменение распределения
 скомпилировано и применено через Live Coding с подтверждением по журналу патча.
-Базовое число 50 следует из размещения по областям; новая игровая генерация для проверки
-в рамках изменения не запускалась.
+Повышение плотности до трёх слотов на область меняет целевое число, а не размеры
+областей или комнат. Новая игровая генерация для проверки не запускалась.
 
 ## Комнаты у зигзагов и подсветка на картах
 
@@ -87,9 +89,10 @@ payload. Тупики остаются частью лабиринта; прос
 входной участок и атмосферные длинные линии исключены. Пол и подходы к дверям
 затем защищает прежний этап провалов. Seed и параметры остаются явными.
 
-Ориентир — до одной добавочной комнаты на область со стороной 16 клеток,
-то есть до 25 сверх базовых 50 на карте 80×80. Пустая область пропускается, если
-подходящего места нет: 75 — верхняя граница, не гарантированное число. Параметры
+Ориентир — до трёх добавочных комнат на область со стороной 16 клеток,
+то есть до 75 сверх базовых комнат на карте 80×80. Кандидаты пересчитываются
+перед каждым слотом с учётом уже добавленных комнат. Слот пропускается, если
+подходящего места нет: 223 со стартовой — общая верхняя граница, не гарантия. Параметры
 находятся в `FMazeRoomDefinition`. Этот этап выполняется синхронно в существующей
 генерации; владелец результата — прежний immutable Generation payload. Новых
 фрагментов, состояний, репликации, правил authority и расписаний нет.
@@ -107,9 +110,12 @@ elements UE 5.8 и прежняя пакетная отрисовка, без Sc
 Форматирование и `git diff --check` завершены. Попытка Live Coding для этого
 изменения зависла после `CompileLiveCoding: entry`: инструмент вернул timeout,
 нового запуска UBT и подтверждения патча в журналах нет. Редактор не завершался;
-эту правку пока нельзя считать применённой к его текущему процессу.
+на тот момент эта правка не была подтверждена в текущем процессе. Последующая
+сборка выявила LNK2011 при линковке общего PCH. После перехода `laby` и мостового
+плагина на private PCH повторная компиляция и линковка всех четырёх патчей прошли
+успешно, редактор подтвердил Live Coding reload. Подробности в `AI-Integration.md`.
 
-## Ритм маршрутов и детали тупиков
+## Ритм маршрутов
 
 `MazeRoutes::Build` — чистый этап `FMazeLayout::Generate`: после резервирования
 комнат и до раскрытия комнат/выхода и размещения провалов. Временный workspace
@@ -135,22 +141,15 @@ DFS предпочитает поворот после нескольких пр
 при следующей генерации; старый seed воспроизводим только в рамках одной версии
 алгоритма. На существующую карту патч не накладывается.
 
-`MazeDeadEndDetails::Append` выводит из immutable layout, seed и координат клетки
-косметические детали для 35% подходящих тупиков: щиток, полку с папками или
-незаконченные отметки на стене. Комнаты, край карты и клетки без пола исключены.
-Это вероятность для каждого места, а не обязательная находка. Объекты пока
-неинтерактивны: инвентаря, наград, игровых предметов и отдельного состояния нет.
-Worker строит их в прежних секциях отделки, без UObject и fragment views;
-владельцем геометрии служит клетка тупика. Повторная загрузка чанка восстанавливает
-тот же вид из seed и топологии, не делает новый случайный выбор. Регенерация и
-EndPlay очищают представления по существующим правилам. Манифест и материалы
-не расширяются; near/far gameplay не меняется. Бюджеты описаны в `Streaming.md`.
+Декоративные находки в тупиках удалены по запросу пользователя: генератора полок,
+щитков и отметок больше нет. Они не имели отдельных ассетов или gameplay-состояния;
+ранее построенная геометрия исчезает при пересоздании визуальных чанков/лабиринта.
 
 Проверки комнат обновлены для одного/двух входов, их расположения и диапазона
 размеров (включая наличие крайних размеров в наборе seed); существующая
 проверка связности покрывает итог после всех изменений топологии и провалов.
 Play и автоматические тесты в рамках этой правки не запускались.
-Форматирование и `git diff --check` выполнены. Новые алгоритмы, детали тупиков
+Форматирование и `git diff --check` выполнены. Алгоритмы маршрутов
 и диапазоны размеров скомпилированы через Live Coding; журнал редактора подтвердил
 `Live coding succeeded` и применение патча. Проверка поведения в игре остаётся
 за пользователем; для новых размеров и маршрутов нужна новая генерация.
@@ -425,8 +424,10 @@ Actor/Character, PlayerController, GameMode и HUD служат адаптера
 
 ## Exploration maps
 
-- The player entity owns `FMazeExplorationFragment`: discovered cells, maze handle/revision and last pose samples. Data resets on entity destruction or maze regeneration; there is no disk persistence or shared team discovery.
-- `ResolvePlayer` calls `FMazeExplorationSystem::Update` after storing the pose and resolving input availability, before movement commands. The current cell and visible cell centers within six cells and a 120-degree forward sector are discovered. Grid-edge ray traversal stops at walls and exact diagonal corners. Disabled input, death and positions outside maze height suspend discovery. Position/direction changes refresh visibility.
+- Map junction contours depend only on discovered cells and their observed walls. A known cell extends to the grid corner unless a wall in a known incident cell meets that junction. Unknown neighbours do not force rounded notches and their wall bits are not inspected; the painter still skips every unseen cell. Pits retain their own fill opacity and symbol without cutting back adjacent floor. This prevents artificial outlined squares beside pits and scallops along the exploration frontier. The shared Slate painter handles both map sizes; no ECS state, discovery rules, scheduling or world geometry changes.
+
+- The player entity owns `FMazeExplorationFragment`: discovered cells, maze handle/revision and the last sampled position. Data resets on entity destruction or maze regeneration; there is no disk persistence or shared team discovery. The unused `LastForward` field is temporarily retained solely for live Mass layout compatibility; it is neither read nor updated by exploration.
+- `ResolvePlayer` calls `FMazeExplorationSystem::Update` after storing the pose and resolving input availability, before movement commands. Discovery now follows the player's position: the current cell and unobstructed cell centers within a two-cell radius (9.25 m at the current scale), in every direction. Initial spawn/revision reset reveals the immediate surroundings. Movement by 0.05 cell refreshes the radius, and entering an unknown cell reveals it immediately; turning in place does not expand the map. `FMazeExplorationDefinition` owns the distances. The existing pure grid-edge ray traversal still stops at walls and exact diagonal corners; engine actor traces/perception would add dependencies and physics queries for topology ECS already owns. No new engine facility is needed: native FVector2D/FMath distance operations are used. Disabled input, death and positions outside maze bounds/height suspend discovery. Seen cells remain known; changing this rule does not erase an existing map, which fully resets on a new generation. Both maps and room highlights consume the same Seen mask. Scheduling, multiplayer authority and lifecycle remain unchanged. Focused movement/direction/wall/reset checks were added without running tests or Play.
 - Discovery is local navigation data. Clients compute their own mask from the replicated topology and local pose; server health and exit rules remain independent. `ReadExploration` validates the entity, maze handle and revision and returns const data for immediate painting only. Widgets never retain fragment pointers.
 - `Session.bMapOpen` is local interface state, like the existing menu (split-screen is unsupported). `SetMapOpen` invokes the system transition; the controller clears only its own character input, changes focus and blocks its movement/look. Other server players remain unaffected. Zoom and pan belong to widget presentation only.
 - `WBP_ExplorationMap` owns the new minimap slot. The editor module creates the missing Blueprint on startup. `UMazeExplorationMapWidget` renders discovered cells in the bottom-right corner and uses the same mask in fullscreen mode. M/Esc close, drag pans, wheel zooms, Home recenters. EndPlay removes the widget. A native layout fallback handles an absent asset.

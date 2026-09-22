@@ -160,6 +160,7 @@ struct FMazeExplorationFragment : public FMassFragment
 	uint32 Revision = 0;
 	TArray<uint8> Seen;
 	FVector2D LastPosition = FVector2D(-1000, -1000);
+	// Unused compatibility slot: preserve the live Mass fragment layout during this patch.
 	FVector2D LastForward = FVector2D::ZeroVector;
 };
 

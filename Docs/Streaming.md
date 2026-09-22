@@ -23,9 +23,10 @@ remove an item, reset a cooldown, respawn loot or change AI decisions.
 Rooms with doorways range from 1 by 1 cells to the existing maximum of 4 by 7
 (the entrance remains 3 by 3). Small, medium and large ranges have weights of
 50%, 35% and 15%; this is not a per-map count guarantee. Floor and ceiling heights
-are unchanged. Base distribution uses one room per spatial sector
-with a target side of 12 cells: the 80-cell map has 49 base rooms plus the entrance,
-instead of 18 unconstrained placements. Corridor margins separate all sectors;
+are unchanged. Base distribution attempts three rooms per spatial sector
+with a target side of 12 cells: the 80-cell map targets up to 147 base rooms plus
+the entrance. Crowded slots are skipped after trying the smallest footprint.
+Corridor margins separate all sectors and rooms within each sector;
 45% of base random rooms have two doorways on adjacent walls, the rest have one.
 The entrance retains its single doorway. The added doorframes use the existing wall
 mesh and resident collision shell; no additional Actors, components, assets or
@@ -42,10 +43,10 @@ simulation state or near/far rule is introduced. Existing creation/eviction
 budgets, readiness gating and resident physics remain unchanged. Runtime visual
 and performance checks require a user-run session; no FPS improvement is claimed.
 
-An additional pass chooses up to 25 compact one-cell rooms on the default map:
+An additional pass chooses up to 75 compact one-cell rooms on the default map:
 two-door rooms on corridor bends or one-door rooms on dead-end branches adjacent
 to bends. It preserves existing cell connections and excludes scenic corridors.
-The additions use existing room/door geometry, at most 50 additional doorframes,
+The additions use existing room/door geometry, at most 150 additional doorframes,
 without new assets or view actors. Smaller footprints and adjacent door directions
 do not extend the prior sightline bound; preload radii, budgets, readiness and
 resident physics stay unchanged. Runtime cost is not measured. Map highlighting
@@ -70,14 +71,11 @@ runs can exceed that target and retain the arbitrary-sightline limitations below
 Room dimensions, traversal speed, creation/eviction limits and hysteresis remain
 unchanged. Resident collision still covers the entire map.
 
-Wall-mounted dead-end details use the existing interior material sections and
-chunk worker. A suitable dead end has a seeded 35% chance of a cabinet, folder shelf
-or tally marks, at most 14 boxes / 168 triangles per selected cell. They stay
-inside their owner cell and project at most 20.1 cm from its back wall; they have
-no collision, Actors, assets or interactive state. Unloading a chunk discards only
-derived cosmetic geometry; regeneration from the same seed and layout restores
-it. No resource participant or location manifest entry is required. This adds
-geometry to existing chunk commits; runtime cost has not been measured.
+Dead-end cabinet, shelf and tally-mark decoration has been removed at the user's
+request. No standalone assets, actors or gameplay state were created for these
+details. Existing chunk meshes keep their old appearance until rebuilt; newly
+built chunks no longer contain them. Ordinary interior trim and fixtures retain
+their existing resource/lifecycle rules.
 
 `[/Script/laby.MazeLocationSettings]` in `Config/DefaultGame.ini` defines:
 

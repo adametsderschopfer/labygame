@@ -1,6 +1,5 @@
 #include "Maze/MazeInterior.h"
 #include "Maze/MazeMeshPrimitives.h"
-#include "Maze/MazeDeadEndDetails.h"
 #include "Maze/MazeRoomDefinition.h"
 
 using MazeMeshPrimitives::Box;
@@ -305,8 +304,6 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 					Result.DetectorTransforms.Add(FTransform(FRotator(0, Random.FRandRange(0.f, 360.f), 0), P));
 				}
 			}
-
-	MazeDeadEndDetails::Append(Result, Layout, Cell, Thickness, Height, Seed, Cells);
 
 	return Result;
 }

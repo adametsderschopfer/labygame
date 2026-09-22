@@ -90,6 +90,8 @@ public class UE_MCP_Bridge : ModuleRules
 	public UE_MCP_Bridge(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		// Keep Live Coding's PCH object unique to this module (UE 5.8 shared-PCH LNK2011).
+		PrivatePCHHeaderFile = "Private/UE_MCP_BridgePCH.h";
 
 		PublicDependencyModuleNames.AddRange(
 			new string[]

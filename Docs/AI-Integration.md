@@ -13,6 +13,32 @@ Use Epic tools first for editor state, logs and Live Coding; use Lyon tools for 
 
 ## Live Coding export compatibility
 
+### Shared PCH patch linking (LNK2011)
+
+UE 5.8's Live Coding server temporarily moves each `.lc.obj` to its original
+`.obj` path while collecting per-module changes (`LC_ServerCommandThread.cpp`).
+When several modules consume the same newly rebuilt shared PCH object, later
+modules can omit it after the first move. On 2026-09-22 UBT compiled successfully,
+but the `laby` and `UE_MCP_Bridge` patches failed with LNK2011/LNK1120 while the
+editor module's patch linked. The manifest listed the same UnrealEd shared PCH
+object for all three modules, but it reached only one patch's modified-file list.
+
+Use UBT's supported `PrivatePCHHeaderFile` for `laby` (`Public/laby.h`) and the
+editor-only bridge (`Private/UE_MCP_BridgePCH.h`). Each gets its own PCH object;
+the runtime PCH includes only CoreMinimal, while the bridge retains its editor
+header context. This is a local bridge build-rule adjustment to preserve on
+plugin updates. It changes no module dependencies, reflected types or gameplay
+state and does not patch engine source. The first compile rebuilds these modules.
+
+Verified on 2026-09-22: UBT succeeded, and patch creation succeeded for `laby`,
+`labyEditor`, `UE_MCP_Bridge` and `UE_MCP_BridgeStatus`. The editor completed
+reload/re-instancing and reported Live Coding success. The synchronous tool call
+timed out while compilation was still running; completion was confirmed from
+the fresh compiler, LiveCodingConsole and editor logs instead of retriggering it.
+The UBA temporary-directory warning remained nonfatal. No Play or tests were run.
+
+### Loading-screen overload
+
 `MazeInterfaceStyle::MakeLoadingScreen()` keeps its original no-argument export
 and delegates to the overload taking `Previous`. Replacing the original export
 with a defaulted parameter changes the C++ symbol; an editor patch can then fail

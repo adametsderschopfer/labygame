@@ -131,8 +131,13 @@ void FMazeLayout::ReserveRooms(FRandomStream& Random)
 
 	const auto TryReserve = [&](const FIntRect& Room)
 	{
-		// Sector margins separate random rooms. Only the fixed entrance can overlap.
-		if (OverlapsEntrance(Room))
+		// Retain a corridor cell between rooms within a sector as well as at its edges.
+		if (OverlapsEntrance(Room) || Rooms.ContainsByPredicate(
+		                                  [&](const FIntRect& Existing)
+		                                  {
+			                                  return Room.Min.X <= Existing.Max.X && Room.Max.X >= Existing.Min.X &&
+			                                         Room.Min.Y <= Existing.Max.Y && Room.Max.Y >= Existing.Min.Y;
+		                                  }))
 			return false;
 
 		Rooms.Add(Room);
@@ -140,53 +145,55 @@ void FMazeLayout::ReserveRooms(FRandomStream& Random)
 		return true;
 	};
 
-	for (int32 SectorY = 0; SectorY < SectorCount; ++SectorY)
-		for (int32 SectorX = 0; SectorX < SectorCount; ++SectorX)
-		{
-			// A corridor margin on every sector edge preserves the connected outside grid.
-			const FIntRect Bounds(SectorX * Size / SectorCount + 1,
-			                      SectorY * Size / SectorCount + 1,
-			                      (SectorX + 1) * Size / SectorCount - 1,
-			                      (SectorY + 1) * Size / SectorCount - 1);
-			const int32 MaxWidth = FMath::Min(FMazeRoomDefinition::MaxWidth, Bounds.Width());
-			const int32 MaxLength = FMath::Min(FMazeRoomDefinition::MaxLength, Bounds.Height());
-
-			if (MaxWidth < FMazeRoomDefinition::MinWidth || MaxLength < FMazeRoomDefinition::MinLength)
-				continue;
-
-			bool bPlaced = false;
-			int32 SizePick = Random.RandRange(1, SizeWeight);
-			const FMazeRoomDefinition::FSizeRange* SizeRange = &FMazeRoomDefinition::SizeRanges[0];
-
-			for (const auto& Range : FMazeRoomDefinition::SizeRanges)
+	// Cover every sector before filling its next slot, preserving the first size draw.
+	for (int32 Slot = 0; Slot < FMazeRoomDefinition::RoomsPerSector; ++Slot)
+		for (int32 SectorY = 0; SectorY < SectorCount; ++SectorY)
+			for (int32 SectorX = 0; SectorX < SectorCount; ++SectorX)
 			{
-				SizePick -= Range.Weight;
+				// A corridor margin on every sector edge preserves the connected outside grid.
+				const FIntRect Bounds(SectorX * Size / SectorCount + 1,
+				                      SectorY * Size / SectorCount + 1,
+				                      (SectorX + 1) * Size / SectorCount - 1,
+				                      (SectorY + 1) * Size / SectorCount - 1);
+				const int32 MaxWidth = FMath::Min(FMazeRoomDefinition::MaxWidth, Bounds.Width());
+				const int32 MaxLength = FMath::Min(FMazeRoomDefinition::MaxLength, Bounds.Height());
 
-				if (SizePick <= 0)
+				if (MaxWidth < FMazeRoomDefinition::MinWidth || MaxLength < FMazeRoomDefinition::MinLength)
+					continue;
+
+				bool bPlaced = false;
+				int32 SizePick = Random.RandRange(1, SizeWeight);
+				const FMazeRoomDefinition::FSizeRange* SizeRange = &FMazeRoomDefinition::SizeRanges[0];
+
+				for (const auto& Range : FMazeRoomDefinition::SizeRanges)
 				{
-					SizeRange = &Range;
-					break;
+					SizePick -= Range.Weight;
+
+					if (SizePick <= 0)
+					{
+						SizeRange = &Range;
+						break;
+					}
 				}
-			}
 
-			for (int32 Attempt = 0; Attempt < FMazeRoomDefinition::PlacementAttemptsPerRoom && !bPlaced; ++Attempt)
-			{
-				const int32 Width = Random.RandRange(FMath::Min(SizeRange->MinWidth, MaxWidth),
-				                                     FMath::Min(SizeRange->MaxWidth, MaxWidth));
-				const int32 Length = Random.RandRange(FMath::Min(SizeRange->MinLength, MaxLength),
-				                                      FMath::Min(SizeRange->MaxLength, MaxLength));
-				const int32 X = Random.RandRange(Bounds.Min.X, Bounds.Max.X - Width);
-				const int32 Y = Random.RandRange(Bounds.Min.Y, Bounds.Max.Y - Length);
-				bPlaced = TryReserve(FIntRect(X, Y, X + Width, Y + Length));
-			}
+				for (int32 Attempt = 0; Attempt < FMazeRoomDefinition::PlacementAttemptsPerRoom && !bPlaced; ++Attempt)
+				{
+					const int32 Width = Random.RandRange(FMath::Min(SizeRange->MinWidth, MaxWidth),
+					                                     FMath::Min(SizeRange->MaxWidth, MaxWidth));
+					const int32 Length = Random.RandRange(FMath::Min(SizeRange->MinLength, MaxLength),
+					                                      FMath::Min(SizeRange->MaxLength, MaxLength));
+					const int32 X = Random.RandRange(Bounds.Min.X, Bounds.Max.X - Width);
+					const int32 Y = Random.RandRange(Bounds.Min.Y, Bounds.Max.Y - Length);
+					bPlaced = TryReserve(FIntRect(X, Y, X + Width, Y + Length));
+				}
 
-			// Exhaust the smallest footprint before skipping an entrance-constrained sector.
-			// Thus unlucky random attempts cannot leave an otherwise usable region empty.
-			for (int32 Y = Bounds.Min.Y; Y + FMazeRoomDefinition::MinLength <= Bounds.Max.Y && !bPlaced; ++Y)
-				for (int32 X = Bounds.Min.X; X + FMazeRoomDefinition::MinWidth <= Bounds.Max.X && !bPlaced; ++X)
-					bPlaced = TryReserve(
-					    FIntRect(X, Y, X + FMazeRoomDefinition::MinWidth, Y + FMazeRoomDefinition::MinLength));
-		}
+				// Exhaust the smallest footprint before skipping a crowded or entrance-constrained slot.
+				// Thus unlucky random attempts cannot leave an otherwise usable region empty.
+				for (int32 Y = Bounds.Min.Y; Y + FMazeRoomDefinition::MinLength <= Bounds.Max.Y && !bPlaced; ++Y)
+					for (int32 X = Bounds.Min.X; X + FMazeRoomDefinition::MinWidth <= Bounds.Max.X && !bPlaced; ++X)
+						bPlaced = TryReserve(
+						    FIntRect(X, Y, X + FMazeRoomDefinition::MinWidth, Y + FMazeRoomDefinition::MinLength));
+			}
 }
 
 void FMazeLayout::CarveRoom(const FIntRect& Room)

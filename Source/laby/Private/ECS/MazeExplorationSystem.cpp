@@ -1,4 +1,5 @@
 #include "ECS/MazeExplorationSystem.h"
+#include "ECS/MazeExplorationDefinition.h"
 
 bool FMazeExplorationSystem::Visible(const FMazeLayout& Layout, FVector2D From, FVector2D To)
 {
@@ -70,23 +71,22 @@ void FMazeExplorationSystem::Update(FMazeExplorationFragment& Exploration,
 		return;
 
 	const FVector2D Position(Local.X / Maze.Cell, Local.Y / Maze.Cell);
-	const FVector2D Forward = FVector2D(Pose.Forward.X, Pose.Forward.Y).GetSafeNormal();
-
-	if ((Position - Exploration.LastPosition).SizeSquared() < 0.0025 &&
-	    FVector2D::DotProduct(Forward, Exploration.LastForward) > 0.999)
-		return;
-
-	Exploration.LastPosition = Position;
-	Exploration.LastForward = Forward;
-
 	const int32 CX = FMath::FloorToInt(Position.X), CY = FMath::FloorToInt(Position.Y);
 
 	if (CX < 0 || CY < 0 || CX >= Layout.Size || CY >= Layout.Size)
 		return;
 
+	// Reveal nearby floor when entering a cell or moving far enough inside it.
+	// A stationary camera turn never expands exploration; walls still occlude it.
+	if (Exploration.Seen[CY * Layout.Size + CX] && (Position - Exploration.LastPosition).SizeSquared() <
+	                                                   FMath::Square(FMazeExplorationDefinition::RefreshDistanceCells))
+		return;
+
+	Exploration.LastPosition = Position;
+
 	Exploration.Seen[CY * Layout.Size + CX] = 1;
 
-	constexpr int32 Radius = 6;
+	constexpr int32 Radius = FMazeExplorationDefinition::RevealRadiusCells;
 
 	for (int32 Y = FMath::Max(0, CY - Radius); Y <= FMath::Min(Layout.Size - 1, CY + Radius); ++Y)
 		for (int32 X = FMath::Max(0, CX - Radius); X <= FMath::Min(Layout.Size - 1, CX + Radius); ++X)
@@ -95,8 +95,7 @@ void FMazeExplorationSystem::Update(FMazeExplorationFragment& Exploration,
 			const FVector2D Target(X + 0.5, Y + 0.5);
 			const FVector2D Delta = Target - Position;
 
-			if (Exploration.Seen[Index] || Delta.SizeSquared() > Radius * Radius ||
-			    FVector2D::DotProduct(Delta.GetSafeNormal(), Forward) < 0.5)
+			if (Exploration.Seen[Index] || Delta.SizeSquared() > Radius * Radius)
 				continue;
 
 			if (Visible(Layout, Position, Target))

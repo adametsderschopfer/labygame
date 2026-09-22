@@ -73,6 +73,14 @@
 - Respect per-frame creation/eviction limits, hysteresis and profiling targets. New long sightlines, larger rooms, faster movement or teleport require an explicit streaming-radius/readiness review. Use standard scalability/texture streaming; do not force one hardware memory budget or promise FPS improvements without measurements.
 - Do not convert procedural maps to World Partition just by enabling a setting. Authored partitioned maps use native streaming sources and the common readiness contract. Resource registration does not automatically define a new location's gameplay or spawn rules.
 
+# Changelog
+
+- Keep `CHANGELOG.txt` player-facing: record only implemented additions, changes and fixes that remain in the resulting game. Describe their visible effect in plain language.
+- Summarize the net result for each version. Consolidate related edits made during the same day or development period; if something was added and then removed before that version was released, omit both events.
+- Do not include internal code, architecture, tooling, compiler/linker errors, Live Coding fixes, build/packaging procedures, formatting, verification reports, test status or development-session history. Keep those details in technical documentation or task reports when needed.
+- Include fixes to player-visible bugs, describing the corrected behavior without implementation details. Do not claim planned or unfinished work as completed.
+- When revising an entry, replace outdated wording instead of appending a contradictory record of intermediate steps.
+
 # Release archive names
 
 - Always package distributable Windows releases through `Scripts/Package-Release.ps1`.

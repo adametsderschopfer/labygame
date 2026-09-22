@@ -9,8 +9,10 @@
 
 namespace
 {
-	// Fill a grid junction only when all four discovered floor cells meet without walls.
-	bool IsOpenFloorJunction(const FMazeLayout& Layout, TConstArrayView<uint8> Seen, int32 X, int32 Y)
+	// Extend known cells to an open junction, including at the exploration frontier.
+	// Only observed walls may cut it back; unseen cells are still never painted.
+	// A pit changes its own fill, not neighbouring contours or wall topology.
+	bool IsOpenJunction(const FMazeLayout& Layout, TConstArrayView<uint8> Seen, int32 X, int32 Y)
 	{
 		if (X <= 0 || Y <= 0 || X >= Layout.Size || Y >= Layout.Size)
 			return false;
@@ -20,9 +22,13 @@ namespace
 		const uint8 FacingWalls[] = {6, 12, 9, 3}; // SE, SW, NW, NE sides facing the junction.
 
 		for (int32 I = 0; I < 4; ++I)
-			if (!Seen.IsValidIndex(Cells[I]) || !Seen[Cells[I]] || !Layout.HasFloor(Cells[I]) ||
-			    (Layout.Walls[Cells[I]] & FacingWalls[I]))
+		{
+			if (!Seen.IsValidIndex(Cells[I]) || !Seen[Cells[I]])
+				continue;
+
+			if (Layout.Walls[Cells[I]] & FacingWalls[I])
 				return false;
+		}
 
 		return true;
 	}
@@ -301,10 +307,10 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 					continue;
 
 				const FVector2D C = Offset + FVector2D(X + 0.5, Y + 0.5) * View.Step;
-				const uint8 JoinedCorners = uint8(IsOpenFloorJunction(*Layout, View.Seen, X, Y)) |
-				                            (IsOpenFloorJunction(*Layout, View.Seen, X + 1, Y) << 1) |
-				                            (IsOpenFloorJunction(*Layout, View.Seen, X + 1, Y + 1) << 2) |
-				                            (IsOpenFloorJunction(*Layout, View.Seen, X, Y + 1) << 3);
+				const uint8 JoinedCorners = uint8(IsOpenJunction(*Layout, View.Seen, X, Y)) |
+				                            (IsOpenJunction(*Layout, View.Seen, X + 1, Y) << 1) |
+				                            (IsOpenJunction(*Layout, View.Seen, X + 1, Y + 1) << 2) |
+				                            (IsOpenJunction(*Layout, View.Seen, X, Y + 1) << 3);
 
 				CorridorContour(Layout->Walls[Index], JoinedCorners, View.Step, Contour);
 				Floor.Reset();
