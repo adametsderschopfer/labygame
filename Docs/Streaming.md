@@ -20,6 +20,65 @@ remove an item, reset a cooldown, respawn loot or change AI decisions.
 
 ## Current implementation and budgets
 
+Rooms with doorways range from 1 by 1 cells to the existing maximum of 4 by 7
+(the entrance remains 3 by 3). Small, medium and large ranges have weights of
+50%, 35% and 15%; this is not a per-map count guarantee. Floor and ceiling heights
+are unchanged. Base distribution uses one room per spatial sector
+with a target side of 12 cells: the 80-cell map has 49 base rooms plus the entrance,
+instead of 18 unconstrained placements. Corridor margins separate all sectors;
+45% of base random rooms have two doorways on adjacent walls, the rest have one.
+The entrance retains its single doorway. The added doorframes use the existing wall
+mesh and resident collision shell; no additional Actors, components, assets or
+worker jobs are allocated per room. Counts are higher but the footprint, sightline
+bound and chunk budgets are unchanged; memory/frame cost has not been measured.
+A room can straddle chunk boundaries, but its
+interior remains within the default two-chunk preload radius from any point
+inside it. Enclosed perimeters and narrow, non-aligned doorways limit new room
+sightlines; arbitrary corridor sightlines retain the limitations below.
+Door jambs and lintels belong to the wall strip's center tile, so each visual
+chunk emits its own portion once, with the same full-layout occupancy used by
+the halo and resident collision. No new asset, resource participant, map entry,
+simulation state or near/far rule is introduced. Existing creation/eviction
+budgets, readiness gating and resident physics remain unchanged. Runtime visual
+and performance checks require a user-run session; no FPS improvement is claimed.
+
+An additional pass chooses up to 25 compact one-cell rooms on the default map:
+two-door rooms on corridor bends or one-door rooms on dead-end branches adjacent
+to bends. It preserves existing cell connections and excludes scenic corridors.
+The additions use existing room/door geometry, at most 50 additional doorframes,
+without new assets or view actors. Smaller footprints and adjacent door directions
+do not extend the prior sightline bound; preload radii, budgets, readiness and
+resident physics stay unchanged. Runtime cost is not measured. Map highlighting
+only changes the tint of already drawn, explored floor polygons on both maps.
+
+Door openings have explicit U-shaped satin-metal trim on both wall faces, using
+the same opening dimensions as the collision shell. Generic ceiling-height corner
+strips are suppressed at all four doorway corners. Each frame belongs to the
+wall strip's center cell, so chunk borders neither duplicate it nor omit one face.
+The six thin boxes per door reuse the existing metal section (72 triangles), stay
+on the solid side of the opening and stop at its header. No asset, Actor, collision,
+gameplay state, sightline or streaming-radius change is needed. Geometry is derived
+from the immutable layout and follows existing chunk/revision cleanup.
+
+Route shaping targets ordinary straight runs of at most six cells, while preserving
+connectivity when no safe bend is available. The scenic quota counts these residual
+long runs first, then may add 8–10-cell runs (two targeted on the default map).
+An intentionally added ten-cell run is 46.25 m at the current cell size, within
+the minimum 16-cell axial coverage of the default two-chunk preload radius.
+This is a sizing review, not a measured readiness guarantee: constrained residual
+runs can exceed that target and retain the arbitrary-sightline limitations below.
+Room dimensions, traversal speed, creation/eviction limits and hysteresis remain
+unchanged. Resident collision still covers the entire map.
+
+Wall-mounted dead-end details use the existing interior material sections and
+chunk worker. A suitable dead end has a seeded 35% chance of a cabinet, folder shelf
+or tally marks, at most 14 boxes / 168 triangles per selected cell. They stay
+inside their owner cell and project at most 20.1 cm from its back wall; they have
+no collision, Actors, assets or interactive state. Unloading a chunk discards only
+derived cosmetic geometry; regeneration from the same seed and layout restores
+it. No resource participant or location manifest entry is required. This adds
+geometry to existing chunk commits; runtime cost has not been measured.
+
 `[/Script/laby.MazeLocationSettings]` in `Config/DefaultGame.ini` defines:
 
 | Setting | Default | Meaning |

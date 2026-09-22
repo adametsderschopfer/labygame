@@ -225,6 +225,11 @@ namespace
 	};
 }
 
+TSharedRef<SWidget> MazeInterfaceStyle::MakeLoadingScreen()
+{
+	return MakeLoadingScreen(nullptr);
+}
+
 TSharedRef<SWidget> MazeInterfaceStyle::MakeLoadingScreen(const TSharedPtr<SWidget>& Previous)
 {
 	// MoviePlayer may still own its widget during PostLoadMap: never give it two Slate parents.

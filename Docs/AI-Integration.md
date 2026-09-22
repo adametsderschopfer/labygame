@@ -11,6 +11,18 @@
 
 Use Epic tools first for editor state, logs and Live Coding; use Lyon tools for additional authoring operations. Serialize all editor calls, including calls across the two servers. Do not apply the same change through both. Confirm the connected project before mutations. Do not run Play, automation tests, or gameplay performance captures unless requested. Do not start normal builds against an open editor.
 
+## Live Coding export compatibility
+
+`MazeInterfaceStyle::MakeLoadingScreen()` keeps its original no-argument export
+and delegates to the overload taking `Previous`. Replacing the original export
+with a defaulted parameter changes the C++ symbol; an editor patch can then fail
+with LNK2019 against the import library from the loaded base DLL. Default arguments
+do not preserve binary compatibility. The overload fix linked both patches on
+2026-09-22. Applying the editor patch then crashed a CoreUObject foreground worker;
+the available stack did not establish the cause. With the editor already exited,
+a full Development Editor build completed successfully and the editor reopened
+to its ready state. No Play or tests were run.
+
 ## ECS snapshot
 
 `MazeDiagnosticsToolset.ReadSnapshots` reads all existing game/PIE worlds through `UMazeECSSubsystem::ReadDiagnostics`. Returns detached values: world path/type, authority, frame/time, session/menu state, active maze seed/size/revision and per-player vitals, items, position, locomotion and progress. Missing gameplay worlds return an explicit status without starting Play. Client values are local observations/mirrors, not server authority. Entity descriptions are scoped to that world and must not be reused as persistent identifiers.

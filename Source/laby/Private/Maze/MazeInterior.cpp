@@ -1,36 +1,13 @@
 #include "Maze/MazeInterior.h"
+#include "Maze/MazeMeshPrimitives.h"
+#include "Maze/MazeDeadEndDetails.h"
+#include "Maze/MazeRoomDefinition.h"
+
+using MazeMeshPrimitives::Box;
+using MazeMeshPrimitives::Quad;
 
 namespace
 {
-	void Quad(FMazeSurface& Mesh, FVector A, FVector B, FVector C, FVector D, FVector N)
-	{
-		const int32 Base = Mesh.Vertices.Num();
-
-		Mesh.Vertices.Append({A, B, C, D});
-		Mesh.Normals.Append({N, N, N, N});
-
-		// Match Unreal's clockwise front faces regardless of the supplied basis.
-		if (FVector::DotProduct(FVector::CrossProduct(B - A, C - A), N) > 0)
-			Mesh.Triangles.Append({Base, Base + 2, Base + 1, Base, Base + 3, Base + 2});
-		else
-			Mesh.Triangles.Append({Base, Base + 1, Base + 2, Base, Base + 2, Base + 3});
-	}
-
-	void Box(FMazeSurface& Mesh, FVector P, FVector U, FVector V, FVector N, FVector Size)
-	{
-		U *= Size.X * 0.5;
-		V *= Size.Y * 0.5;
-
-		const FVector W = N * Size.Z * 0.5;
-
-		Quad(Mesh, P - U - V + W, P + U - V + W, P + U + V + W, P - U + V + W, N);
-		Quad(Mesh, P - U + V - W, P + U + V - W, P + U - V - W, P - U - V - W, -N);
-		Quad(Mesh, P + U - V - W, P + U + V - W, P + U + V + W, P + U - V + W, U.GetSafeNormal());
-		Quad(Mesh, P - U + V - W, P - U - V - W, P - U - V + W, P - U + V + W, -U.GetSafeNormal());
-		Quad(Mesh, P + U + V - W, P - U + V - W, P - U + V + W, P + U + V + W, V.GetSafeNormal());
-		Quad(Mesh, P - U - V - W, P + U - V - W, P + U - V + W, P - U - V + W, -V.GetSafeNormal());
-	}
-
 	FIntPoint Key(FVector P)
 	{
 		return FIntPoint(FMath::RoundToInt(P.X * 100), FMath::RoundToInt(P.Y * 100));
@@ -56,6 +33,54 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 		return !bRegion || Cells.Contains(CellIndex);
 	};
 	const FVector Up(0, 0, 1);
+	TSet<FIntPoint> DoorCorners;
+	const FVector DoorDirections[] = {FVector(0, -1, 0), FVector(1, 0, 0), FVector(0, 1, 0), FVector(-1, 0, 0)};
+	const float DoorWidth = FMazeRoomDefinition::OpeningWidth(Cell - Thickness);
+	const float DoorHeight = FMazeRoomDefinition::OpeningHeight(Height);
+	const float TrimWidth = FMath::Min3(DoorTrimWidthCm, (Cell - Thickness - DoorWidth) / 2, (Height - DoorHeight) / 2);
+	const float TrimBottom = FMath::Min(CoveHeightCm, DoorHeight / 2);
+
+	// The explicit doorway frame replaces generic full-height corner strips.
+	// Both faces share the wall strip's center-cell owner, including on chunk borders.
+	for (const FMazeRoomDoorway& Door : Layout.RoomDoorways())
+	{
+		const FVector Across = DoorDirections[Door.Direction];
+		const FVector Along(-Across.Y, Across.X, 0);
+		const FVector Center =
+		    FVector((Door.Cell.X + 0.5f) * Cell, (Door.Cell.Y + 0.5f) * Cell, 0) + Across * (Cell / 2);
+
+		for (const float Face : {-1.f, 1.f})
+		{
+			const FVector Normal = Across * Face;
+			const FVector Front = Center + Normal * (Thickness / 2);
+
+			for (const float Side : {-1.f, 1.f})
+				DoorCorners.Add(Key(Front + Along * (Side * DoorWidth / 2)));
+
+			if (bLampsOnly || !Owns(Center) || TrimWidth <= 0.f)
+				continue;
+
+			const FVector Surface = Front + Normal * (CornerRadiusCm / 2 + 0.01f);
+
+			for (const float Side : {-1.f, 1.f})
+				Box(Result.Sections[1],
+				    Surface + Along * (Side * (DoorWidth + TrimWidth) / 2) + Up * ((DoorHeight + TrimBottom) / 2),
+				    Along,
+				    Up,
+				    Normal,
+				    FVector(TrimWidth, DoorHeight - TrimBottom, CornerRadiusCm));
+
+			// A horizontal header closes the U at the opening height, not the ceiling.
+			// Bands stay on the solid wall side, preserving the clear door dimensions.
+			Box(Result.Sections[1],
+			    Surface + Up * (DoorHeight + TrimWidth / 2),
+			    Along,
+			    Up,
+			    Normal,
+			    FVector(DoorWidth + 2 * TrimWidth, TrimWidth, CornerRadiusCm));
+		}
+	}
+
 	TMap<FIntPoint, FVector> Joins;
 
 	// Boundary quads are supplied by the existing union mesh, including junctions.
@@ -63,7 +88,7 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 	{
 		const FVector N = Walls.Normals[I];
 
-		if (FMath::Abs(N.Z) > 0.1)
+		if (FMath::Abs(N.Z) > 0.1 || Walls.Vertices[I].Z != 0 || Walls.Vertices[I + 1].Z != 0)
 			continue;
 
 		Joins.FindOrAdd(Key(Walls.Vertices[I]), FVector::ZeroVector) += N;
@@ -82,7 +107,9 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 	{
 		const FVector N = Walls.Normals[I];
 
-		if (FMath::Abs(N.Z) > 0.1)
+		// Raised lintel faces have no floor contact and must not receive baseboards,
+		// full-height corner trim or low fixtures across the doorway.
+		if (FMath::Abs(N.Z) > 0.1 || Walls.Vertices[I].Z != 0 || Walls.Vertices[I + 1].Z != 0)
 			continue;
 
 		const FVector A = Walls.Vertices[I], B = Walls.Vertices[I + 1];
@@ -144,7 +171,7 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 
 		// Only right-angle convex joins receive quarter-circle metal trim; chamfers use the mitered cove.
 		if (FMath::IsNearlyEqual(JA.SizeSquared(), 2.0) && FMath::Abs(JA.X) > 0.5 && FMath::Abs(JA.Y) > 0.5 &&
-		    FVector::DotProduct(JA, U) < -0.5 && !FinishedCorners.Contains(Key(A)))
+		    FVector::DotProduct(JA, U) < -0.5 && !FinishedCorners.Contains(Key(A)) && !DoorCorners.Contains(Key(A)))
 		{
 			FinishedCorners.Add(Key(A));
 
@@ -278,6 +305,8 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 					Result.DetectorTransforms.Add(FTransform(FRotator(0, Random.FRandRange(0.f, 360.f), 0), P));
 				}
 			}
+
+	MazeDeadEndDetails::Append(Result, Layout, Cell, Thickness, Height, Seed, Cells);
 
 	return Result;
 }

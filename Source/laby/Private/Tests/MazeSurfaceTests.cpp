@@ -1,4 +1,5 @@
 #include "Maze/MazeSurface.h"
+#include "Maze/MazeRoomDefinition.h"
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -34,7 +35,7 @@ bool FMazeSurfaceTest::RunTest(const FString& Parameters)
 
 				Ids[J] = VertexIds[V];
 
-				if (V.Z != 0 && V.Z != 1000)
+				if (V.Z != 0 && V.Z != FMazeRoomDefinition::DoorHeight && V.Z != 1000)
 				{
 					AddError(TEXT("Wrong wall height"));
 

@@ -1,4 +1,5 @@
 #include "ECS/MazeGameplaySystems.h"
+#include "Maze/MazeRoomDefinition.h"
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -60,8 +61,13 @@ bool FMazeFloorConnectivityTest::RunTest(const FString& Parameters)
 				TestTrue(TEXT("Every player spawns over connected floor"), Seen.Contains(C));
 			}
 
+			int32 TotalDoors = 0, ThroughRooms = 0;
+
 			for (const auto& Room : Layout.Rooms)
 			{
+				int32 DoorCount = 0;
+				uint8 DoorSides = 0;
+
 				TestTrue(TEXT("Rooms stay inside the boundary"),
 				         Room.Min.X >= 0 && Room.Min.Y >= 0 && Room.Max.X <= Size && Room.Max.Y <= Size);
 
@@ -69,6 +75,20 @@ bool FMazeFloorConnectivityTest::RunTest(const FString& Parameters)
 					for (int32 X = Room.Min.X; X < Room.Max.X; ++X)
 					{
 						const uint8 Walls = Layout.Walls[Y * Size + X];
+						TestTrue(TEXT("Room floor has no holes"), Layout.HasFloor(Y * Size + X));
+
+						for (int32 D = 0; D < 4; ++D)
+						{
+							const FIntPoint Outside(X + DX[D], Y + DY[D]);
+
+							if (Room.Contains(Outside) || (Walls & (1 << D)))
+								continue;
+
+							++DoorCount;
+							DoorSides |= 1 << D;
+							TestTrue(TEXT("Door connects to reachable corridor floor"),
+							         Seen.Contains(Outside.Y * Size + Outside.X));
+						}
 
 						if (X + 1 < Room.Max.X)
 							TestFalse(TEXT("No east interior room wall"), (Walls & 2) != 0);
@@ -76,11 +96,28 @@ bool FMazeFloorConnectivityTest::RunTest(const FString& Parameters)
 						if (Y + 1 < Room.Max.Y)
 							TestFalse(TEXT("No south interior room wall"), (Walls & 4) != 0);
 					}
+
+				if (Room == Layout.Rooms[0])
+					TestEqual(TEXT("Entrance room keeps one doorway"), DoorCount, 1);
+				else
+					TestTrue(TEXT("Random room has one or two doorways"), DoorCount == 1 || DoorCount == 2);
+
+				if (DoorCount == 2)
+				{
+					++ThroughRooms;
+					TestTrue(TEXT("Through-room doors turn a corner rather than align"),
+					         DoorSides != 5 && DoorSides != 10);
+				}
+
+				TotalDoors += DoorCount;
 			}
+
+			TestEqual(TEXT("Derived door list matches open perimeter edges"), Layout.RoomDoorways().Num(), TotalDoors);
 
 			if (Size >= 40)
 			{
 				TestTrue(TEXT("Large maps have random rooms beyond the spawn room"), Layout.Rooms.Num() > 1);
+				TestTrue(TEXT("Large maps retain through-rooms"), ThroughRooms > 0);
 				TestTrue(TEXT("Large maps contain holes"), Layout.NumHoles() > 0);
 			}
 

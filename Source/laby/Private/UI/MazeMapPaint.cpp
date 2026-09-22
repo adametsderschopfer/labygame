@@ -9,45 +9,52 @@
 
 namespace
 {
+	// Fill a grid junction only when all four discovered floor cells meet without walls.
+	bool IsOpenFloorJunction(const FMazeLayout& Layout, TConstArrayView<uint8> Seen, int32 X, int32 Y)
+	{
+		if (X <= 0 || Y <= 0 || X >= Layout.Size || Y >= Layout.Size)
+			return false;
+
+		const int32 Cells[] = {
+		    (Y - 1) * Layout.Size + X - 1, (Y - 1) * Layout.Size + X, Y * Layout.Size + X, Y * Layout.Size + X - 1};
+		const uint8 FacingWalls[] = {6, 12, 9, 3}; // SE, SW, NW, NE sides facing the junction.
+
+		for (int32 I = 0; I < 4; ++I)
+			if (!Seen.IsValidIndex(Cells[I]) || !Seen[Cells[I]] || !Layout.HasFloor(Cells[I]) ||
+			    (Layout.Walls[Cells[I]] & FacingWalls[I]))
+				return false;
+
+		return true;
+	}
+
 	// A schematic floor ribbon for one known cell. Open sides meet their neighbours
 	// without internal seams; inset walls leave a readable dark gutter between rooms.
-	void CorridorContour(uint8 Walls, float Step, TArray<FVector2D>& Points)
+	void CorridorContour(uint8 Walls, uint8 JoinedCorners, float Step, TArray<FVector2D>& Points)
 	{
 		const double R = Step * 0.34;
 		const double H = Step * 0.5;
 		const double Bevel = FMath::Min(Step * 0.07, 3.0);
 		TArray<FVector2D, TInlineAllocator<16>> Corners;
 
-		Corners.Add({-R, -R});
+		const FVector2D Signs[] = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
 
-		if (!(Walls & 1))
+		for (int32 I = 0; I < 4; ++I)
 		{
-			Corners.Add({-R, -H});
-			Corners.Add({R, -H});
-		}
+			const FVector2D Sign = Signs[I];
 
-		Corners.Add({R, -R});
+			if (JoinedCorners & (1 << I))
+			{
+				Corners.Add(Sign * H);
+				continue;
+			}
 
-		if (!(Walls & 2))
-		{
-			Corners.Add({H, -R});
-			Corners.Add({H, R});
-		}
+			if (!(Walls & (1 << ((I + 3) % 4))))
+				Corners.Add(Sign * (I % 2 == 0 ? FVector2D(H, R) : FVector2D(R, H)));
 
-		Corners.Add({R, R});
+			Corners.Add(Sign * R);
 
-		if (!(Walls & 4))
-		{
-			Corners.Add({R, H});
-			Corners.Add({-R, H});
-		}
-
-		Corners.Add({-R, R});
-
-		if (!(Walls & 8))
-		{
-			Corners.Add({-H, R});
-			Corners.Add({-H, -R});
+			if (!(Walls & (1 << I)))
+				Corners.Add(Sign * (I % 2 == 0 ? FVector2D(R, H) : FVector2D(H, R)));
 		}
 
 		Points.Reset();
@@ -102,6 +109,7 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 	const FLinearColor Wall = Ink.CopyWithNewOpacity(0.48f);
 	const FLinearColor StartColor = Muted, ExitColor = Accent;
 	const FLinearColor Danger = Ink;
+	const FLinearColor RoomFill = FLinearColor::FromSRGBColor(FColor(112, 167, 173)).CopyWithNewOpacity(0.36f);
 
 	const FSlateRect Content = MazeMapContentRect(View);
 	const FVector2D MapOrigin(Content.Left, Content.Top),
@@ -275,6 +283,14 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 		Floor.Reserve(24);
 
 		TArray<TPair<FVector2D, FVector2D>> WallEdges;
+		// A transient presentation mask, derived from this immutable layout on each paint.
+		// Seen remains the sole exploration authority; never fill unseen parts of a room.
+		TSet<int32> RoomCells;
+
+		for (const FIntRect& Room : Layout->Rooms)
+			for (int32 Y = FMath::Max(MinY, Room.Min.Y); Y <= FMath::Min(MaxY, Room.Max.Y - 1); ++Y)
+				for (int32 X = FMath::Max(MinX, Room.Min.X); X <= FMath::Min(MaxX, Room.Max.X - 1); ++X)
+					RoomCells.Add(Y * Layout->Size + X);
 
 		for (int32 Y = MinY; Y <= MaxY; ++Y)
 			for (int32 X = MinX; X <= MaxX; ++X)
@@ -285,13 +301,21 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 					continue;
 
 				const FVector2D C = Offset + FVector2D(X + 0.5, Y + 0.5) * View.Step;
-				CorridorContour(Layout->Walls[Index], View.Step, Contour);
+				const uint8 JoinedCorners = uint8(IsOpenFloorJunction(*Layout, View.Seen, X, Y)) |
+				                            (IsOpenFloorJunction(*Layout, View.Seen, X + 1, Y) << 1) |
+				                            (IsOpenFloorJunction(*Layout, View.Seen, X + 1, Y + 1) << 2) |
+				                            (IsOpenFloorJunction(*Layout, View.Seen, X, Y + 1) << 3);
+
+				CorridorContour(Layout->Walls[Index], JoinedCorners, View.Step, Contour);
 				Floor.Reset();
 
 				for (const FVector2D& P : Contour)
 					Floor.Add(C + P);
 
-				Polygon(C, Floor, Muted.CopyWithNewOpacity(Layout->HasFloor(Index) ? 0.3f : 0.06f), FloorLayer);
+				const FLinearColor FloorColor = Layout->HasFloor(Index) && RoomCells.Contains(Index)
+				                                    ? RoomFill
+				                                    : Muted.CopyWithNewOpacity(Layout->HasFloor(Index) ? 0.3f : 0.06f);
+				Polygon(C, Floor, FloorColor, FloorLayer);
 
 				for (int32 I = 0; I < Contour.Num(); ++I)
 				{
@@ -542,11 +566,12 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 		                        NSLOCTEXT("Maze.Glass", "Unknown", "НЕИЗВЕСТНО"),
 		                        NSLOCTEXT("Maze.Glass", "Start", "НАЧАЛО"),
 		                        NSLOCTEXT("Maze.Glass", "Exit", "ВЫХОД"),
-		                        NSLOCTEXT("Maze.Glass", "Gap", "ПРОВАЛ")};
+		                        NSLOCTEXT("Maze.Glass", "Gap", "ПРОВАЛ"),
+		                        NSLOCTEXT("Maze.Map", "DiscoveredRoom", "КОМНАТА")};
 
 		for (int32 I = 0; I < UE_ARRAY_COUNT(Labels); ++I)
 		{
-			const FVector2D P = Left + FVector2D(9, 291 + I * 53);
+			const FVector2D P = Left + FVector2D(9, 291 + I * 47);
 
 			if (I == 0)
 			{
@@ -568,6 +593,11 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 				Outline(P - FVector2D(5, 5), {10, 10}, ExitColor);
 				Box(P - FVector2D(2, 2), {4, 4}, ExitColor);
 			}
+			else if (I == 6)
+			{
+				Box(P - FVector2D(8, 6), {16, 12}, RoomFill);
+				Outline(P - FVector2D(8, 6), {16, 12}, Wall);
+			}
 			else
 			{
 				Path({P + FVector2D(0, -5),
@@ -581,7 +611,7 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 					Stroke(P - FVector2D(2.5, 0), P + FVector2D(2.5, 0), Danger);
 			}
 
-			Text(Labels[I], Left + FVector2D(38, 282 + I * 53), 12, Ink, false, TextWidth - 40);
+			Text(Labels[I], Left + FVector2D(38, 282 + I * 47), 12, Ink, false, TextWidth - 40);
 		}
 
 		if (View.bPreview)

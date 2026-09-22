@@ -1,4 +1,67 @@
 #include "Maze/MazeSurface.h"
+#include "Maze/MazeRoomDefinition.h"
+
+namespace
+{
+	// Fill one wall strip with a U-shaped opening. End faces join the neighboring
+	// occupied junction tiles; no overlapping boxes or hidden internal caps.
+	void Doorway(
+	    FMazeSurface& Mesh, FVector Origin, FVector Along, FVector Across, float Span, float Depth, float Height)
+	{
+		const float Width = FMazeRoomDefinition::OpeningWidth(Span);
+		const float OpeningHeight = FMazeRoomDefinition::OpeningHeight(Height);
+		const float Left = (Span - Width) / 2, Right = (Span + Width) / 2;
+		const FVector Up(0, 0, 1);
+		const auto Point = [&](float X, float Y, float Z)
+		{
+			return Origin + Along * X + Across * Y + Up * Z;
+		};
+		const auto Quad = [&](FVector A, FVector B, FVector C, FVector D, FVector Normal)
+		{
+			const int32 Base = Mesh.Vertices.Num();
+			Mesh.Vertices.Append({A, B, C, D});
+			Mesh.Normals.Append({Normal, Normal, Normal, Normal});
+
+			if (FVector::DotProduct(FVector::CrossProduct(B - A, C - A), Normal) > 0)
+				Mesh.Triangles.Append({Base, Base + 2, Base + 1, Base, Base + 3, Base + 2});
+			else
+				Mesh.Triangles.Append({Base, Base + 1, Base + 2, Base, Base + 2, Base + 3});
+		};
+
+		for (const float Y : {0.f, Depth})
+		{
+			const FVector Normal = Y == 0 ? -Across : Across;
+
+			// Trapezoids meet the lintel without T-junctions on the outer tile edges.
+			Quad(Point(0, Y, 0), Point(Left, Y, 0), Point(Left, Y, OpeningHeight), Point(0, Y, Height), Normal);
+			Quad(Point(Right, Y, 0), Point(Span, Y, 0), Point(Span, Y, Height), Point(Right, Y, OpeningHeight), Normal);
+			Quad(Point(0, Y, Height),
+			     Point(Left, Y, OpeningHeight),
+			     Point(Right, Y, OpeningHeight),
+			     Point(Span, Y, Height),
+			     Normal);
+		}
+
+		Quad(Point(0, 0, Height), Point(Span, 0, Height), Point(Span, Depth, Height), Point(0, Depth, Height), Up);
+		Quad(Point(0, 0, 0), Point(Left, 0, 0), Point(Left, Depth, 0), Point(0, Depth, 0), -Up);
+		Quad(Point(Right, 0, 0), Point(Span, 0, 0), Point(Span, Depth, 0), Point(Right, Depth, 0), -Up);
+		Quad(Point(Left, 0, 0),
+		     Point(Left, Depth, 0),
+		     Point(Left, Depth, OpeningHeight),
+		     Point(Left, 0, OpeningHeight),
+		     Along);
+		Quad(Point(Right, Depth, 0),
+		     Point(Right, 0, 0),
+		     Point(Right, 0, OpeningHeight),
+		     Point(Right, Depth, OpeningHeight),
+		     -Along);
+		Quad(Point(Left, 0, OpeningHeight),
+		     Point(Right, 0, OpeningHeight),
+		     Point(Right, Depth, OpeningHeight),
+		     Point(Left, Depth, OpeningHeight),
+		     -Up);
+	}
+}
 
 void FMazeSurface::Build(
     const FMazeLayout& Layout, float Cell, float Thickness, float Height, FIntRect Cells, int32 Seed)
@@ -41,6 +104,20 @@ void FMazeSurface::Build(
 				Strip(X * 2, (Y + 1) * 2, true);
 		}
 
+	// Door positions are derived from the same immutable topology for collision,
+	// visual chunks and their halos. The strip's center tile owns the opening.
+	TMap<int32, bool> DoorTiles;
+
+	for (const FMazeRoomDoorway& Door : Layout.RoomDoorways())
+	{
+		const bool bHorizontal = Door.Direction == 0 || Door.Direction == 2;
+		const int32 X = Door.Cell.X * 2 + (Door.Direction == 1 ? 2 : 0);
+		const int32 Y = Door.Cell.Y * 2 + (Door.Direction == 2 ? 2 : 0);
+
+		Strip(X, Y, bHorizontal);
+		DoorTiles.Add((Y + (bHorizontal ? 0 : 1)) * N + X + (bHorizontal ? 1 : 0), bHorizontal);
+	}
+
 	auto Occupied = [&](int32 X, int32 Y)
 	{
 		return X >= 0 && Y >= 0 && X < N && Y < N && Solid[Y * N + X];
@@ -64,6 +141,19 @@ void FMazeSurface::Build(
 				continue;
 
 			const float A = Edge(X), B = Edge(X + 1), C = Edge(Y), D = Edge(Y + 1);
+
+			if (const bool* Horizontal = DoorTiles.Find(Y * N + X))
+			{
+				Doorway(*this,
+				        *Horizontal ? FVector(A, C, 0) : FVector(B, C, 0),
+				        *Horizontal ? FVector(1, 0, 0) : FVector(0, 1, 0),
+				        *Horizontal ? FVector(0, 1, 0) : FVector(-1, 0, 0),
+				        *Horizontal ? B - A : D - C,
+				        *Horizontal ? D - C : B - A,
+				        Height);
+				continue;
+			}
+
 			const FVector Corners[] = {{A, C, 0}, {B, C, 0}, {B, D, 0}, {A, D, 0}};
 			const int32 DX[] = {-1, 1, 1, -1}, DY[] = {-1, -1, 1, 1};
 			const float Cut = FMath::Min(ChamferInsetCm, FMath::Min(B - A, D - C) * 0.4f);

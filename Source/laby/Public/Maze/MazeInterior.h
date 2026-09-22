@@ -9,6 +9,7 @@ struct FMazeInterior
 	static constexpr float CoveHeightCm = 10.f;
 	static constexpr float CoveRadiusCm = 3.f;
 	static constexpr float CornerRadiusCm = 0.35f;
+	static constexpr float DoorTrimWidthCm = 1.5f;
 	// Green flooring, satin metal, painted ivory, dark recesses.
 	FMazeSurface Sections[4];
 	TArray<FTransform> SocketTransforms;

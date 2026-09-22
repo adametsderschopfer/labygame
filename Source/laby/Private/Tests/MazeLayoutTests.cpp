@@ -1,4 +1,5 @@
 #include "Maze/MazeLayout.h"
+#include "Maze/MazeRoomDefinition.h"
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -7,6 +8,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FMazeLayoutTest,
                                  EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FMazeLayoutTest::RunTest(const FString& Parameters)
 {
+	bool FoundTinyRoom = false, FoundLargestRoom = false;
+	bool FoundBendSideRoom = false, FoundBendThroughRoom = false;
+
 	for (int32 Seed = 1; Seed <= 100; ++Seed)
 	{
 		FMazeLayout Maze, Copy;
@@ -14,6 +18,55 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 		Maze.Generate(Seed);
 		TestEqual(TEXT("Default maze is 80 by 80"), Maze.Size, 80);
 		TestEqual(TEXT("Default maze has 6400 cells"), Maze.Walls.Num(), 6400);
+		TestTrue(TEXT("Default maze retains 50 base rooms and adds at most 25 bend rooms"),
+		         Maze.Rooms.Num() >= 50 && Maze.Rooms.Num() <= 75);
+
+		for (int32 I = 50; I < Maze.Rooms.Num(); ++I)
+		{
+			const FIntRect& Room = Maze.Rooms[I];
+			const uint8 Open = ~Maze.Walls[Room.Min.Y * Maze.Size + Room.Min.X] & 15;
+			const bool bSideRoom = Open != 0 && (Open & (Open - 1)) == 0;
+			const bool bThroughRoom = Open == 3 || Open == 6 || Open == 9 || Open == 12;
+
+			TestTrue(TEXT("Additional rooms have one entrance or two adjacent doors"),
+			         Room.Width() == 1 && Room.Height() == 1 && (bSideRoom || bThroughRoom));
+			FoundBendSideRoom |= bSideRoom;
+			FoundBendThroughRoom |= bThroughRoom;
+		}
+
+		for (int32 I = 1; I < Maze.Rooms.Num(); ++I)
+		{
+			const FIntRect& Room = Maze.Rooms[I];
+
+			TestTrue(TEXT("Random room fits the configured size limits"),
+			         Room.Width() >= FMazeRoomDefinition::MinWidth && Room.Width() <= FMazeRoomDefinition::MaxWidth &&
+			             Room.Height() >= FMazeRoomDefinition::MinLength &&
+			             Room.Height() <= FMazeRoomDefinition::MaxLength);
+			FoundTinyRoom |= Room.Width() == 1 && Room.Height() == 1;
+			FoundLargestRoom |=
+			    Room.Width() == FMazeRoomDefinition::MaxWidth && Room.Height() == FMazeRoomDefinition::MaxLength;
+		}
+
+		for (int32 SectorY = 0; SectorY < 7; ++SectorY)
+			for (int32 SectorX = 0; SectorX < 7; ++SectorX)
+			{
+				const FIntRect Sector(SectorX * Maze.Size / 7,
+				                      SectorY * Maze.Size / 7,
+				                      (SectorX + 1) * Maze.Size / 7,
+				                      (SectorY + 1) * Maze.Size / 7);
+				int32 RoomCount = 0;
+
+				for (int32 I = 1; I < Maze.Rooms.Num(); ++I)
+				{
+					const FIntRect& Room = Maze.Rooms[I];
+
+					if (Sector.Contains(Room.Min) && Sector.Contains(Room.Max - FIntPoint(1, 1)))
+						++RoomCount;
+				}
+
+				TestTrue(TEXT("Every default-map sector retains a non-entrance room"), RoomCount >= 1);
+			}
+
 		Copy.Generate(Seed);
 		TestTrue(TEXT("Same seed reproduces topology, rooms and holes"),
 		         Maze.Walls == Copy.Walls && Maze.Exits == Copy.Exits && Maze.Rooms == Copy.Rooms &&
@@ -71,6 +124,11 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 		Copy.Generate(Seed + 1);
 		TestTrue(TEXT("Different seed changes maze"), Maze.Walls != Copy.Walls);
 	}
+
+	TestTrue(TEXT("Seed corpus includes compact one-cell rooms"), FoundTinyRoom);
+	TestTrue(TEXT("Seed corpus retains the previous largest rooms"), FoundLargestRoom);
+	TestTrue(TEXT("Seed corpus includes side rooms near bends"), FoundBendSideRoom);
+	TestTrue(TEXT("Seed corpus includes through-rooms on bends"), FoundBendThroughRoom);
 
 	return true;
 }

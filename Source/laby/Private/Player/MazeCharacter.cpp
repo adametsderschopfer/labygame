@@ -135,6 +135,10 @@ namespace
 		if (Character.IsLocallyControlled() && Character.GetCharacterMovement()->bCrouchMaintainsBaseLocation)
 			if (auto* Camera = FindFirstPersonCamera(Character))
 			{
+				// Crouch callbacks run inside CharacterMovement's deferred movement scope.
+				// Refresh the child's stale world transform first, otherwise SetRelativeLocation
+				// can see a zero world delta and discard this compensation on every crouch.
+				Camera->UpdateComponentToWorld();
 				// CharacterMovement already moved the capsule; preserve the previous world-space eye height.
 				FVector Location = Camera->GetRelativeLocation();
 				Location.Z += HalfHeightAdjust;

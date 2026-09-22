@@ -36,7 +36,7 @@ create("LabCeilingMineral", {
     "CellSizeCm": 462.5, "WallThicknessCm": 50.0,
     "TargetPanelSizeCm": 120.0, "RailWidthCm": 2.4,
     "LightStrength": 2.3, "PoreContrast": 0.48,
-    "OffFraction": 0.18, "FlickerFraction": 0.12,
+    "OffFraction": 0.18, "FlickerFraction": 0.06,
     "FlickerPeriodSeconds": 12.0,
 }, {"MazeOrigin": (0.0, 0.0, 0.0), "MazeSeed": (0.0, 0.0, 0.0),
     "PanelColor": (0.72, 0.74, 0.73), "RailColor": (0.42, 0.45, 0.44),
@@ -104,10 +104,16 @@ float period = max(FlickerPeriodSeconds, 3.0) * lerp(0.8, 1.3, phase);
 float clock = GameTime / period + phase;
 float cycle = floor(clock);
 float seconds = frac(clock) * period;
-float depth = lerp(0.25, 0.65, pattern.Hash(id + cycle + 57.4));
-// One soft dropout per cycle; no rapid full-screen or high-frequency flashing.
-float dropout = smoothstep(0.0, 0.45, seconds) * (1.0 - smoothstep(0.8, 1.5, seconds));
-power *= 1.0 - isFlickering * depth * dropout;
+// Hard on/off blinks, separated by long steady intervals. Vary the event within
+// each cycle so faulty lamps do not blink together or at a metronomic cadence.
+float eventStart = period * lerp(0.15, 0.65, pattern.Hash(id + cycle + 57.4));
+float blinkTime = seconds - eventStart;
+float blinkDuration = lerp(0.12, 0.22, pattern.Hash(id + cycle + 81.2));
+float firstBlink = step(0.0, blinkTime) * (1.0 - step(blinkDuration, blinkTime));
+float doubleBlink = step(0.6, pattern.Hash(id + cycle + 103.8));
+float secondBlink = step(0.55, blinkTime) * (1.0 - step(0.71, blinkTime));
+float dropout = max(firstBlink, doubleBlink * secondBlink);
+power *= 1.0 - isFlickering * dropout;
 
 float2 t = saturate((edge - rail * 0.5) / 0.35);
 float2 raised = t * t * (3.0 - 2.0 * t);

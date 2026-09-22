@@ -22,7 +22,15 @@ def create(name, scalars, colors, code, instanced=False, animated=False, texture
     if material is None:
         raise RuntimeError(f"Cannot create {path}")
     properties(material, tangent_space_normal=False, used_with_instanced_static_meshes=instanced)
-    LIB.delete_all_material_expressions(material)
+    # UE 5.8 removes from the same array it iterates, which can skip expressions.
+    # Drain it fully so stale parameter defaults cannot shadow the new graph.
+    remaining = LIB.get_num_material_expressions(material)
+    while remaining:
+        LIB.delete_all_material_expressions(material)
+        current = LIB.get_num_material_expressions(material)
+        if current >= remaining:
+            raise RuntimeError(f"Cannot clear all expressions from {path}")
+        remaining = current
 
     def node(cls, **values):
         return properties(LIB.create_material_expression(material, cls), **values)

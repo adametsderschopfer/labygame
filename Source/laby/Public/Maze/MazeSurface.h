@@ -1,8 +1,8 @@
 #pragma once
 #include "Maze/MazeLayout.h"
 
-// Union of wall strips with deterministic full-height chamfers on convex corners.
-// Vertical faces are quads; cap vertex blocks are padded to multiples of four.
+// Union of wall strips with room doorways and deterministic convex-corner chamfers.
+// Wall faces are quads (including lintel trapezoids); caps are padded to four vertices.
 struct FMazeSurface
 {
 	static constexpr float ChamferInsetCm = 15.f;
