@@ -1,5 +1,6 @@
 #include "MazeMapPaint.h"
 #include "Maze/MazeNarrowPassageDefinition.h"
+#include "Maze/MazeRoomDefinition.h"
 #include "Player/MazeKeyBindings.h"
 #include "Maze/MazeLayout.h"
 #include "UI/MazeInterfaceStyle.h"
@@ -88,6 +89,74 @@ namespace
 				Points.Add(P + After * Bevel);
 			}
 		}
+	}
+
+	// Match the traversable floor of one physical narrow-passage cell. Segment
+	// endpoints widen into the ordinary corridor and side-room doors grow a short
+	// branch through the inserted wall instead of painting floor behind it.
+	void NarrowCorridorContour(uint8 Axis,
+	                           uint8 DoorSides,
+	                           bool bStartsSegment,
+	                           bool bEndsSegment,
+	                           float Step,
+	                           float Cell,
+	                           TArray<FVector2D>& Points)
+	{
+		const double Half = Step * 0.5;
+		const double OrdinaryHalf = Step * 0.34;
+		const double NarrowHalf = Step * FMazeNarrowPassageDefinition::ClearWidthCm / FMath::Max(1.f, Cell) * 0.5;
+		const double DoorHalf = Step * FMazeRoomDefinition::DoorWidth / FMath::Max(1.f, Cell) * 0.5;
+		const double Taper =
+		    FMath::Min(double(Step * FMazeNarrowPassageDefinition::TaperLengthCm / FMath::Max(1.f, Cell)), Half);
+		const uint8 NegativeDoor = Axis == 1 ? 1 : 8;
+		const uint8 PositiveDoor = Axis == 1 ? 4 : 2;
+		const auto Point = [Axis](double Along, double Across)
+		{
+			return Axis == 1 ? FVector2D(Along, Across) : FVector2D(Across, Along);
+		};
+		const auto Add = [&](double Along, double Across)
+		{
+			const FVector2D P = Point(Along, Across);
+
+			if (Points.IsEmpty() || !Points.Last().Equals(P))
+				Points.Add(P);
+		};
+
+		Points.Reset();
+		Add(-Half, bStartsSegment ? -OrdinaryHalf : -NarrowHalf);
+
+		if (bStartsSegment)
+			Add(-Half + Taper, -NarrowHalf);
+
+		if (DoorSides & NegativeDoor)
+		{
+			Add(-DoorHalf, -NarrowHalf);
+			Add(-DoorHalf, -Half);
+			Add(DoorHalf, -Half);
+			Add(DoorHalf, -NarrowHalf);
+		}
+
+		if (bEndsSegment)
+			Add(Half - Taper, -NarrowHalf);
+
+		Add(Half, bEndsSegment ? -OrdinaryHalf : -NarrowHalf);
+		Add(Half, bEndsSegment ? OrdinaryHalf : NarrowHalf);
+
+		if (bEndsSegment)
+			Add(Half - Taper, NarrowHalf);
+
+		if (DoorSides & PositiveDoor)
+		{
+			Add(DoorHalf, NarrowHalf);
+			Add(DoorHalf, Half);
+			Add(-DoorHalf, Half);
+			Add(-DoorHalf, NarrowHalf);
+		}
+
+		if (bStartsSegment)
+			Add(-Half + Taper, NarrowHalf);
+
+		Add(-Half, bStartsSegment ? OrdinaryHalf : NarrowHalf);
 	}
 }
 
@@ -294,6 +363,7 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 		// A transient presentation mask, derived from this immutable layout on each paint.
 		// Seen remains the sole exploration authority; never fill unseen parts of a room.
 		TSet<int32> RoomCells;
+		const TArray<uint8> RoomDoorSides = Layout->RoomDoorApproachSides();
 
 		for (const FIntRect& Room : Layout->Rooms)
 			for (int32 Y = FMath::Max(MinY, Room.Min.Y); Y <= FMath::Min(MaxY, Room.Max.Y - 1); ++Y)
@@ -314,7 +384,26 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 				                            (IsOpenJunction(*Layout, View.Seen, X + 1, Y + 1) << 2) |
 				                            (IsOpenJunction(*Layout, View.Seen, X, Y + 1) << 3);
 
-				CorridorContour(Layout->Walls[Index], JoinedCorners, View.Step, Contour);
+				const uint8 NarrowAxis = Layout->NarrowPassages.IsValidIndex(Index) ? Layout->NarrowPassages[Index] : 0;
+
+				if (NarrowAxis != 0)
+				{
+					const int32 Previous = NarrowAxis == 1 ? Index - 1 : Index - Layout->Size;
+					const int32 Next = NarrowAxis == 1 ? Index + 1 : Index + Layout->Size;
+					const bool bHasPrevious = NarrowAxis == 1 ? X > 0 : Y > 0;
+					const bool bHasNext = NarrowAxis == 1 ? X + 1 < Layout->Size : Y + 1 < Layout->Size;
+
+					NarrowCorridorContour(NarrowAxis,
+					                      RoomDoorSides.IsValidIndex(Index) ? RoomDoorSides[Index] : 0,
+					                      !bHasPrevious || Layout->NarrowPassages[Previous] != NarrowAxis,
+					                      !bHasNext || Layout->NarrowPassages[Next] != NarrowAxis,
+					                      View.Step,
+					                      View.Cell,
+					                      Contour);
+				}
+				else
+					CorridorContour(Layout->Walls[Index], JoinedCorners, View.Step, Contour);
+
 				Floor.Reset();
 
 				for (const FVector2D& P : Contour)
@@ -352,26 +441,6 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 					}
 
 					WallEdges.Emplace(C + A, C + B);
-				}
-
-				if (Layout->NarrowPassages.IsValidIndex(Index) && Layout->NarrowPassages[Index] != 0)
-				{
-					const double HalfLength = View.Step * 0.5;
-					const double HalfWidth =
-					    View.Step * FMazeNarrowPassageDefinition::ClearWidthCm / FMath::Max(1.f, View.Cell) * 0.5;
-
-					if (Layout->NarrowPassages[Index] == 1)
-					{
-						WallEdges.Emplace(C + FVector2D(-HalfLength, -HalfWidth),
-						                  C + FVector2D(HalfLength, -HalfWidth));
-						WallEdges.Emplace(C + FVector2D(-HalfLength, HalfWidth), C + FVector2D(HalfLength, HalfWidth));
-					}
-					else
-					{
-						WallEdges.Emplace(C + FVector2D(-HalfWidth, -HalfLength),
-						                  C + FVector2D(-HalfWidth, HalfLength));
-						WallEdges.Emplace(C + FVector2D(HalfWidth, -HalfLength), C + FVector2D(HalfWidth, HalfLength));
-					}
 				}
 
 				if (!Layout->HasFloor(Index))

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Math/RandomStream.h"
 
 struct FMazeRoomDoorway
 {
@@ -85,6 +86,8 @@ struct FMazeLayout
 	void Generate(int32 Seed, int32 InSize = DefaultSize);
 	// Derived from room bounds and the canonical wall bits; never an independent cache.
 	TArray<FMazeRoomDoorway> RoomDoorways() const;
+	// Per-corridor-cell bits pointing back through room doorways; derived, never stored.
+	TArray<uint8> RoomDoorApproachSides() const;
 
 private:
 	bool IsEntranceCell(int32 X, int32 Y) const;

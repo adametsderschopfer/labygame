@@ -66,6 +66,7 @@ namespace
 
 	void Prism(FMazeSurface& Mesh, TArray<FVector2D> Polygon, float Height)
 	{
+		const float Overlap = FMazeNarrowPassageDefinition::FloorCeilingOverlapCm;
 		double SignedArea = 0;
 
 		for (int32 I = 0; I < Polygon.Num(); ++I)
@@ -78,16 +79,17 @@ namespace
 		{
 			const int32 Base = Mesh.Vertices.Num();
 			const FVector Normal(0, 0, bTop ? 1 : -1);
+			const float Z = bTop ? Height + Overlap : -Overlap;
 
 			for (const FVector2D& P : Polygon)
 			{
-				Mesh.Vertices.Emplace(P.X, P.Y, bTop ? Height : 0.f);
+				Mesh.Vertices.Emplace(P.X, P.Y, Z);
 				Mesh.Normals.Add(Normal);
 			}
 
 			while (Mesh.Vertices.Num() % 4 != 0)
 			{
-				Mesh.Vertices.Emplace(Polygon.Last().X, Polygon.Last().Y, bTop ? Height : 0.f);
+				Mesh.Vertices.Emplace(Polygon.Last().X, Polygon.Last().Y, Z);
 				Mesh.Normals.Add(Normal);
 			}
 
@@ -102,12 +104,69 @@ namespace
 		{
 			const FVector2D P = Polygon[I], Q = Polygon[(I + 1) % Polygon.Num()];
 			const FVector Direction(Q.X - P.X, Q.Y - P.Y, 0);
-			const FVector Normal(Direction.Y, -Direction.X, 0);
+			const FVector Normal = FVector(Direction.Y, -Direction.X, 0).GetSafeNormal();
+			const auto Side = [&](float Bottom, float Top)
+			{
+				const int32 Base = Mesh.Vertices.Num();
+
+				Mesh.Vertices.Append({FVector(P, Bottom), FVector(Q, Bottom), FVector(Q, Top), FVector(P, Top)});
+				Mesh.Normals.Append({Normal, Normal, Normal, Normal});
+				Mesh.Triangles.Append({Base, Base + 2, Base + 1, Base, Base + 3, Base + 2});
+			};
+
+			// The middle quad retains exact gameplay height for interior trim extraction;
+			// only the hidden cap strips extend through the adjacent floor and ceiling.
+			Side(-Overlap, 0.f);
+			Side(0.f, Height);
+			Side(Height, Height + Overlap);
+		}
+	}
+
+	void RaisedPrism(FMazeSurface& Mesh, TArray<FVector2D> Polygon, float Bottom, float Height)
+	{
+		const float Top = Height + FMazeNarrowPassageDefinition::FloorCeilingOverlapCm;
+		double SignedArea = 0;
+
+		for (int32 I = 0; I < Polygon.Num(); ++I)
+			SignedArea += FVector2D::CrossProduct(Polygon[I], Polygon[(I + 1) % Polygon.Num()]);
+
+		if (SignedArea < 0)
+			Algo::Reverse(Polygon);
+
+		for (const bool bTop : {false, true})
+		{
+			const int32 Base = Mesh.Vertices.Num();
+			const FVector Normal(0, 0, bTop ? 1 : -1);
+			const float Z = bTop ? Top : Bottom;
+
+			for (const FVector2D& P : Polygon)
+			{
+				Mesh.Vertices.Emplace(P.X, P.Y, Z);
+				Mesh.Normals.Add(Normal);
+			}
+
+			while (Mesh.Vertices.Num() % 4 != 0)
+			{
+				Mesh.Vertices.Emplace(Polygon.Last().X, Polygon.Last().Y, Z);
+				Mesh.Normals.Add(Normal);
+			}
+
+			for (int32 I = 1; I + 1 < Polygon.Num(); ++I)
+				if (bTop)
+					Mesh.Triangles.Append({Base, Base + I + 1, Base + I});
+				else
+					Mesh.Triangles.Append({Base, Base + I, Base + I + 1});
+		}
+
+		for (int32 I = 0; I < Polygon.Num(); ++I)
+		{
+			const FVector2D P = Polygon[I], Q = Polygon[(I + 1) % Polygon.Num()];
+			const FVector Direction(Q.X - P.X, Q.Y - P.Y, 0);
+			const FVector Normal = FVector(Direction.Y, -Direction.X, 0).GetSafeNormal();
 			const int32 Base = Mesh.Vertices.Num();
 
-			Mesh.Vertices.Append({FVector(P, 0), FVector(Q, 0), FVector(Q, Height), FVector(P, Height)});
-			Mesh.Normals.Append(
-			    {Normal.GetSafeNormal(), Normal.GetSafeNormal(), Normal.GetSafeNormal(), Normal.GetSafeNormal()});
+			Mesh.Vertices.Append({FVector(P, Bottom), FVector(Q, Bottom), FVector(Q, Top), FVector(P, Top)});
+			Mesh.Normals.Append({Normal, Normal, Normal, Normal});
 			Mesh.Triangles.Append({Base, Base + 2, Base + 1, Base, Base + 3, Base + 2});
 		}
 	}
@@ -119,15 +178,19 @@ namespace
 	                   float Length,
 	                   float Cell,
 	                   float Thickness,
-	                   float Height)
+	                   float Height,
+	                   TArray<float> NegativeDoorCenters,
+	                   TArray<float> PositiveDoorCenters)
 	{
 		constexpr float WallOverlapCm = 5.f;
 		const float FreeHalfWidth = (Cell - Thickness) * 0.5f;
 		const float ClearHalfWidth =
 		    FMath::Min(FMazeNarrowPassageDefinition::ClearWidthCm, Cell - Thickness - 10.f) * 0.5f;
 		const float Taper = FMath::Min(FMazeNarrowPassageDefinition::TaperLengthCm, Length * 0.25f);
+		const float DoorWidth = FMazeRoomDefinition::OpeningWidth(Cell - Thickness);
+		const float DoorHeight = FMazeRoomDefinition::OpeningHeight(Height);
 
-		for (const float Side : {-1.f, 1.f})
+		const auto BuildSide = [&](float Side, TArray<float>& DoorCenters)
 		{
 			const auto Point = [&](float AlongDistance, float AcrossDistance)
 			{
@@ -138,15 +201,64 @@ namespace
 			// emerges from it without sharing non-manifold surface edges.
 			const float Endpoint = Side * (FreeHalfWidth + 1.f);
 			const float Inner = Side * ClearHalfWidth;
-			TArray<FVector2D> Polygon = {Point(0, Outer),
-			                             Point(Length, Outer),
-			                             Point(Length, Endpoint),
-			                             Point(Length - Taper, Inner),
-			                             Point(Taper, Inner),
-			                             Point(0, Endpoint)};
+			const auto InnerAt = [&](float Distance)
+			{
+				if (Distance < Taper)
+					return FMath::Lerp(Endpoint, Inner, Distance / Taper);
 
-			Prism(Mesh, MoveTemp(Polygon), Height);
-		}
+				if (Distance > Length - Taper)
+					return FMath::Lerp(Endpoint, Inner, (Length - Distance) / Taper);
+
+				return Inner;
+			};
+			const auto AddSolid = [&](float Begin, float End)
+			{
+				if (End - Begin <= UE_KINDA_SMALL_NUMBER)
+					return;
+
+				TArray<FVector2D> Polygon = {Point(Begin, Outer), Point(End, Outer), Point(End, InnerAt(End))};
+
+				if (Begin < Length - Taper && End > Length - Taper)
+					Polygon.Add(Point(Length - Taper, Inner));
+
+				if (Begin < Taper && End > Taper)
+					Polygon.Add(Point(Taper, Inner));
+
+				Polygon.Add(Point(Begin, InnerAt(Begin)));
+				Prism(Mesh, MoveTemp(Polygon), Height);
+			};
+
+			DoorCenters.Sort();
+			float SolidBegin = 0.f;
+
+			for (const float Center : DoorCenters)
+			{
+				const float GapBegin = FMath::Clamp(Center - DoorWidth * 0.5f, 0.f, Length);
+				const float GapEnd = FMath::Clamp(Center + DoorWidth * 0.5f, 0.f, Length);
+
+				AddSolid(SolidBegin, GapBegin);
+
+				// The inserted wall is much deeper than an ordinary doorway. Bridge its
+				// header back into the canonical room wall so the opening reads as one
+				// long enclosed doorway instead of a full-height slot. A small overlap
+				// hides the lintel's side faces inside the neighbouring wall solids.
+				constexpr float LintelSideOverlapCm = 1.f;
+				const float LintelBegin = FMath::Max(0.f, GapBegin - LintelSideOverlapCm);
+				const float LintelEnd = FMath::Min(Length, GapEnd + LintelSideOverlapCm);
+				TArray<FVector2D> Lintel = {Point(LintelBegin, Outer),
+				                            Point(LintelEnd, Outer),
+				                            Point(LintelEnd, InnerAt(LintelEnd)),
+				                            Point(LintelBegin, InnerAt(LintelBegin))};
+
+				RaisedPrism(Mesh, MoveTemp(Lintel), DoorHeight, Height);
+				SolidBegin = FMath::Max(SolidBegin, GapEnd);
+			}
+
+			AddSolid(SolidBegin, Length);
+		};
+
+		BuildSide(-1.f, NegativeDoorCenters);
+		BuildSide(1.f, PositiveDoorCenters);
 	}
 
 	void NarrowPassages(
@@ -157,6 +269,7 @@ namespace
 		{
 			return !bRegion || Cells.Contains(FIntPoint(X, Y));
 		};
+		const TArray<uint8> RoomDoorSides = Layout.RoomDoorApproachSides();
 
 		for (int32 Y = 0; Y < Layout.Size; ++Y)
 			for (int32 X = 0; X < Layout.Size; ++X)
@@ -190,8 +303,32 @@ namespace
 				const FVector2D Across = Axis == 1 ? FVector2D(0, 1) : FVector2D(1, 0);
 				const FVector2D Start =
 				    Axis == 1 ? FVector2D(X * Cell, (Y + 0.5f) * Cell) : FVector2D((X + 0.5f) * Cell, Y * Cell);
+				TArray<float> NegativeDoorCenters, PositiveDoorCenters;
+				const uint8 NegativeSide = Axis == 1 ? 1 : 8;
+				const uint8 PositiveSide = Axis == 1 ? 4 : 2;
 
-				NarrowSegment(Mesh, Start, Along, Across, LengthCells * Cell, Cell, Thickness, Height);
+				for (int32 I = 0; I < LengthCells; ++I)
+				{
+					const int32 SegmentCell = CellIndex + (Axis == 1 ? I : I * Layout.Size);
+					const float DoorCenter = (I + 0.5f) * Cell;
+
+					if (RoomDoorSides[SegmentCell] & NegativeSide)
+						NegativeDoorCenters.Add(DoorCenter);
+
+					if (RoomDoorSides[SegmentCell] & PositiveSide)
+						PositiveDoorCenters.Add(DoorCenter);
+				}
+
+				NarrowSegment(Mesh,
+				              Start,
+				              Along,
+				              Across,
+				              LengthCells * Cell,
+				              Cell,
+				              Thickness,
+				              Height,
+				              MoveTemp(NegativeDoorCenters),
+				              MoveTemp(PositiveDoorCenters));
 			}
 	}
 }

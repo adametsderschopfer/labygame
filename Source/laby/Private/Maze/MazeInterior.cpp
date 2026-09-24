@@ -1,5 +1,6 @@
 #include "Maze/MazeInterior.h"
 #include "Maze/MazeMeshPrimitives.h"
+#include "Maze/MazeNarrowPassageDefinition.h"
 #include "Maze/MazeRoomDefinition.h"
 
 using MazeMeshPrimitives::Box;
@@ -38,6 +39,36 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 	const float DoorHeight = FMazeRoomDefinition::OpeningHeight(Height);
 	const float TrimWidth = FMath::Min3(DoorTrimWidthCm, (Cell - Thickness - DoorWidth) / 2, (Height - DoorHeight) / 2);
 	const float TrimBottom = FMath::Min(CoveHeightCm, DoorHeight / 2);
+	const float NarrowHalfWidth =
+	    FMath::Min(FMazeNarrowPassageDefinition::ClearWidthCm, Cell - Thickness - 10.f) * 0.5f;
+	const int32 DoorDX[] = {0, 1, 0, -1}, DoorDY[] = {-1, 0, 1, 0};
+	const auto RegisterDoorCorners = [&](FVector Center, FVector Along)
+	{
+		for (const float Side : {-1.f, 1.f})
+			DoorCorners.Add(Key(Center + Along * (Side * DoorWidth / 2)));
+	};
+	const auto AddDoorFrame = [&](FVector Center, FVector Along, FVector Normal)
+	{
+		if (bLampsOnly || !Owns(Center) || TrimWidth <= 0.f)
+			return;
+
+		const FVector Surface = Center + Normal * (CornerRadiusCm / 2 + 0.01f);
+
+		for (const float Side : {-1.f, 1.f})
+			Box(Result.Sections[1],
+			    Surface + Along * (Side * (DoorWidth + TrimWidth) / 2) + Up * ((DoorHeight + TrimBottom) / 2),
+			    Along,
+			    Up,
+			    Normal,
+			    FVector(TrimWidth, DoorHeight - TrimBottom, CornerRadiusCm));
+
+		Box(Result.Sections[1],
+		    Surface + Up * (DoorHeight + TrimWidth / 2),
+		    Along,
+		    Up,
+		    Normal,
+		    FVector(DoorWidth + 2 * TrimWidth, TrimWidth, CornerRadiusCm));
+	};
 
 	// The explicit doorway frame replaces generic full-height corner strips.
 	// Both faces share the wall strip's center-cell owner, including on chunk borders.
@@ -47,36 +78,37 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 		const FVector Along(-Across.Y, Across.X, 0);
 		const FVector Center =
 		    FVector((Door.Cell.X + 0.5f) * Cell, (Door.Cell.Y + 0.5f) * Cell, 0) + Across * (Cell / 2);
+		const FIntPoint Outside = Door.Cell + FIntPoint(DoorDX[Door.Direction], DoorDY[Door.Direction]);
+		const int32 OutsideIndex = Outside.Y * Layout.Size + Outside.X;
+		const uint8 NarrowAxis = Outside.X >= 0 && Outside.Y >= 0 && Outside.X < Layout.Size &&
+		                                 Outside.Y < Layout.Size && Layout.NarrowPassages.IsValidIndex(OutsideIndex)
+		                             ? Layout.NarrowPassages[OutsideIndex]
+		                             : 0;
+		const bool bOpensFromNarrowSide = (NarrowAxis == 1 && (Door.Direction == 0 || Door.Direction == 2)) ||
+		                                  (NarrowAxis == 2 && (Door.Direction == 1 || Door.Direction == 3));
 
 		for (const float Face : {-1.f, 1.f})
 		{
 			const FVector Normal = Across * Face;
 			const FVector Front = Center + Normal * (Thickness / 2);
 
-			for (const float Side : {-1.f, 1.f})
-				DoorCorners.Add(Key(Front + Along * (Side * DoorWidth / 2)));
+			RegisterDoorCorners(Front, Along);
 
-			if (bLampsOnly || !Owns(Center) || TrimWidth <= 0.f)
-				continue;
+			// A narrow doorway keeps the room-facing frame (Face < 0) but omits the
+			// corridor-facing canonical frame hidden halfway through the long tunnel.
+			if (!bOpensFromNarrowSide || Face < 0)
+				AddDoorFrame(Front, Along, Normal);
+		}
 
-			const FVector Surface = Front + Normal * (CornerRadiusCm / 2 + 0.01f);
+		if (bOpensFromNarrowSide)
+		{
+			const FVector OutsideCenter((Outside.X + 0.5f) * Cell, (Outside.Y + 0.5f) * Cell, 0);
+			const FVector NarrowEntrance = OutsideCenter - Across * NarrowHalfWidth;
 
-			for (const float Side : {-1.f, 1.f})
-				Box(Result.Sections[1],
-				    Surface + Along * (Side * (DoorWidth + TrimWidth) / 2) + Up * ((DoorHeight + TrimBottom) / 2),
-				    Along,
-				    Up,
-				    Normal,
-				    FVector(TrimWidth, DoorHeight - TrimBottom, CornerRadiusCm));
-
-			// A horizontal header closes the U at the opening height, not the ceiling.
-			// Bands stay on the solid wall side, preserving the clear door dimensions.
-			Box(Result.Sections[1],
-			    Surface + Up * (DoorHeight + TrimWidth / 2),
-			    Along,
-			    Up,
-			    Normal,
-			    FVector(DoorWidth + 2 * TrimWidth, TrimWidth, CornerRadiusCm));
+			RegisterDoorCorners(NarrowEntrance, Along);
+			// The second visible frame belongs at the narrow-corridor mouth. Together
+			// with the room-facing frame it brackets the tunnel without a middle copy.
+			AddDoorFrame(NarrowEntrance, Along, Across);
 		}
 	}
 
@@ -107,6 +139,10 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 		return X >= 0 && Y >= 0 && X < Layout.Size && Y < Layout.Size &&
 		       Layout.NarrowPassages.IsValidIndex(Y * Layout.Size + X) &&
 		       Layout.NarrowPassages[Y * Layout.Size + X] != 0;
+	};
+	const auto FixtureFits = [&](FVector P, FVector Along)
+	{
+		return !IsNarrowPassage(P) && !IsNarrowPassage(P - Along * 10.f) && !IsNarrowPassage(P + Along * 10.f);
 	};
 	TSet<FIntPoint> FinishedCorners;
 
@@ -176,13 +212,19 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 			}
 		}
 
-		// Only right-angle convex joins receive quarter-circle metal trim; chamfers use the mitered cove.
-		if (FMath::IsNearlyEqual(JA.SizeSquared(), 2.0) && FMath::Abs(JA.X) > 0.5 && FMath::Abs(JA.Y) > 0.5 &&
-		    FVector::DotProduct(JA, U) < -0.5 && !FinishedCorners.Contains(Key(A)) && !DoorCorners.Contains(Key(A)))
+		const FVector Other = JA - N;
+		const bool bTouchesNarrowPassage = IsNarrowPassage(A) || IsNarrowPassage(A + N * 4) ||
+		                                   IsNarrowPassage(A + Other * 4) || IsNarrowPassage(A + JA * 4);
+
+		// Only ordinary right-angle convex joins receive quarter-circle metal trim.
+		// Narrow-wall bends already define their own silhouette and explicit doorway
+		// frames; adding the generic full-height strip creates the visible column.
+		if (!bTouchesNarrowPassage && FMath::IsNearlyEqual(JA.SizeSquared(), 2.0) && FMath::Abs(JA.X) > 0.5 &&
+		    FMath::Abs(JA.Y) > 0.5 && FVector::DotProduct(JA, U) < -0.5 && !FinishedCorners.Contains(Key(A)) &&
+		    !DoorCorners.Contains(Key(A)))
 		{
 			FinishedCorners.Add(Key(A));
 
-			const FVector Other = JA - N;
 			const float Bottom = HasFloor(A + JA * 4) ? CoveHeightCm : 0.f;
 			FVector Previous = N * CornerRadiusCm;
 
@@ -220,13 +262,17 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 		}
 
 		// Sparse low sockets: stable by seed, shifted along long wall faces.
-		if (!IsNarrowPassage(Mid) && (B - A).Size() > 150 && HasFloor(Mid + N * 4) && Random.FRand() < 0.035f)
+		if ((B - A).Size() > 150 && HasFloor(Mid + N * 4) && Random.FRand() < 0.035f)
 		{
 			const FVector P = FMath::Lerp(A, B, Random.FRandRange(0.25f, 0.75f)) + Up * 30.f + N * 0.08f;
 
-			Result.SocketTransforms.Add(FTransform(N.Rotation(), P));
+			// Long canonical wall faces can span a later narrow insertion. Check the
+			// chosen fixture position rather than only the face midpoint so the mesh
+			// cannot clip through a taper and leave a dark triangular sliver.
+			if (FixtureFits(P, U))
+				Result.SocketTransforms.Add(FTransform(N.Rotation(), P));
 		}
-		else if (!IsNarrowPassage(Mid) && (B - A).Size() > 150 && HasFloor(Mid + N * 4) && Random.FRand() < 0.02f)
+		else if ((B - A).Size() > 150 && HasFloor(Mid + N * 4) && Random.FRand() < 0.02f && FixtureFits(Mid, U))
 		{
 			const FVector P = Mid + Up * 110.f;
 

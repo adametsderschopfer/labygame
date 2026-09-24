@@ -29,8 +29,16 @@ chunk containing its first cell. Since the maximum segment is shorter than one
 streaming-radius or sightline increase is introduced. The added wall faces do
 increase resident collision and visual triangle counts; the cost has not been
 measured. No new Actor, component, asset, resource participant or manifest entry
-is added. Wall fixtures that could reduce clearance are omitted inside these
-segments. The passages do not change movement speed, jumping or stamina and do
+is added. A side room door may open from a narrow segment: the worker derives its
+wall cutout from the same immutable room-door topology used by resident collision,
+and the existing room remains full width. A wall lintel closes the full depth
+above the door opening. The visible corridor mouth owns one metal frame; the
+canonical room wall emits only its room-facing frame, not the hidden middle copy.
+Generic full-height corner trim is omitted on narrow-wall bends. Fixture placement is checked at its
+actual position so no cosmetic mesh can intersect a taper. Hidden wall caps
+overlap the floor and ceiling by 1 cm to avoid coplanar rendering artifacts.
+Both explored maps derive the narrow floor ribbon and doorway branch from the
+same masks. The passages do not change movement speed, jumping or stamina and do
 not depend on whether a visual chunk is resident.
 
 Rooms with doorways range from 1 by 1 cells to the existing maximum of 4 by 7
@@ -65,14 +73,17 @@ do not extend the prior sightline bound; preload radii, budgets, readiness and
 resident physics stay unchanged. Runtime cost is not measured. Map highlighting
 only changes the tint of already drawn, explored floor polygons on both maps.
 
-Door openings have explicit U-shaped satin-metal trim on both wall faces, using
+Ordinary door openings have explicit U-shaped satin-metal trim on both wall faces, using
 the same opening dimensions as the collision shell. Generic ceiling-height corner
 strips are suppressed at all four doorway corners. Each frame belongs to the
 wall strip's center cell, so chunk borders neither duplicate it nor omit one face.
 The six thin boxes per door reuse the existing metal section (72 triangles), stay
 on the solid side of the opening and stop at its header. No asset, Actor, collision,
 gameplay state, sightline or streaming-radius change is needed. Geometry is derived
-from the immutable layout and follows existing chunk/revision cleanup.
+from the immutable layout and follows existing chunk/revision cleanup. A doorway
+reached through a narrow segment instead emits frames only at the segment's inner
+wall and the room-facing wall; its long lintel and jamb tunnel are part of the
+same derived wall surface.
 
 Route shaping targets ordinary straight runs of at most six cells, while preserving
 connectivity when no safe bend is available. The scenic quota counts these residual

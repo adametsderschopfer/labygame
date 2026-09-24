@@ -10,11 +10,15 @@ memory ownership, thread scheduling and current resident-collision policy.
 
 After rooms and route shaping, a feature-specific seeded stream marks a soft
 target of 5% of eligible straight corridor cells as full-height narrow passages.
-Segments are 2–3 cells long, keep three cells of spacing, and exclude rooms,
-door approaches, the entrance, the exit and scenic runs. Their cells and a
-one-cell approach halo are protected from holes. The immutable axis mask drives
-resident collision, chunk visuals and map presentation; it adds no movement
-restriction, trigger actor or per-wall entity.
+Segments are 2–3 cells long, keep three cells of spacing, and exclude room cells,
+the entrance, the exit and scenic runs. A straight corridor cell may retain a
+side door into a room; the inserted wall is split around that opening and leads
+to the canonical room doorway through an enclosed door-height tunnel. Metal
+frames remain at its two accessible ends, while the hidden middle copy and
+generic full-height trim on narrow-wall bends are suppressed. Segment cells and a one-cell approach halo are
+protected from holes. The immutable axis mask drives resident collision, chunk
+visuals and the physically narrow floor ribbon on both explored maps; it adds no
+movement restriction, trigger actor or per-wall entity.
 
 Default 80 x 80 maps target 18 rooms (including the 3 x 3 spawn room) and at most
 64 single-cell holes. Random rooms range from 3 x 3 to 7 x 7 cells, stay inside

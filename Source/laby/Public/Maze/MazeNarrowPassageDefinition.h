@@ -12,4 +12,6 @@ struct FMazeNarrowPassageDefinition
 	static constexpr int32 MinSpacingCells = 3;
 	static constexpr float ClearWidthCm = 145.f;
 	static constexpr float TaperLengthCm = 120.f;
+	// Keep horizontal prism caps behind the floor and ceiling to avoid coplanar rendering artifacts.
+	static constexpr float FloorCeilingOverlapCm = 1.f;
 };

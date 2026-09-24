@@ -11,6 +11,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 {
 	bool FoundTinyRoom = false, FoundLargestRoom = false;
 	bool FoundBendSideRoom = false, FoundBendThroughRoom = false;
+	bool FoundNarrowRoomDoor = false;
 
 	for (int32 Seed = 1; Seed <= 100; ++Seed)
 	{
@@ -90,6 +91,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 		             Maze.NarrowPassages == Copy.NarrowPassages && Maze.Holes == Copy.Holes);
 
 		int32 NarrowCells = 0;
+		const TArray<uint8> RoomDoorSides = Maze.RoomDoorApproachSides();
 
 		for (int32 Cell = 0; Cell < Maze.NarrowPassages.Num(); ++Cell)
 		{
@@ -100,9 +102,17 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 
 			++NarrowCells;
 			TestTrue(TEXT("Narrow passages use a known axis"), Axis == 1 || Axis == 2);
-			TestEqual(TEXT("Narrow passages occupy straight corridor cells"),
-			          uint8(~Maze.Walls[Cell] & 15),
+
+			const uint8 OpenSides = ~Maze.Walls[Cell] & 15;
+			const uint8 NonRoomOpenSides = OpenSides & ~RoomDoorSides[Cell];
+
+			TestEqual(TEXT("Narrow passages retain a straight non-room corridor"),
+			          NonRoomOpenSides,
 			          uint8(Axis == 1 ? 10 : 5));
+			TestEqual(TEXT("Room doorway side masks always describe open topology"),
+			          uint8(RoomDoorSides[Cell] & ~OpenSides),
+			          uint8(0));
+			FoundNarrowRoomDoor |= RoomDoorSides[Cell] != 0;
 			TestTrue(TEXT("Narrow passage floor cannot become a hole"), Maze.HasFloor(Cell));
 
 			const FIntPoint Point(Cell % Maze.Size, Cell / Maze.Size);
@@ -203,6 +213,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Seed corpus retains the previous largest rooms"), FoundLargestRoom);
 	TestTrue(TEXT("Seed corpus includes side rooms near bends"), FoundBendSideRoom);
 	TestTrue(TEXT("Seed corpus includes through-rooms on bends"), FoundBendThroughRoom);
+	TestTrue(TEXT("Seed corpus includes room doors opening inside narrow passages"), FoundNarrowRoomDoor);
 
 	return true;
 }

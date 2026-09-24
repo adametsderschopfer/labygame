@@ -137,15 +137,7 @@ void FMazeLayout::GenerateNarrowPassages(int32 Seed, const TArray<int32>& Scenic
 			for (int32 X = Room.Min.X; X < Room.Max.X; ++X)
 				Blocked[Y * Size + X] = true;
 
-	const int32 DX[] = {0, 1, 0, -1}, DY[] = {-1, 0, 1, 0};
-
-	for (const FMazeRoomDoorway& Door : RoomDoorways())
-	{
-		const FIntPoint Outside = Door.Cell + FIntPoint(DX[Door.Direction], DY[Door.Direction]);
-
-		if (Outside.X >= 0 && Outside.Y >= 0 && Outside.X < Size && Outside.Y < Size)
-			Blocked[Outside.Y * Size + Outside.X] = true;
-	}
+	const TArray<uint8> RoomDoorSides = RoomDoorApproachSides();
 
 	for (int32 Y = 0; Y < Size; ++Y)
 		for (int32 X = 0; X < Size; ++X)
@@ -185,10 +177,11 @@ void FMazeLayout::GenerateNarrowPassages(int32 Seed, const TArray<int32>& Scenic
 			continue;
 
 		const uint8 OpenSides = ~Walls[Cell] & 15;
+		const uint8 NonRoomOpenSides = OpenSides & ~RoomDoorSides[Cell];
 
-		if (OpenSides == 10)
+		if (NonRoomOpenSides == 10)
 			EligibleAxis[Cell] = 1;
-		else if (OpenSides == 5)
+		else if (NonRoomOpenSides == 5)
 			EligibleAxis[Cell] = 2;
 
 		EligibleCount += EligibleAxis[Cell] != 0;
@@ -488,6 +481,25 @@ TArray<FMazeRoomDoorway> FMazeLayout::RoomDoorways() const
 			Add(Room.Min.X, Y, 3);
 			Add(Room.Max.X - 1, Y, 1);
 		}
+	}
+
+	return Result;
+}
+
+TArray<uint8> FMazeLayout::RoomDoorApproachSides() const
+{
+	TArray<uint8> Result;
+
+	Result.Init(0, Walls.Num());
+
+	const int32 DX[] = {0, 1, 0, -1}, DY[] = {-1, 0, 1, 0};
+
+	for (const FMazeRoomDoorway& Door : RoomDoorways())
+	{
+		const FIntPoint Outside = Door.Cell + FIntPoint(DX[Door.Direction], DY[Door.Direction]);
+
+		if (Outside.X >= 0 && Outside.Y >= 0 && Outside.X < Size && Outside.Y < Size)
+			Result[Outside.Y * Size + Outside.X] |= 1 << ((Door.Direction + 2) % 4);
 	}
 
 	return Result;
