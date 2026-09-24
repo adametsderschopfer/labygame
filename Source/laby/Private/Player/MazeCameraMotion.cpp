@@ -1,12 +1,13 @@
 #include "Player/MazeCameraMotion.h"
 #include "CoreGlobals.h"
+#include "ECS/MazePlayerControlDefinition.h"
 
 namespace
 {
 	// Cosmetic tuning in centimetres, degrees and seconds; no locomotion rules here.
 	struct FMazeCameraMotionDefinition
 	{
-		float FullWeightSpeed = 450.f;
+		float FullWeightSpeed = FMazePlayerControlDefinition::WalkSpeed;
 		float MinimumSpeed = 5.f;
 		float StrideLength = 300.f;
 		float VerticalAmplitude = 0.85f;

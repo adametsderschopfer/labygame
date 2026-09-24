@@ -4,8 +4,8 @@
 
 struct FMazePlayerControlDefinition
 {
-	static constexpr float WalkSpeed = 450.f;
-	static constexpr float SprintSpeed = 750.f;
+	static constexpr float WalkSpeed = 350.f;
+	static constexpr float SprintSpeed = 600.f;
 	static constexpr float NarrowPassageSpeed = FMazeNarrowPassageDefinition::SlowWalkSpeed;
 	static constexpr float CrouchSpeed = 225.f;
 	static constexpr float CrouchedHalfHeight = 55.f;
