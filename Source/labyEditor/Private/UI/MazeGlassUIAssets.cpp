@@ -671,15 +671,6 @@ namespace MazeGlassUI
 
 			Button(
 			    Tree, Stage, TEXT("QuitButton"), MazeText::Widget(TEXT("QuitButtonLabel")), Plate, {88, Y}, {540, 72});
-			Place(Stage,
-			      Label(Tree,
-			            TEXT("NavigationHint"),
-			            NSLOCTEXT(
-			                "Maze.Glass", "Navigation", "TAB  ВЫБОР     /     ENTER  ПОДТВЕРДИТЬ     /     ESC  НАЗАД"),
-			            12,
-			            Muted),
-			      {90, 1004},
-			      {1270, 32});
 		}
 
 		SyncWidgetGuids(Blueprint);
@@ -806,11 +797,6 @@ namespace MazeGlassUI
 			Title->SetJustification(ETextJustify::Center);
 			Place(Items, Title, {40, 64}, {640, 49});
 
-			auto* Message = Label(
-			    Tree, bDeath ? TEXT("DeathHint") : TEXT("ExitHint"), MazeText::Widget(TEXT("DeathHint")), 13, Muted);
-
-			Message->SetJustification(ETextJustify::Center);
-			Place(Items, Message, {40, 136}, {640, 26});
 			Panel->SetVisibility(ESlateVisibility::Collapsed);
 		}
 

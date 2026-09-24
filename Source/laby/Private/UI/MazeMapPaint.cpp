@@ -675,24 +675,6 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 			Text(FText::AsNumber(I * Stride), {Content.Left - 12, Y}, 8, Muted, true);
 			Text(FText::AsNumber(I * Stride), {Content.Right + 12, Y}, 8, Muted, true);
 		}
-
-		const float Bottom = View.Origin.Y + View.Size.Y - 61;
-
-		Stroke({View.Origin.X + 24, Bottom - 22},
-		       {View.Origin.X + View.Size.X - 24, Bottom - 22},
-		       MazeInterfaceStyle::Line);
-		Text(NSLOCTEXT(
-		         "Maze.Glass", "MapNavigation", "КОЛЕСО  МАСШТАБ     /     ЛКМ  ПЕРЕМЕСТИТЬ     /     HOME  К ИГРОКУ"),
-		     {View.Origin.X + 36, Bottom},
-		     12,
-		     Ink,
-		     false,
-		     View.Size.X - 300);
-		Text(FText::Format(NSLOCTEXT("Maze.Glass", "MapCloseKey", "{0} / ESC  ЗАКРЫТЬ"),
-		                   MazeKeyBindings::GetKey(TEXT("Map")).GetDisplayName()),
-		     {View.Origin.X + View.Size.X - 220, Bottom},
-		     12,
-		     Accent);
 	}
 	else
 		Text(FText::Format(NSLOCTEXT("Maze.Glass", "MapHintKey", "{0}   КАРТА"),

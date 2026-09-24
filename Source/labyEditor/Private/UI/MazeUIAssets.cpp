@@ -228,9 +228,6 @@ namespace
 			          bDeath ? MazeText::Widget(TEXT("DeathText")) : MazeText::Widget(TEXT("ExitText")),
 			          28,
 			          bDeath ? FLinearColor(1, 0.3f, 0.3f) : FLinearColor(0.3f, 1, 0.6f)));
-			Row(Items,
-			    Label(Tree, bDeath ? TEXT("DeathHint") : TEXT("ExitHint"), MazeText::Widget(TEXT("DeathHint")), 16),
-			    FMargin(0));
 			Message->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}

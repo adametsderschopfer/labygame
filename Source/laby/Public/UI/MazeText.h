@@ -22,8 +22,6 @@ namespace MazeText
 		    {TEXT("StaminaText"), NSLOCTEXT("Maze.Widgets", "StaminaText", "ВЫНОСЛИВОСТЬ")},
 		    {TEXT("DeathText"), NSLOCTEXT("Maze.Widgets", "DeathText", "СВЯЗЬ ПОТЕРЯНА")},
 		    {TEXT("ExitText"), NSLOCTEXT("Maze.Widgets", "ExitText", "ВЫХОД НАЙДЕН")},
-		    {TEXT("DeathHint"), NSLOCTEXT("Maze.Widgets", "DeathHint", "ESC   /   ОТКРЫТЬ МЕНЮ")},
-		    {TEXT("ExitHint"), NSLOCTEXT("Maze.Widgets", "ExitHint", "ESC   /   ОТКРЫТЬ МЕНЮ")},
 		};
 
 		return Labels;

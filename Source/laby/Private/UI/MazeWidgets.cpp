@@ -53,6 +53,7 @@ void UMazeMenuWidget::NativeConstruct()
 	     TEXT("Subtitle"),
 	     MazeText::Subtitle(GetWidgetFromName(TEXT("SensitivitySlider")) != nullptr,
 	                        GetWidgetFromName(TEXT("ResumeButton")) != nullptr));
+	Visible(this, TEXT("NavigationHint"), false);
 
 	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("ResumeButton"))))
 		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::Resume);
@@ -193,6 +194,9 @@ void UMazeHUDWidget::NativeConstruct()
 
 	for (const auto& Entry : MazeText::WidgetLabels())
 		Text(this, *Entry.Key.ToString(), Entry.Value);
+
+	Visible(this, TEXT("DeathHint"), false);
+	Visible(this, TEXT("ExitHint"), false);
 
 	const TCHAR* Section = TEXT("/Script/EngineSettings.GeneralProjectSettings");
 	FString Version;
