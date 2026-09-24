@@ -1,4 +1,5 @@
 #include "ECS/MazeECSSubsystem.h"
+#include "ECS/MazeTraversalSystem.h"
 #include "ProfilingDebugging/CpuProfilerTrace.h"
 #include "ECS/MazeVitalsSystem.h"
 #include "ECS/MazeGameplaySystems.h"
@@ -316,16 +317,19 @@ FMazePlayerCommandFragment UMazeECSSubsystem::ResolvePlayer(FMassEntityHandle En
 	*StoredPose = Pose;
 	StoredPose->bInputEnabled &= !ReadRoom().bActive || ReadRoom().bStarted;
 
-	if (auto* Exploration = FindFragment<FMazeExplorationFragment>(Entity))
-		if (const auto* Maze = FindFragment<FMazeGenerationFragment>(ReadSession().Maze))
-			FMazeExplorationSystem::Update(
-			    *Exploration, ReadSession().Maze, *Maze, *StoredPose, FMazeVitalsSystem::IsAlive(*Vitals));
+	const FMassEntityHandle MazeEntity = ReadSession().Maze;
+	const auto* Maze = FindFragment<FMazeGenerationFragment>(MazeEntity);
 
-	if (GetWorld()->GetNetMode() != NM_Client)
-		if (const auto* Maze = FindFragment<FMazeGenerationFragment>(ReadSession().Maze))
-			FMazeHazardSystem::Apply(*Maze, *StoredPose, *Vitals);
+	if (auto* Exploration = FindFragment<FMazeExplorationFragment>(Entity); Exploration && Maze)
+		FMazeExplorationSystem::Update(
+		    *Exploration, MazeEntity, *Maze, *StoredPose, FMazeVitalsSystem::IsAlive(*Vitals));
 
-	*Command = FMazePlayerControlSystem::Resolve(*Input, *StoredPose, *Vitals, *Locomotion);
+	if (GetWorld()->GetNetMode() != NM_Client && Maze)
+		FMazeHazardSystem::Apply(*Maze, *StoredPose, *Vitals);
+
+	const bool bNarrowPassage = Maze && FMazeTraversalSystem::IsInNarrowPassage(*Maze, StoredPose->Location);
+
+	*Command = FMazePlayerControlSystem::Resolve(*Input, *StoredPose, *Vitals, *Locomotion, bNarrowPassage);
 
 	if (GetWorld()->GetNetMode() != NM_Client)
 		UpdateProgress(Entity);

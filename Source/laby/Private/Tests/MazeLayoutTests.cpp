@@ -1,4 +1,5 @@
 #include "Maze/MazeLayout.h"
+#include "Maze/MazeNarrowPassageDefinition.h"
 #include "Maze/MazeRoomDefinition.h"
 #include "Misc/AutomationTest.h"
 
@@ -84,9 +85,66 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 			}
 
 		Copy.Generate(Seed);
-		TestTrue(TEXT("Same seed reproduces topology, rooms and holes"),
+		TestTrue(TEXT("Same seed reproduces topology, rooms, narrow passages and holes"),
 		         Maze.Walls == Copy.Walls && Maze.Exits == Copy.Exits && Maze.Rooms == Copy.Rooms &&
-		             Maze.Holes == Copy.Holes);
+		             Maze.NarrowPassages == Copy.NarrowPassages && Maze.Holes == Copy.Holes);
+
+		int32 NarrowCells = 0;
+
+		for (int32 Cell = 0; Cell < Maze.NarrowPassages.Num(); ++Cell)
+		{
+			const uint8 Axis = Maze.NarrowPassages[Cell];
+
+			if (Axis == 0)
+				continue;
+
+			++NarrowCells;
+			TestTrue(TEXT("Narrow passages use a known axis"), Axis == 1 || Axis == 2);
+			TestEqual(TEXT("Narrow passages occupy straight corridor cells"),
+			          uint8(~Maze.Walls[Cell] & 15),
+			          uint8(Axis == 1 ? 10 : 5));
+			TestTrue(TEXT("Narrow passage floor cannot become a hole"), Maze.HasFloor(Cell));
+
+			const FIntPoint Point(Cell % Maze.Size, Cell / Maze.Size);
+
+			TestFalse(TEXT("Narrow passages never occupy rooms"),
+			          Maze.Rooms.ContainsByPredicate(
+			              [Point](const FIntRect& Room)
+			              {
+				              return Room.Contains(Point);
+			              }));
+
+			for (int32 OffsetY = -1; OffsetY <= 1; ++OffsetY)
+				for (int32 OffsetX = -1; OffsetX <= 1; ++OffsetX)
+				{
+					const int32 X = Point.X + OffsetX, Y = Point.Y + OffsetY;
+
+					if (X >= 0 && Y >= 0 && X < Maze.Size && Y < Maze.Size)
+						TestTrue(TEXT("Narrow passage approach remains solid"), Maze.HasFloor(Y * Maze.Size + X));
+				}
+
+			const int32 Previous = Axis == 1 ? Cell - 1 : Cell - Maze.Size;
+			const bool bHasPrevious = Axis == 1 ? Point.X > 0 : Point.Y > 0;
+
+			if (!bHasPrevious || Maze.NarrowPassages[Previous] != Axis)
+			{
+				int32 SegmentCells = 1;
+
+				while (Axis == 1 && Point.X + SegmentCells < Maze.Size &&
+				       Maze.NarrowPassages[Cell + SegmentCells] == Axis)
+					++SegmentCells;
+
+				while (Axis == 2 && Point.Y + SegmentCells < Maze.Size &&
+				       Maze.NarrowPassages[Cell + SegmentCells * Maze.Size] == Axis)
+					++SegmentCells;
+
+				TestTrue(TEXT("Narrow passage length stays within its definition"),
+				         SegmentCells >= FMazeNarrowPassageDefinition::MinCells &&
+				             SegmentCells <= FMazeNarrowPassageDefinition::MaxCells);
+			}
+		}
+
+		TestTrue(TEXT("Default maze contains narrow passages"), NarrowCells > 0);
 
 		TSet<int32> Seen;
 		TArray<int32> Queue;

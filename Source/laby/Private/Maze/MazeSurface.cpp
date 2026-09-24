@@ -1,4 +1,6 @@
 #include "Maze/MazeSurface.h"
+#include "Algo/Reverse.h"
+#include "Maze/MazeNarrowPassageDefinition.h"
 #include "Maze/MazeRoomDefinition.h"
 
 namespace
@@ -60,6 +62,137 @@ namespace
 		     Point(Right, Depth, OpeningHeight),
 		     Point(Left, Depth, OpeningHeight),
 		     -Up);
+	}
+
+	void Prism(FMazeSurface& Mesh, TArray<FVector2D> Polygon, float Height)
+	{
+		double SignedArea = 0;
+
+		for (int32 I = 0; I < Polygon.Num(); ++I)
+			SignedArea += FVector2D::CrossProduct(Polygon[I], Polygon[(I + 1) % Polygon.Num()]);
+
+		if (SignedArea < 0)
+			Algo::Reverse(Polygon);
+
+		for (const bool bTop : {false, true})
+		{
+			const int32 Base = Mesh.Vertices.Num();
+			const FVector Normal(0, 0, bTop ? 1 : -1);
+
+			for (const FVector2D& P : Polygon)
+			{
+				Mesh.Vertices.Emplace(P.X, P.Y, bTop ? Height : 0.f);
+				Mesh.Normals.Add(Normal);
+			}
+
+			while (Mesh.Vertices.Num() % 4 != 0)
+			{
+				Mesh.Vertices.Emplace(Polygon.Last().X, Polygon.Last().Y, bTop ? Height : 0.f);
+				Mesh.Normals.Add(Normal);
+			}
+
+			for (int32 I = 1; I + 1 < Polygon.Num(); ++I)
+				if (bTop)
+					Mesh.Triangles.Append({Base, Base + I + 1, Base + I});
+				else
+					Mesh.Triangles.Append({Base, Base + I, Base + I + 1});
+		}
+
+		for (int32 I = 0; I < Polygon.Num(); ++I)
+		{
+			const FVector2D P = Polygon[I], Q = Polygon[(I + 1) % Polygon.Num()];
+			const FVector Direction(Q.X - P.X, Q.Y - P.Y, 0);
+			const FVector Normal(Direction.Y, -Direction.X, 0);
+			const int32 Base = Mesh.Vertices.Num();
+
+			Mesh.Vertices.Append({FVector(P, 0), FVector(Q, 0), FVector(Q, Height), FVector(P, Height)});
+			Mesh.Normals.Append(
+			    {Normal.GetSafeNormal(), Normal.GetSafeNormal(), Normal.GetSafeNormal(), Normal.GetSafeNormal()});
+			Mesh.Triangles.Append({Base, Base + 2, Base + 1, Base, Base + 3, Base + 2});
+		}
+	}
+
+	void NarrowSegment(FMazeSurface& Mesh,
+	                   FVector2D Start,
+	                   FVector2D Along,
+	                   FVector2D Across,
+	                   float Length,
+	                   float Cell,
+	                   float Thickness,
+	                   float Height)
+	{
+		constexpr float WallOverlapCm = 5.f;
+		const float FreeHalfWidth = (Cell - Thickness) * 0.5f;
+		const float ClearHalfWidth =
+		    FMath::Min(FMazeNarrowPassageDefinition::ClearWidthCm, Cell - Thickness - 10.f) * 0.5f;
+		const float Taper = FMath::Min(FMazeNarrowPassageDefinition::TaperLengthCm, Length * 0.25f);
+
+		for (const float Side : {-1.f, 1.f})
+		{
+			const auto Point = [&](float AlongDistance, float AcrossDistance)
+			{
+				return Start + Along * AlongDistance + Across * AcrossDistance;
+			};
+			const float Outer = Side * (FreeHalfWidth + WallOverlapCm);
+			// Both end vertices remain inside the canonical wall volume. The taper
+			// emerges from it without sharing non-manifold surface edges.
+			const float Endpoint = Side * (FreeHalfWidth + 1.f);
+			const float Inner = Side * ClearHalfWidth;
+			TArray<FVector2D> Polygon = {Point(0, Outer),
+			                             Point(Length, Outer),
+			                             Point(Length, Endpoint),
+			                             Point(Length - Taper, Inner),
+			                             Point(Taper, Inner),
+			                             Point(0, Endpoint)};
+
+			Prism(Mesh, MoveTemp(Polygon), Height);
+		}
+	}
+
+	void NarrowPassages(
+	    FMazeSurface& Mesh, const FMazeLayout& Layout, float Cell, float Thickness, float Height, FIntRect Cells)
+	{
+		const bool bRegion = Cells.Width() > 0 && Cells.Height() > 0;
+		const auto Owns = [&](int32 X, int32 Y)
+		{
+			return !bRegion || Cells.Contains(FIntPoint(X, Y));
+		};
+
+		for (int32 Y = 0; Y < Layout.Size; ++Y)
+			for (int32 X = 0; X < Layout.Size; ++X)
+			{
+				const int32 CellIndex = Y * Layout.Size + X;
+
+				if (!Layout.NarrowPassages.IsValidIndex(CellIndex) || Layout.NarrowPassages[CellIndex] == 0)
+					continue;
+
+				const uint8 Axis = Layout.NarrowPassages[CellIndex];
+				const int32 Previous = Axis == 1 ? CellIndex - 1 : CellIndex - Layout.Size;
+				const bool bHasPrevious = Axis == 1 ? X > 0 : Y > 0;
+
+				if (bHasPrevious && Layout.NarrowPassages[Previous] == Axis)
+					continue;
+
+				int32 LengthCells = 1;
+
+				while (Axis == 1 && X + LengthCells < Layout.Size &&
+				       Layout.NarrowPassages[CellIndex + LengthCells] == Axis)
+					++LengthCells;
+
+				while (Axis == 2 && Y + LengthCells < Layout.Size &&
+				       Layout.NarrowPassages[CellIndex + LengthCells * Layout.Size] == Axis)
+					++LengthCells;
+
+				if (!Owns(X, Y))
+					continue;
+
+				const FVector2D Along = Axis == 1 ? FVector2D(1, 0) : FVector2D(0, 1);
+				const FVector2D Across = Axis == 1 ? FVector2D(0, 1) : FVector2D(1, 0);
+				const FVector2D Start =
+				    Axis == 1 ? FVector2D(X * Cell, (Y + 0.5f) * Cell) : FVector2D((X + 0.5f) * Cell, Y * Cell);
+
+				NarrowSegment(Mesh, Start, Along, Across, LengthCells * Cell, Cell, Thickness, Height);
+			}
 	}
 }
 
@@ -217,4 +350,6 @@ void FMazeSurface::Build(
 				Face(P, Q, Q + FVector(0, 0, Height), P + FVector(0, 0, Height), Normal);
 			}
 		}
+
+	NarrowPassages(*this, Layout, Cell, Thickness, Height, Cells);
 }

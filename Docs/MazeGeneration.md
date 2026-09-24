@@ -8,6 +8,14 @@ chunk generation through `FMazeChunkSystem`. `AMazeWorld` consumes these results
 to create engine resources. See [Streaming.md](Streaming.md) for lifecycle,
 memory ownership, thread scheduling and current resident-collision policy.
 
+After rooms and route shaping, a feature-specific seeded stream marks a soft
+target of 5% of eligible straight corridor cells as full-height narrow passages.
+Segments are 2–3 cells long, keep three cells of spacing, and exclude rooms,
+door approaches, the entrance, the exit and scenic runs. Their cells and a
+one-cell approach halo are protected from holes. The immutable axis mask drives
+resident collision, chunk visuals, map presentation and ECS traversal limits;
+no trigger actors or per-wall entities are created.
+
 Default 80 x 80 maps target 18 rooms (including the 3 x 3 spawn room) and at most
 64 single-cell holes. Random rooms range from 3 x 3 to 7 x 7 cells, stay inside
 the boundary and keep a corridor gap between their rectangles. They remove only

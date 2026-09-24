@@ -100,6 +100,14 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 
 		return X >= 0 && Y >= 0 && X < Layout.Size && Y < Layout.Size && Layout.HasFloor(Y * Layout.Size + X);
 	};
+	const auto IsNarrowPassage = [&](FVector P)
+	{
+		const int32 X = FMath::FloorToInt(P.X / Cell), Y = FMath::FloorToInt(P.Y / Cell);
+
+		return X >= 0 && Y >= 0 && X < Layout.Size && Y < Layout.Size &&
+		       Layout.NarrowPassages.IsValidIndex(Y * Layout.Size + X) &&
+		       Layout.NarrowPassages[Y * Layout.Size + X] != 0;
+	};
 	TSet<FIntPoint> FinishedCorners;
 
 	for (int32 I = 0; I + 3 < Walls.Vertices.Num(); I += 4)
@@ -212,13 +220,13 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 		}
 
 		// Sparse low sockets: stable by seed, shifted along long wall faces.
-		if ((B - A).Size() > 150 && HasFloor(Mid + N * 4) && Random.FRand() < 0.035f)
+		if (!IsNarrowPassage(Mid) && (B - A).Size() > 150 && HasFloor(Mid + N * 4) && Random.FRand() < 0.035f)
 		{
 			const FVector P = FMath::Lerp(A, B, Random.FRandRange(0.25f, 0.75f)) + Up * 30.f + N * 0.08f;
 
 			Result.SocketTransforms.Add(FTransform(N.Rotation(), P));
 		}
-		else if ((B - A).Size() > 150 && HasFloor(Mid + N * 4) && Random.FRand() < 0.02f)
+		else if (!IsNarrowPassage(Mid) && (B - A).Size() > 150 && HasFloor(Mid + N * 4) && Random.FRand() < 0.02f)
 		{
 			const FVector P = Mid + Up * 110.f;
 

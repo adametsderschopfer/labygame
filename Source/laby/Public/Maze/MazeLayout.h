@@ -19,6 +19,8 @@ struct FMazeLayout
 	TArray<int32> Exits;
 	TArray<FIntRect> Rooms;
 	TArray<uint8> Holes;
+	// 0 = ordinary floor, 1 = narrow east-west passage, 2 = narrow north-south passage.
+	TArray<uint8> NarrowPassages;
 	int32 NumHoles() const
 	{
 		int32 Count = 0;
@@ -89,6 +91,7 @@ private:
 	bool OverlapsEntrance(const FIntRect& Room) const;
 	void ReserveRooms(FRandomStream& Random);
 	void AddRoomsAtBends(FRandomStream& Random, const TArray<int32>& ScenicFloor);
+	void GenerateNarrowPassages(int32 Seed, const TArray<int32>& ScenicFloor);
 	void CarveEntrance();
 	void CarveRoom(const FIntRect& Room);
 	void GenerateHoles(FRandomStream& Random, const TArray<int32>& ScenicFloor);

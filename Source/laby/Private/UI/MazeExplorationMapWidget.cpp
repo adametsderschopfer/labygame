@@ -179,6 +179,7 @@ int32 UMazeExplorationMapWidget::NativePaint(const FPaintArgs& Args,
 	View.Player = FVector2D(Local.X, Local.Y);
 	View.Center = View.bFull ? Center : View.Player;
 	View.Start = FVector2D(Maze.Data->Start.X, Maze.Data->Start.Y) / Maze.Cell;
+	View.Cell = Maze.Cell;
 	View.Yaw = Controller->GetControlRotation().Yaw;
 	View.Layout = &Maze.Data->Layout;
 

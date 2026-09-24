@@ -23,6 +23,7 @@ struct FMazeMapPaintView
 	FVector2D Player;
 	FVector2D Start;
 	float Step = 20.f;
+	float Cell = 462.5f;
 	float Yaw = 0.f;
 	bool bFull = false;
 	bool bCompass = true;

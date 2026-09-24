@@ -1,4 +1,5 @@
 #include "MazeMapPaint.h"
+#include "Maze/MazeNarrowPassageDefinition.h"
 #include "Player/MazeKeyBindings.h"
 #include "Maze/MazeLayout.h"
 #include "UI/MazeInterfaceStyle.h"
@@ -351,6 +352,26 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 					}
 
 					WallEdges.Emplace(C + A, C + B);
+				}
+
+				if (Layout->NarrowPassages.IsValidIndex(Index) && Layout->NarrowPassages[Index] != 0)
+				{
+					const double HalfLength = View.Step * 0.5;
+					const double HalfWidth =
+					    View.Step * FMazeNarrowPassageDefinition::ClearWidthCm / FMath::Max(1.f, View.Cell) * 0.5;
+
+					if (Layout->NarrowPassages[Index] == 1)
+					{
+						WallEdges.Emplace(C + FVector2D(-HalfLength, -HalfWidth),
+						                  C + FVector2D(HalfLength, -HalfWidth));
+						WallEdges.Emplace(C + FVector2D(-HalfLength, HalfWidth), C + FVector2D(HalfLength, HalfWidth));
+					}
+					else
+					{
+						WallEdges.Emplace(C + FVector2D(-HalfWidth, -HalfLength),
+						                  C + FVector2D(-HalfWidth, HalfLength));
+						WallEdges.Emplace(C + FVector2D(HalfWidth, -HalfLength), C + FVector2D(HalfWidth, HalfLength));
+					}
 				}
 
 				if (!Layout->HasFloor(Index))

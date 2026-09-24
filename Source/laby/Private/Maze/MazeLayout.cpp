@@ -1,4 +1,5 @@
 #include "Maze/MazeLayout.h"
+#include "Maze/MazeNarrowPassageDefinition.h"
 #include "Maze/MazeRoomDefinition.h"
 #include "Maze/MazeRoutes.h"
 
@@ -115,7 +116,179 @@ void FMazeLayout::Generate(int32 Seed, int32 InSize)
 	}
 
 	AddRoomsAtBends(Random, ScenicFloor);
+	GenerateNarrowPassages(Seed, ScenicFloor);
 	GenerateHoles(Random, ScenicFloor);
+}
+
+void FMazeLayout::GenerateNarrowPassages(int32 Seed, const TArray<int32>& ScenicFloor)
+{
+	NarrowPassages.Init(0, Walls.Num());
+
+	TArray<bool> Blocked;
+
+	Blocked.Init(false, Walls.Num());
+
+	for (const int32 Cell : ScenicFloor)
+		if (Blocked.IsValidIndex(Cell))
+			Blocked[Cell] = true;
+
+	for (const FIntRect& Room : Rooms)
+		for (int32 Y = Room.Min.Y; Y < Room.Max.Y; ++Y)
+			for (int32 X = Room.Min.X; X < Room.Max.X; ++X)
+				Blocked[Y * Size + X] = true;
+
+	const int32 DX[] = {0, 1, 0, -1}, DY[] = {-1, 0, 1, 0};
+
+	for (const FMazeRoomDoorway& Door : RoomDoorways())
+	{
+		const FIntPoint Outside = Door.Cell + FIntPoint(DX[Door.Direction], DY[Door.Direction]);
+
+		if (Outside.X >= 0 && Outside.Y >= 0 && Outside.X < Size && Outside.Y < Size)
+			Blocked[Outside.Y * Size + Outside.X] = true;
+	}
+
+	for (int32 Y = 0; Y < Size; ++Y)
+		for (int32 X = 0; X < Size; ++X)
+		{
+			bool bNearEntrance = false;
+
+			for (int32 OffsetY = -1; OffsetY <= 1 && !bNearEntrance; ++OffsetY)
+				for (int32 OffsetX = -1; OffsetX <= 1; ++OffsetX)
+					bNearEntrance |= IsEntranceCell(X + OffsetX, Y + OffsetY);
+
+			Blocked[Y * Size + X] = Blocked[Y * Size + X] || bNearEntrance;
+		}
+
+	for (const int32 Exit : Exits)
+	{
+		const int32 ExitX = Exit % Size, ExitY = Exit / Size;
+
+		for (int32 OffsetY = -1; OffsetY <= 1; ++OffsetY)
+			for (int32 OffsetX = -1; OffsetX <= 1; ++OffsetX)
+			{
+				const int32 X = ExitX + OffsetX, Y = ExitY + OffsetY;
+
+				if (X >= 0 && Y >= 0 && X < Size && Y < Size)
+					Blocked[Y * Size + X] = true;
+			}
+	}
+
+	TArray<uint8> EligibleAxis;
+
+	EligibleAxis.Init(0, Walls.Num());
+
+	int32 EligibleCount = 0;
+
+	for (int32 Cell = 0; Cell < Walls.Num(); ++Cell)
+	{
+		if (Blocked[Cell])
+			continue;
+
+		const uint8 OpenSides = ~Walls[Cell] & 15;
+
+		if (OpenSides == 10)
+			EligibleAxis[Cell] = 1;
+		else if (OpenSides == 5)
+			EligibleAxis[Cell] = 2;
+
+		EligibleCount += EligibleAxis[Cell] != 0;
+	}
+
+	struct FCandidate
+	{
+		int32 Cell = 0;
+		int32 Length = 0;
+		uint8 Axis = 0;
+	};
+	TArray<FCandidate> Candidates;
+	FRandomStream Random(static_cast<int32>(uint32(Seed) ^ 0x6D2B79F5u));
+
+	const auto AddRun = [&](int32 Start, int32 Length, int32 Step, uint8 Axis)
+	{
+		for (int32 Offset = 0; Offset + FMazeNarrowPassageDefinition::MinCells <= Length; ++Offset)
+		{
+			const int32 Remaining = Length - Offset;
+			const int32 SegmentLength = Random.RandRange(FMazeNarrowPassageDefinition::MinCells,
+			                                             FMath::Min(FMazeNarrowPassageDefinition::MaxCells, Remaining));
+
+			Candidates.Add({Start + Offset * Step, SegmentLength, Axis});
+		}
+	};
+
+	for (int32 Y = 0; Y < Size; ++Y)
+		for (int32 X = 0; X < Size;)
+		{
+			const int32 StartX = X;
+
+			while (X < Size && EligibleAxis[Y * Size + X] == 1)
+				++X;
+
+			if (X - StartX >= FMazeNarrowPassageDefinition::MinCells)
+				AddRun(Y * Size + StartX, X - StartX, 1, 1);
+
+			if (X == StartX)
+				++X;
+		}
+
+	for (int32 X = 0; X < Size; ++X)
+		for (int32 Y = 0; Y < Size;)
+		{
+			const int32 StartY = Y;
+
+			while (Y < Size && EligibleAxis[Y * Size + X] == 2)
+				++Y;
+
+			if (Y - StartY >= FMazeNarrowPassageDefinition::MinCells)
+				AddRun(StartY * Size + X, Y - StartY, Size, 2);
+
+			if (Y == StartY)
+				++Y;
+		}
+
+	for (int32 I = Candidates.Num() - 1; I > 0; --I)
+		Candidates.Swap(I, Random.RandRange(0, I));
+
+	const int32 TargetCells = FMath::RoundToInt(EligibleCount * FMazeNarrowPassageDefinition::CoverageFraction);
+	int32 PlacedCells = 0;
+
+	for (const FCandidate& Candidate : Candidates)
+	{
+		if (PlacedCells >= TargetCells)
+			break;
+
+		const int32 Step = Candidate.Axis == 1 ? 1 : Size;
+		bool bSeparated = true;
+
+		for (int32 I = 0; I < Candidate.Length && bSeparated; ++I)
+		{
+			const int32 Cell = Candidate.Cell + I * Step;
+			const int32 CellX = Cell % Size, CellY = Cell / Size;
+
+			for (int32 OffsetY = -FMazeNarrowPassageDefinition::MinSpacingCells;
+			     OffsetY <= FMazeNarrowPassageDefinition::MinSpacingCells && bSeparated;
+			     ++OffsetY)
+				for (int32 OffsetX = -FMazeNarrowPassageDefinition::MinSpacingCells;
+				     OffsetX <= FMazeNarrowPassageDefinition::MinSpacingCells;
+				     ++OffsetX)
+				{
+					const int32 X = CellX + OffsetX, Y = CellY + OffsetY;
+
+					if (X >= 0 && Y >= 0 && X < Size && Y < Size && NarrowPassages[Y * Size + X] != 0)
+					{
+						bSeparated = false;
+						break;
+					}
+				}
+		}
+
+		if (!bSeparated)
+			continue;
+
+		for (int32 I = 0; I < Candidate.Length; ++I)
+			NarrowPassages[Candidate.Cell + I * Step] = Candidate.Axis;
+
+		PlacedCells += Candidate.Length;
+	}
 }
 
 void FMazeLayout::ReserveRooms(FRandomStream& Random)
@@ -225,6 +398,21 @@ void FMazeLayout::GenerateHoles(FRandomStream& Random, const TArray<int32>& Scen
 
 	for (const int32 Cell : ScenicFloor)
 		Protected[Cell] = true;
+
+	for (int32 Cell = 0; Cell < NarrowPassages.Num(); ++Cell)
+		if (NarrowPassages[Cell] != 0)
+		{
+			const int32 CellX = Cell % Size, CellY = Cell / Size;
+
+			for (int32 OffsetY = -1; OffsetY <= 1; ++OffsetY)
+				for (int32 OffsetX = -1; OffsetX <= 1; ++OffsetX)
+				{
+					const int32 X = CellX + OffsetX, Y = CellY + OffsetY;
+
+					if (X >= 0 && Y >= 0 && X < Size && Y < Size)
+						Protected[Y * Size + X] = true;
+				}
+		}
 
 	for (const FIntRect& Room : Rooms)
 		for (int32 Y = Room.Min.Y; Y < Room.Max.Y; ++Y)
