@@ -75,6 +75,7 @@ TConstArrayView<FMazeKeyBinding> MazeKeyBindings::Definitions()
 	    {TEXT("Jump"), TEXT("Jump"), 0.f, EKeys::SpaceBar, NSLOCTEXT("Maze.Keys", "Jump", "Прыжок")},
 	    {TEXT("Crouch"), TEXT("Crouch"), 0.f, EKeys::LeftControl, NSLOCTEXT("Maze.Keys", "Crouch", "Присесть")},
 	    {TEXT("Headlamp"), TEXT("Headlamp"), 0.f, EKeys::L, NSLOCTEXT("Maze.Keys", "Headlamp", "Фонарик")},
+	    {TEXT("Signal"), TEXT("Signal"), 0.f, EKeys::X, NSLOCTEXT("Maze.Keys", "Signal", "Свисток")},
 	    {TEXT("Map"), TEXT("Map"), 0.f, EKeys::M, NSLOCTEXT("Maze.Keys", "Map", "Карта")},
 	    {TEXT("NewMaze"), TEXT("NewMaze"), 0.f, EKeys::R, NSLOCTEXT("Maze.Keys", "NewMaze", "Новый лабиринт")}};
 

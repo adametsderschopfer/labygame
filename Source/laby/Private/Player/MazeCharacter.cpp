@@ -12,13 +12,19 @@
 #include "Camera/CameraComponent.h"
 #include "UI/MazeInterfacePreferences.h"
 #include "Player/MazeKeyBindings.h"
+#include "AudioDevice.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/AudioComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
+#include "Sound/SoundAttenuation.h"
+#include "Sound/SoundBase.h"
+#include "Sound/SoundSubmix.h"
+#include "SubmixEffects/AudioMixerSubmixEffectReverb.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Net/UnrealNetwork.h"
 
@@ -302,6 +308,7 @@ void AMazeCharacter::BeginPlay()
 		ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);
 
 	RefreshHeadlamp();
+	InitializeSignalAudio();
 
 	if (GetNetMode() != NM_DedicatedServer && !FindComponentByClass<UMazeFootstepAudioComponent>())
 	{
@@ -321,6 +328,23 @@ void AMazeCharacter::EndPlay(const EEndPlayReason::Type Reason)
 
 	PlayerEntity = FMassEntityHandle();
 	HeadlampLight->SetVisibility(false);
+
+	if (SignalReverbSubmix)
+	{
+		if (const UWorld* World = GetWorld())
+		{
+			FAudioDeviceHandle AudioDevice = World->GetAudioDevice();
+
+			if (AudioDevice.IsValid())
+				AudioDevice->UnregisterSoundSubmix(SignalReverbSubmix, true);
+		}
+
+		SignalReverbSubmix->SetParentSubmix(nullptr, false);
+	}
+
+	SignalAttenuation = nullptr;
+	SignalReverbSubmix = nullptr;
+	SignalReverbPreset = nullptr;
 	ReplicatedItems = FMazeItemsSnapshot();
 	ECSSubsystem = nullptr;
 	Super::EndPlay(Reason);
@@ -561,6 +585,122 @@ void AMazeCharacter::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindAction(TEXT("Crouch"), IE_Released, this, &AMazeCharacter::CrouchStop);
 	Input->BindAction(TEXT("NewMaze"), IE_Pressed, this, &AMazeCharacter::RestartMaze);
 	Input->BindAction(TEXT("Headlamp"), IE_Pressed, this, &AMazeCharacter::ToggleHeadlamp);
+	Input->BindAction(TEXT("Signal"), IE_Pressed, this, &AMazeCharacter::RequestSignal);
+}
+
+void AMazeCharacter::InitializeSignalAudio()
+{
+	if (GetNetMode() == NM_DedicatedServer)
+		return;
+
+	SignalSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Audio/Player/S_PlayerWhistle.S_PlayerWhistle"));
+
+	SignalAttenuation = NewObject<USoundAttenuation>(this, TEXT("SignalAttenuation"));
+
+	auto& Attenuation = SignalAttenuation->Attenuation;
+
+	Attenuation.bAttenuate = true;
+	Attenuation.bSpatialize = true;
+	Attenuation.DistanceAlgorithm = EAttenuationDistanceModel::NaturalSound;
+	Attenuation.FalloffMode = ENaturalSoundFalloffMode::Silent;
+	Attenuation.dBAttenuationAtMax = -48.f;
+	Attenuation.AttenuationShape = EAttenuationShape::Cone;
+	Attenuation.AttenuationShapeExtents = FVector(400.f, 70.f, 110.f);
+	Attenuation.FalloffDistance = FMazeSignalDefinition::AudibleRadius - 400.f;
+	Attenuation.ConeSphereRadius = 500.f;
+	Attenuation.ConeSphereFalloffDistance = 4500.f;
+	Attenuation.bEnableOcclusion = true;
+	Attenuation.bUseComplexCollisionForOcclusion = false;
+	Attenuation.OcclusionTraceChannel = ECC_Visibility;
+	Attenuation.OcclusionLowPassFilterFrequency = 1400.f;
+	Attenuation.OcclusionVolumeAttenuation = 0.22f;
+	Attenuation.OcclusionInterpolationTime = 0.15f;
+
+	SignalReverbPreset = NewObject<USubmixEffectReverbPreset>(this, TEXT("SignalReverbPreset"));
+
+	FSubmixEffectReverbSettings Reverb;
+
+	Reverb.ReflectionsDelay = 0.045f;
+	Reverb.ReflectionsGain = 0.7f;
+	Reverb.LateDelay = 0.06f;
+	Reverb.DecayTime = 1.9f;
+	Reverb.Density = 0.65f;
+	Reverb.Diffusion = 0.72f;
+	Reverb.AirAbsorptionGainHF = 0.72f;
+	Reverb.DecayHFRatio = 0.62f;
+	Reverb.LateGain = 1.1f;
+	Reverb.Gain = 0.5f;
+	Reverb.WetLevel = 1.f;
+	Reverb.DryLevel = 0.f;
+	SignalReverbPreset->SetSettings(Reverb);
+
+	SignalReverbSubmix = NewObject<USoundSubmix>(this, TEXT("SignalReverbSubmix"));
+	SignalReverbSubmix->SubmixEffectChain.Add(SignalReverbPreset);
+
+	FAudioDeviceHandle AudioDevice = GetWorld()->GetAudioDevice();
+
+	if (AudioDevice.IsValid())
+	{
+		SignalReverbSubmix->SetParentSubmix(&AudioDevice->GetMainSubmixObject(), false);
+		AudioDevice->RegisterSoundSubmix(SignalReverbSubmix, true);
+	}
+	else
+	{
+		SignalReverbSubmix = nullptr;
+		SignalReverbPreset = nullptr;
+	}
+}
+
+void AMazeCharacter::RequestSignal()
+{
+	if (const auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>(); Location && !Location->IsReady())
+		return;
+
+	if (!IsLocallyControlled() || !Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() ||
+	    UGameplayStatics::IsGamePaused(this))
+		return;
+
+	ServerRequestSignal();
+}
+
+void AMazeCharacter::ServerRequestSignal_Implementation()
+{
+	if (!Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() || !ECSSubsystem)
+		return;
+
+	FMazeSignalSnapshot Accepted;
+
+	if (!ECSSubsystem->RequestSignal(PlayerEntity, Accepted))
+		return;
+
+	ReplicatedSignal = Accepted;
+
+	if (GetNetMode() != NM_DedicatedServer)
+		PlaySignal(Accepted);
+
+	ForceNetUpdate();
+}
+
+void AMazeCharacter::OnRep_Signal()
+{
+	if (ECSSubsystem && ECSSubsystem->ReceiveSignal(PlayerEntity, ReplicatedSignal))
+		PlaySignal(ReplicatedSignal);
+}
+
+void AMazeCharacter::PlaySignal(const FMazeSignalSnapshot& Signal)
+{
+	if (!SignalSound || !SignalAttenuation || !SignalReverbSubmix || Signal.Sequence == 0)
+		return;
+
+	FHitResult Hit;
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(MazeSignalForwardProbe), false, this);
+	const FVector End = Signal.Location + Signal.Direction * FMazeSignalDefinition::ForwardProbeDistance;
+	const bool bFacingWall = GetWorld()->LineTraceSingleByChannel(Hit, Signal.Location, End, ECC_Visibility, Query);
+	auto* Audio = UGameplayStatics::SpawnSoundAtLocation(
+	    this, SignalSound, Signal.Location, Signal.Direction.Rotation(), 1.f, 1.f, 0.f, SignalAttenuation);
+
+	if (Audio)
+		Audio->SetSubmixSend(SignalReverbSubmix, bFacingWall ? 0.85f : 0.55f);
 }
 
 void AMazeCharacter::ToggleHeadlamp()
@@ -726,6 +866,7 @@ void AMazeCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME_CONDITION(AMazeCharacter, ReplicatedVitals, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AMazeCharacter, ReplicatedExit, COND_OwnerOnly);
 	DOREPLIFETIME(AMazeCharacter, ReplicatedItems);
+	DOREPLIFETIME(AMazeCharacter, ReplicatedSignal);
 }
 
 void AMazeCharacter::OnRep_Items()

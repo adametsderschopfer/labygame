@@ -3,6 +3,7 @@
 #include "GameFramework/Character.h"
 #include "ECS/MazeVitals.h"
 #include "ECS/MazeItems.h"
+#include "ECS/MazeSignal.h"
 #include "Mass/EntityHandle.h"
 #include "Player/MazeCameraMotion.h"
 #include "MazeCharacter.generated.h"
@@ -67,13 +68,35 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerSnapshot)
 	int32 ReplicatedExit = 0;
 
+	UPROPERTY(ReplicatedUsing = OnRep_Signal)
+	FMazeSignalSnapshot ReplicatedSignal;
+
 	UFUNCTION()
 	void OnRep_PlayerSnapshot();
+	UFUNCTION()
+	void OnRep_Signal();
 	UFUNCTION(Server, Reliable)
 	void ServerSetSprint(bool bHeld);
 	UFUNCTION(Server, Reliable)
 	void ServerToggleHeadlamp();
+	UFUNCTION(Server, Reliable)
+	void ServerRequestSignal();
 	void ToggleHeadlamp();
+	void RequestSignal();
+	void PlaySignal(const FMazeSignalSnapshot& Signal);
+	void InitializeSignalAudio();
+
+	UPROPERTY()
+	TObjectPtr<class USoundBase> SignalSound;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class USoundAttenuation> SignalAttenuation;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class USoundSubmix> SignalReverbSubmix;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class USubmixEffectReverbPreset> SignalReverbPreset;
 
 	UPROPERTY(Transient)
 	FMassEntityHandle PlayerEntity;

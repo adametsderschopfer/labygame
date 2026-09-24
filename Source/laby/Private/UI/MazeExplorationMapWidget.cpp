@@ -7,6 +7,7 @@
 #include "Maze/MazeLayout.h"
 #include "UI/MazeInterfacePreferences.h"
 #include "Input/Reply.h"
+#include "EngineUtils.h"
 
 void UMazeExplorationMapWidget::CenterOnPlayer()
 {
@@ -180,6 +181,25 @@ int32 UMazeExplorationMapWidget::NativePaint(const FPaintArgs& Args,
 	View.Start = FVector2D(Maze.Data->Start.X, Maze.Data->Start.Y) / Maze.Cell;
 	View.Yaw = Controller->GetControlRotation().Yaw;
 	View.Layout = &Maze.Data->Layout;
+
+	TArray<FMazeMapSignal> Signals;
+
+	for (TActorIterator<AMazeCharacter> It(GetWorld()); It; ++It)
+	{
+		const FMazeSignalView Signal = ECS->ReadSignal(It->GetPlayerEntity());
+
+		if (Signal.Sequence == 0 || Signal.RemainingSeconds <= 0.f)
+			continue;
+
+		const FVector SignalLocal = (Signal.Location - Maze.Origin) / Maze.Cell;
+		FMazeMapSignal& MapSignal = Signals.AddDefaulted_GetRef();
+
+		MapSignal.Position = FVector2D(SignalLocal.X, SignalLocal.Y);
+		MapSignal.Progress = 1.f - Signal.RemainingSeconds / FMazeSignalDefinition::DisplaySeconds;
+		MapSignal.bLocal = *It == Player;
+	}
+
+	View.Signals = Signals;
 
 	// Borrow only for this synchronous paint; stale discovery never reveals a regenerated maze.
 	if (const auto* Exploration = ECS->ReadExploration(Player->GetPlayerEntity());

@@ -7,6 +7,13 @@ class FSlateWindowElementList;
 
 struct FMazeLayout;
 
+struct FMazeMapSignal
+{
+	FVector2D Position = FVector2D::ZeroVector;
+	float Progress = 0.f;
+	bool bLocal = false;
+};
+
 // Borrowed presentation inputs, consumed synchronously by one paint call. No world state is retained.
 struct FMazeMapPaintView
 {
@@ -22,6 +29,7 @@ struct FMazeMapPaintView
 	bool bPreview = false;
 	const FMazeLayout* Layout = nullptr;
 	TConstArrayView<uint8> Seen;
+	TConstArrayView<FMazeMapSignal> Signals;
 };
 
 FSlateRect MazeMapContentRect(const FMazeMapPaintView& View);

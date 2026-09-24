@@ -53,6 +53,9 @@ public:
 	void ClearPlayerInput();
 	void ClearInput(FMassEntityHandle Entity);
 	FMazePlayerCommandFragment ResolvePlayer(FMassEntityHandle Entity, const FMazePlayerPoseFragment& Pose);
+	bool RequestSignal(FMassEntityHandle Entity, FMazeSignalSnapshot& OutSignal);
+	bool ReceiveSignal(FMassEntityHandle Entity, const FMazeSignalSnapshot& Signal);
+	FMazeSignalView ReadSignal(FMassEntityHandle Entity) const;
 	int32 ReadReachedExit(FMassEntityHandle Entity) const;
 	FMassEntityHandle CreateMaze(int32 Seed, FVector Origin);
 	void DestroyMaze(FMassEntityHandle Entity);
@@ -88,6 +91,7 @@ private:
 	TUniquePtr<FMassEntityQuery> VitalsQuery;
 	TUniquePtr<FMassEntityQuery> GenerationQuery;
 	TUniquePtr<FMassEntityQuery> InputQuery;
+	TUniquePtr<FMassEntityQuery> SignalQuery;
 	FMassArchetypeHandle PlayerArchetype;
 	FMassArchetypeHandle MazeArchetype;
 	FMassEntityHandle SessionEntity;

@@ -6,6 +6,7 @@
 #include "Mass/ExternalSubsystemTraits.h"
 #include "ECS/MazeVitals.h"
 #include "ECS/MazePlayerControlDefinition.h"
+#include "ECS/MazeSignal.h"
 #include "Maze/MazeSurface.h"
 #include "MazeECSFragments.generated.h"
 
@@ -95,6 +96,21 @@ struct FMazePlayerCommandFragment : public FMassFragment
 	bool bCrouch = false;
 	UPROPERTY()
 	bool bDead = false;
+};
+
+USTRUCT()
+struct FMazeSignalFragment : public FMassFragment
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FMazeSignalSnapshot Value;
+
+	UPROPERTY()
+	float CooldownRemaining = 0.f;
+
+	UPROPERTY()
+	float DisplayRemaining = 0.f;
 };
 
 USTRUCT()

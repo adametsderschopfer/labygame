@@ -1,4 +1,5 @@
 #include "Player/MazePlayerController.h"
+#include "Components/InputComponent.h"
 #include "Player/MazeCharacter.h"
 #include "Player/MazeKeyBindings.h"
 #include "Camera/PlayerCameraManager.h"

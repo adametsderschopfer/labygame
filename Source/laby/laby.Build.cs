@@ -23,9 +23,14 @@ public class laby : ModuleRules
 			                                                "RenderCore" });
 
 		PublicDependencyModuleNames.AddRange(new string[] { "OnlineSubsystem", "OnlineSubsystemUtils" });
-		PrivateDependencyModuleNames.AddRange(new string[] {
-			"Slate", "SlateCore", "ApplicationCore", "Sockets", "MoviePlayer", "AnimGraphRuntime", "AnimationCore"
-		});
+		PrivateDependencyModuleNames.AddRange(new string[] { "Slate",
+			                                                 "SlateCore",
+			                                                 "ApplicationCore",
+			                                                 "Sockets",
+			                                                 "MoviePlayer",
+			                                                 "AnimGraphRuntime",
+			                                                 "AnimationCore",
+			                                                 "AudioMixer" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

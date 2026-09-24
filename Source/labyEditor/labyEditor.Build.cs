@@ -12,6 +12,7 @@ public class labyEditor : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[] { "Core",
 			                                                 "CoreUObject",
 			                                                 "Engine",
+			                                                 "InputCore",
 			                                                 "laby",
 			                                                 "UMG",
 			                                                 "UMGEditor",

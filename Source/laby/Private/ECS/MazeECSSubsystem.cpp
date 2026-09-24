@@ -4,6 +4,7 @@
 #include "ECS/MazeGameplaySystems.h"
 #include "ECS/MazeExplorationSystem.h"
 #include "ECS/MazeItemSystem.h"
+#include "ECS/MazeSignal.h"
 #include "MassEntitySubsystem.h"
 #include "MassExecutionContext.h"
 #include "Engine/World.h"
@@ -32,6 +33,7 @@ void UMazeECSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	                                    FMazePlayerInputFragment::StaticStruct(),
 	                                    FMazePlayerPoseFragment::StaticStruct(),
 	                                    FMazePlayerCommandFragment::StaticStruct(),
+	                                    FMazeSignalFragment::StaticStruct(),
 	                                    FMazeProgressFragment::StaticStruct(),
 	                                    FMazeExplorationFragment::StaticStruct(),
 	                                    FMazeItemsFragment::StaticStruct()};
@@ -49,6 +51,8 @@ void UMazeECSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	InputQuery = MakeUnique<FMassEntityQuery>(Manager.AsShared());
 	InputQuery->AddRequirement<FMazePlayerInputFragment>(EMassFragmentAccess::ReadWrite);
 	InputQuery->AddRequirement<FMazeLocomotionFragment>(EMassFragmentAccess::ReadWrite);
+	SignalQuery = MakeUnique<FMassEntityQuery>(Manager.AsShared());
+	SignalQuery->AddRequirement<FMazeSignalFragment>(EMassFragmentAccess::ReadWrite);
 
 	const UScriptStruct* SessionFragments[] = {FMazeSessionFragment::StaticStruct(), FMazeRoomFragment::StaticStruct()};
 
@@ -60,6 +64,7 @@ void UMazeECSSubsystem::Deinitialize()
 	VitalsQuery.Reset();
 	GenerationQuery.Reset();
 	InputQuery.Reset();
+	SignalQuery.Reset();
 
 	if (MassSubsystem && MassSubsystem->GetEntityManager().IsEntityValid(SessionEntity))
 		MassSubsystem->GetMutableEntityManager().DestroyEntity(SessionEntity);
@@ -86,11 +91,23 @@ void UMazeECSSubsystem::Tick(float DeltaSeconds)
 	TRACE_CPUPROFILER_EVENT_SCOPE(Maze_ECS_Tick);
 	Super::Tick(DeltaSeconds);
 
-	if (!MassSubsystem || !VitalsQuery || !GetWorld()->HasBegunPlay() || GetWorld()->IsPaused() ||
-	    GetWorld()->GetNetMode() == NM_Client)
+	if (!MassSubsystem || !VitalsQuery || !SignalQuery || !GetWorld()->HasBegunPlay() || GetWorld()->IsPaused())
 		return;
 
 	auto Context = MassSubsystem->GetMutableEntityManager().CreateExecutionContext(DeltaSeconds);
+	const bool bAuthority = GetWorld()->GetNetMode() != NM_Client;
+
+	SignalQuery->ForEachEntityChunk(Context,
+	                                [DeltaSeconds, bAuthority](FMassExecutionContext& Chunk)
+	                                {
+		                                auto Signals = Chunk.GetMutableFragmentView<FMazeSignalFragment>();
+
+		                                for (auto& Signal : Signals)
+			                                FMazeSignalSystem::Update(Signal, DeltaSeconds, bAuthority);
+	                                });
+
+	if (!bAuthority)
+		return;
 
 	VitalsQuery->ForEachEntityChunk(Context,
 	                                [DeltaSeconds](FMassExecutionContext& Chunk)
@@ -314,6 +331,51 @@ FMazePlayerCommandFragment UMazeECSSubsystem::ResolvePlayer(FMassEntityHandle En
 		UpdateProgress(Entity);
 
 	return *Command;
+}
+
+bool UMazeECSSubsystem::RequestSignal(FMassEntityHandle Entity, FMazeSignalSnapshot& OutSignal)
+{
+	if (GetWorld()->GetNetMode() == NM_Client || GetWorld()->IsPaused())
+		return false;
+
+	auto* Signal = FindFragment<FMazeSignalFragment>(Entity);
+	const auto* Pose = FindFragment<FMazePlayerPoseFragment>(Entity);
+	const auto* Vitals = FindVitals(Entity);
+	const auto Session = ReadSession();
+	const auto Room = ReadRoom();
+	const bool bAllowed = Pose && Vitals && Pose->bInputEnabled && FMazeVitalsSystem::IsAlive(*Vitals) &&
+	                      Session.bSessionStarted && (!Room.bActive || Room.bStarted);
+
+	if (!Signal || !Pose || !FMazeSignalSystem::Request(*Signal, Pose->Location, Pose->Forward, bAllowed))
+		return false;
+
+	OutSignal = Signal->Value;
+
+	return true;
+}
+
+bool UMazeECSSubsystem::ReceiveSignal(FMassEntityHandle Entity, const FMazeSignalSnapshot& Signal)
+{
+	if (GetWorld()->GetNetMode() != NM_Client)
+		return false;
+
+	auto* Stored = FindFragment<FMazeSignalFragment>(Entity);
+
+	return Stored && FMazeSignalSystem::Receive(*Stored, Signal);
+}
+
+FMazeSignalView UMazeECSSubsystem::ReadSignal(FMassEntityHandle Entity) const
+{
+	FMazeSignalView Result;
+
+	if (const auto* Signal = FindFragment<FMazeSignalFragment>(Entity))
+	{
+		Result.Location = Signal->Value.Location;
+		Result.RemainingSeconds = Signal->DisplayRemaining;
+		Result.Sequence = Signal->Value.Sequence;
+	}
+
+	return Result;
 }
 
 void UMazeECSSubsystem::UpdateProgress(FMassEntityHandle Entity)
