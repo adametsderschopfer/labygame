@@ -459,6 +459,7 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 	{
 		const FVector2D Center = Offset + Signal.Position * View.Step;
 		const FLinearColor SignalColor = Signal.bLocal ? Muted : Accent;
+		const float SignalFade = 1.f - FMath::Clamp(Signal.Progress, 0.f, 1.f);
 
 		for (int32 Ring = 0; Ring < 3; ++Ring)
 		{
@@ -475,7 +476,7 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 				Circle.Add(Center + FVector2D(FMath::Cos(A), FMath::Sin(A)) * Radius);
 			}
 
-			Path(Circle, SignalColor.CopyWithNewOpacity((1.f - Phase) * 0.9f), Ring == 0 ? 2.f : 1.2f);
+			Path(Circle, SignalColor.CopyWithNewOpacity((1.f - Phase) * SignalFade * 0.9f), Ring == 0 ? 2.f : 1.2f);
 		}
 	}
 

@@ -27,7 +27,7 @@ struct FMazeSignalView
 
 struct FMazeSignalDefinition
 {
-	static constexpr float CooldownSeconds = 8.f;
+	static constexpr float CooldownSeconds = 4.f;
 	static constexpr float DisplaySeconds = 3.f;
 	static constexpr float AudibleRadius = 8000.f;
 	static constexpr float ForwardProbeDistance = 1200.f;
