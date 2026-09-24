@@ -30,8 +30,8 @@ streaming-radius or sightline increase is introduced. The added wall faces do
 increase resident collision and visual triangle counts; the cost has not been
 measured. No new Actor, component, asset, resource participant or manifest entry
 is added. Wall fixtures that could reduce clearance are omitted inside these
-segments. Gameplay speed and jump restrictions remain synchronous ECS rules and
-do not depend on whether a visual chunk is resident.
+segments. The passages do not change movement speed, jumping or stamina and do
+not depend on whether a visual chunk is resident.
 
 Rooms with doorways range from 1 by 1 cells to the existing maximum of 4 by 7
 (the entrance remains 3 by 3). Small, medium and large ranges have weights of

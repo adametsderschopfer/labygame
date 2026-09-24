@@ -12,5 +12,4 @@ struct FMazeNarrowPassageDefinition
 	static constexpr int32 MinSpacingCells = 3;
 	static constexpr float ClearWidthCm = 145.f;
 	static constexpr float TaperLengthCm = 120.f;
-	static constexpr float SlowWalkSpeed = 275.f;
 };

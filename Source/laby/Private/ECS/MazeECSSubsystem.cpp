@@ -1,5 +1,4 @@
 #include "ECS/MazeECSSubsystem.h"
-#include "ECS/MazeTraversalSystem.h"
 #include "ProfilingDebugging/CpuProfilerTrace.h"
 #include "ECS/MazeVitalsSystem.h"
 #include "ECS/MazeGameplaySystems.h"
@@ -327,9 +326,7 @@ FMazePlayerCommandFragment UMazeECSSubsystem::ResolvePlayer(FMassEntityHandle En
 	if (GetWorld()->GetNetMode() != NM_Client && Maze)
 		FMazeHazardSystem::Apply(*Maze, *StoredPose, *Vitals);
 
-	const bool bNarrowPassage = Maze && FMazeTraversalSystem::IsInNarrowPassage(*Maze, StoredPose->Location);
-
-	*Command = FMazePlayerControlSystem::Resolve(*Input, *StoredPose, *Vitals, *Locomotion, bNarrowPassage);
+	*Command = FMazePlayerControlSystem::Resolve(*Input, *StoredPose, *Vitals, *Locomotion);
 
 	if (GetWorld()->GetNetMode() != NM_Client)
 		UpdateProgress(Entity);

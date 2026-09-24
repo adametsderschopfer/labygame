@@ -178,8 +178,7 @@ struct FMazePlayerControlSystem
 	static FMazePlayerCommandFragment Resolve(FMazePlayerInputFragment& Input,
 	                                          const FMazePlayerPoseFragment& Pose,
 	                                          const FMazeVitals& Vitals,
-	                                          FMazeLocomotionFragment& Locomotion,
-	                                          bool bNarrowPassage = false)
+	                                          FMazeLocomotionFragment& Locomotion)
 	{
 		FMazePlayerCommandFragment Command;
 		Command.bDead = !FMazeVitalsSystem::IsAlive(Vitals);
@@ -189,20 +188,17 @@ struct FMazePlayerControlSystem
 
 		Command.bCrouch = Input.bCrouchHeld;
 		const bool bLowStance = Command.bCrouch || Pose.bCrouched;
-		const bool bSprint = !bLowStance && !bNarrowPassage && Pose.bInputEnabled && Input.bSprintHeld &&
-		                     FMazeVitalsSystem::CanSprint(Vitals);
+		const bool bSprint =
+		    !bLowStance && Pose.bInputEnabled && Input.bSprintHeld && FMazeVitalsSystem::CanSprint(Vitals);
 		Command.Speed = bLowStance ? FMazePlayerControlDefinition::CrouchSpeed
 		                : bSprint  ? FMazePlayerControlDefinition::SprintSpeed
 		                           : FMazePlayerControlDefinition::WalkSpeed;
 
-		if (bNarrowPassage)
-			Command.Speed = FMath::Min(Command.Speed, FMazePlayerControlDefinition::NarrowPassageSpeed);
-
 		if (!Command.bDead && Pose.bInputEnabled)
 		{
 			Command.Movement = (Pose.Forward * Input.Forward + Pose.Right * Input.Right).GetClampedToMaxSize(1.f);
-			Command.bJumpHeld = Input.bJumpHeld && !bLowStance && !bNarrowPassage;
-			Command.bStartJump = Input.bJumpPressed && !bLowStance && !bNarrowPassage;
+			Command.bJumpHeld = Input.bJumpHeld && !bLowStance;
+			Command.bStartJump = Input.bJumpPressed && !bLowStance;
 		}
 
 		Command.Yaw = Input.Yaw * Pose.Sensitivity;

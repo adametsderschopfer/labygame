@@ -13,8 +13,8 @@ target of 5% of eligible straight corridor cells as full-height narrow passages.
 Segments are 2–3 cells long, keep three cells of spacing, and exclude rooms,
 door approaches, the entrance, the exit and scenic runs. Their cells and a
 one-cell approach halo are protected from holes. The immutable axis mask drives
-resident collision, chunk visuals, map presentation and ECS traversal limits;
-no trigger actors or per-wall entities are created.
+resident collision, chunk visuals and map presentation; it adds no movement
+restriction, trigger actor or per-wall entity.
 
 Default 80 x 80 maps target 18 rooms (including the 3 x 3 spawn room) and at most
 64 single-cell holes. Random rooms range from 3 x 3 to 7 x 7 cells, stay inside
