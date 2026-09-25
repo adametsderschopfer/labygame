@@ -73,6 +73,22 @@
 - Respect per-frame creation/eviction limits, hysteresis and profiling targets. New long sightlines, larger rooms, faster movement or teleport require an explicit streaming-radius/readiness review. Use standard scalability/texture streaming; do not force one hardware memory budget or promise FPS improvements without measurements.
 - Do not convert procedural maps to World Partition just by enabling a setting. Authored partitioned maps use native streaming sources and the common readiness contract. Resource registration does not automatically define a new location's gameplay or spawn rules.
 
+# 3D assets and content pipeline
+
+- Read `Docs/AssetPipeline.md` before importing, generating, replacing, moving or wiring a 3D asset, material, texture, animation, prefab-like assembly or presentation catalog. Keep it current when the asset layout, import contract, representation policy or loading path changes.
+- Treat the document as the target for new and touched content. Existing assets that do not yet comply are migration candidates, not precedents and not permission for an unrelated bulk reorganization.
+- Keep editable/vendor source and provenance under `ArtSource/<Feature>/`; keep runtime Unreal packages under `Content/<Feature>/`. Never place source archives, DCC caches or exported intermediates in `Content`, and never make production content depend on `Content/Developers`.
+- Move or rename `.uasset` and `.umap` packages only through Unreal-aware editor tooling, then update references and fix redirectors. Do not move binary Unreal packages with filesystem commands.
+- Preserve the separation between asset, representation and gameplay. Meshes and prefab-like assemblies are presentation resources; gameplay identity and mutable rules remain in ECS. Blueprint construction graphs and Actor/component ticks must not become another gameplay implementation.
+- Choose the lightest native representation that fits: a mesh/component for a unique visual, ISM for repeated identical props, Packed Level Actor for supported predominantly static assemblies, Level Instance for authored multi-Actor modules, and a thin Actor/Blueprint adapter only when engine-owned resources or behavior require one.
+- Do not spawn one Actor per repeated cosmetic prop. Group compatible instances by mesh, material set, mobility and collision policy. Consider HISM, Mass Representation, PCG or a new plugin only after checking the installed UE version, scheduling implications and measured benefit.
+- Use typed soft references in a focused settings or asset-definition object instead of scattering hard-coded `/Game/...` strings. Mass fragments hold stable value identifiers, not UObjects. Adapters resolve presentation assets after the location readiness contract has loaded them.
+- Register every production runtime dependency in `UMazeLocationSettings` or an explicitly integrated Asset Manager bundle. A soft reference is not proof that a resource was preloaded. Do not hide first-use synchronous loading behind an unregistered `LoadObject` call.
+- Imported assets must have documented provenance/license, deliberate centimeter scale/orientation/pivot, intentional material slots, UV/tangent policy, collision, LOD or Nanite decision, and target-platform suitability. Nanite does not replace collision, navigation or a memory budget.
+- Procedural cosmetic placement must be deterministic from explicit seed and stable inputs. Anything affecting collision, navigation, interaction, loot, AI or progression needs stable ECS identity and the documented resident/near/far policy; visual chunk eviction must not erase gameplay facts.
+- Prefer reproducible Unreal Python/editor scripts for generated or bulk-imported asset families. Scripts must be safe to rerun or clearly document destructive replacement behavior. Never hand-edit `.uasset` files.
+- Before completing an asset change, inspect references, manifest/cook coverage, dedicated-server behavior where relevant, instancing compatibility, cleanup on regeneration/teardown and the source/runtime asset pair. Run `Scripts/Validate-Locations.ps1` after manifest changes; Play, rendering captures and gameplay tests remain opt-in.
+
 # Changelog
 
 - Keep `CHANGELOG.txt` player-facing: record only implemented additions, changes and fixes that remain in the resulting game. Describe their visible effect in plain language.

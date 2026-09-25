@@ -1,4 +1,22 @@
-# Ground and night environment
+# Source-art repository
+
+`ArtSource` stores editable, vendor and prepared inputs used to create Unreal
+packages. Runtime assets belong under `Content`; Unreal never loads files from
+this directory in a packaged game.
+
+New source-art families follow `ArtSource/<Feature>/` and include a `README.md`
+with creator/vendor, source URL, license, attribution, delivery date, modifications,
+canonical import inputs, Unreal destination and the reproducible import command.
+Use `Original/` for a retained unchanged delivery and `Prepared/` for the cleaned
+export that Unreal imports. Do not commit DCC caches, autosaves, OS metadata,
+redundant archives or throwaway previews.
+
+The complete import, naming, representation, loading and migration contract is in
+[`Docs/AssetPipeline.md`](../Docs/AssetPipeline.md). Existing folders predate that
+layout and may be migrated only when their owning feature is deliberately touched;
+do not bulk-move them or move `.uasset` packages outside Unreal-aware tooling.
+
+## Ground and night environment
 
 Ground: user-supplied `Rugged_Gravel_Texture_Surface_01_2k.rar`.
 Original images are preserved in `Ground/RuggedGravel`. The archive did not

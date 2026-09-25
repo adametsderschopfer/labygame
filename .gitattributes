@@ -1,4 +1,6 @@
 * text=auto
+.gitattributes text eol=lf
+.gitignore text eol=lf
 *.cpp text eol=lf
 *.h text eol=lf
 *.cs text eol=lf
@@ -6,5 +8,44 @@
 *.py text eol=lf
 *.md text eol=lf
 *.uproject text eol=lf
+*.gltf text eol=lf
+*.obj text eol=lf
+*.mtl text eol=lf
+*.usda text eol=lf
 *.uasset binary
 *.umap binary
+*.fbx binary
+*.blend binary
+*.glb binary
+*.max binary
+*.mb binary
+*.c4d binary
+*.spp binary
+*.sbsar binary
+*.usdc binary
+*.usdz binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.tga binary
+*.tif binary
+*.tiff binary
+*.bmp binary
+*.webp binary
+*.dds binary
+*.psd binary
+*.kra binary
+*.xcf binary
+*.exr binary
+*.hdr binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.flac binary
+*.aiff binary
+*.m4a binary
+*.mp4 binary
+*.mov binary
+*.zip binary
+*.rar binary
+*.7z binary
