@@ -1,16 +1,14 @@
 # Glass interface artwork
 
-`MenuBackdrop.png` is the background-only menu plate, generated with the built-in
-imagegen tool from the user's approved green laboratory HUD concept on 2026-09-20.
-Live text, controls, health, stamina and maps are rendered by Unreal, not baked into this image.
-Imported as `/Game/UI/Glass/T_MenuBackdrop` (sRGB, UI group, EditorIcon, never stream).
+`MenuBackdrop.png` is an earlier laboratory concept plate. Its imported
+`/Game/UI/Glass/T_MenuBackdrop` remains for provenance but is not displayed.
+The current menu and settings use a neutral, slowly moving blue-graphite gradient
+drawn in Slate beneath the editable UMG layout. The full map draws a matching
+gradient. No photographic backdrop is used on these screens.
 
-The two short WAV files are original deterministic synthesized interface effects,
-created by `Scripts/create_ui_sounds.py`: a quiet air-like hover and a soft confirmation.
-They contain no speech or third-party samples. Imported as `S_UIHover` and `S_UIPress`.
-
-## Final background prompt
-
-Use case: background-extraction.
-Create a production game MAIN MENU BACKGROUND image, 16:9, ideally 2560x1440. Use the attached approved laboratory corridor HUD concept as visual source. Rebuild ONLY its environment as a cinematic calm background plate. Remove EVERY UI element: no HUD, minimap, crosshair, text, logos, labels, signs, letters or numbers anywhere.
-Preserve the eye-level corridor intersection, warm-white small rectangular ceramic tiles, muted grey-green satin marbled linoleum floor, white mineral suspended ceiling and restrained rectangular fluorescent lights. Maintain the original scene's composition and colour, subtle clinical unease, sophisticated atmospheric lighting, no people, weapons, debris or monsters. Reflections subdued, not a flooded wet floor. Soft optical defocus across the image, like looking through lightly frosted glass, still recognisable architecture but no sharp tile noise. Near-black green shadows, grey-green highlights, no amber/orange/yellow. Make the left third and edges considerably darker for live text overlay, while central and right corridor remain softly discernible. This is a background-only render for a real interactive Unreal menu; absolutely no baked-in lettering or interface.
+The three WAV files are original deterministic synthesis from
+`Scripts/create_ui_sounds.py`. `S_UIHover` is a quiet airy cue, `S_UIPress` a soft
+confirmation, and `S_MenuAmbient` a 48-second stereo loop of low tones and distant
+texture. No downloaded recordings, speech, or third-party samples are used.
+The runtime Sound Waves live in `/Game/UI/Glass`; the ambient sound is also listed
+in the Maze location asset manifest and loaded asynchronously when a menu opens.

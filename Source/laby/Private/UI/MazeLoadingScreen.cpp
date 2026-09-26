@@ -117,7 +117,7 @@ void UMazeOnlineGameInstance::UpdatePreparationScreen(UWorld* World, bool bPrepa
 
 	if (Failure.IsEmpty())
 	{
-		// Preserve elapsed time, but use a separate widget while MoviePlayer releases its Slate tree.
+		// Preserve the latest status using a separate widget while MoviePlayer releases its Slate tree.
 		LoadingScreen = MazeInterfaceStyle::MakeLoadingScreen(bShowingPreparationError ? nullptr : LoadingScreen);
 
 		bShowingPreparationError = false;
@@ -128,7 +128,7 @@ void UMazeOnlineGameInstance::UpdatePreparationScreen(UWorld* World, bool bPrepa
 		LoadingScreen =
 		    SNew(SBorder)
 		        .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-		        .BorderBackgroundColor(FLinearColor::Black)
+		        .BorderBackgroundColor(MazeInterfaceStyle::Palette().Glass)
 		        .HAlign(HAlign_Center)
 		        .VAlign(
 		            VAlign_Center)[SNew(STextBlock)
@@ -137,7 +137,7 @@ void UMazeOnlineGameInstance::UpdatePreparationScreen(UWorld* World, bool bPrepa
 		                                   "PreparationFailed",
 		                                   "Не удалось подготовить локацию. Проверьте файлы игры и повторите запуск."))
 		                               .AutoWrapText(true)
-		                               .ColorAndOpacity(FLinearColor::White)];
+		                               .ColorAndOpacity(MazeInterfaceStyle::Palette().Ink)];
 		bShowingPreparationError = true;
 	}
 

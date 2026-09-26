@@ -1,11 +1,16 @@
 #include "UI/MazeWidgets.h"
+#include "UI/MazeInterfaceStyle.h"
 #include "Player/MazeKeyBindings.h"
 #include "Components/InputKeySelector.h"
 #include "Components/WidgetSwitcher.h"
 #include "Fonts/FontMeasure.h"
 #include "Framework/Application/SlateApplication.h"
+#include "HAL/PlatformTime.h"
 #include "Rendering/DrawElements.h"
 #include "Rendering/SlateRenderer.h"
+#include "Styling/CoreStyle.h"
+#include "Widgets/SLeafWidget.h"
+#include "Widgets/SOverlay.h"
 
 namespace
 {
@@ -32,11 +37,126 @@ namespace
 
 		return Pages && Pages->GetActiveWidgetIndex() == 1;
 	}
+
+	int32 PaintAmbientBackground(const FGeometry& Geometry,
+	                             FSlateWindowElementList& Elements,
+	                             int32 Layer,
+	                             const FLinearColor& Tint)
+	{
+		const FVector2D Size = Geometry.GetLocalSize();
+
+		if (Size.X <= 0.f || Size.Y <= 0.f)
+			return Layer;
+
+		const auto Resource =
+		    FSlateApplication::Get().GetRenderer()->GetResourceHandle(*FCoreStyle::Get().GetBrush("WhiteBrush"));
+		TArray<FSlateVertex> Vertices;
+		TArray<SlateIndex> Indices;
+
+		Vertices.Reserve(128);
+		Indices.Reserve(384);
+
+		const auto Vertex = [&](FVector2D Position, FVector2D UV, FLinearColor Color)
+		{
+			return FSlateVertex::Make<ESlateVertexRounding::Disabled>(Geometry.GetAccumulatedRenderTransform(),
+			                                                          FVector2f(Position),
+			                                                          FVector2f(UV),
+			                                                          (Color * Tint).ToFColorSRGB());
+		};
+		const auto Quad =
+		    [&](FLinearColor TopLeft, FLinearColor TopRight, FLinearColor BottomRight, FLinearColor BottomLeft)
+		{
+			const SlateIndex Base = Vertices.Num();
+
+			Vertices.Add(Vertex({0, 0}, {0, 0}, TopLeft));
+			Vertices.Add(Vertex({Size.X, 0}, {1, 0}, TopRight));
+			Vertices.Add(Vertex(Size, {1, 1}, BottomRight));
+			Vertices.Add(Vertex({0, Size.Y}, {0, 1}, BottomLeft));
+			Indices.Append(
+			    {Base, SlateIndex(Base + 1), SlateIndex(Base + 2), Base, SlateIndex(Base + 2), SlateIndex(Base + 3)});
+		};
+		const auto Glow = [&](FVector2D Center, FVector2D Radius, FLinearColor Color)
+		{
+			constexpr int32 Segments = 48;
+			const SlateIndex Base = Vertices.Num();
+
+			Vertices.Add(Vertex(Center, {0.5f, 0.5f}, Color));
+
+			for (int32 Segment = 0; Segment <= Segments; ++Segment)
+			{
+				const double Angle = 2.0 * PI * Segment / Segments;
+				const FVector2D Unit(FMath::Cos(Angle), FMath::Sin(Angle));
+
+				Vertices.Add(Vertex(Center + Unit * Radius, Unit * 0.5 + FVector2D(0.5), FLinearColor::Transparent));
+
+				if (Segment > 0)
+					Indices.Append({Base, SlateIndex(Base + Segment), SlateIndex(Base + Segment + 1)});
+			}
+		};
+
+		const auto Palette = MazeInterfaceStyle::Palette();
+
+		Quad(Palette.BackgroundMid, Palette.BackgroundHigh, Palette.Glass, Palette.BackgroundLow);
+
+		const double Time = FPlatformTime::Seconds();
+		const FVector2D UpperCenter(Size.X * (0.78 + FMath::Sin(Time * 0.035) * 0.035),
+		                            Size.Y * (0.18 + FMath::Cos(Time * 0.028) * 0.04));
+		const FVector2D LowerCenter(Size.X * (0.58 + FMath::Cos(Time * 0.024) * 0.045),
+		                            Size.Y * (0.92 + FMath::Sin(Time * 0.03) * 0.035));
+		const FVector2D MiddleCenter(Size.X * (0.50 + FMath::Sin(Time * 0.018) * 0.03), Size.Y * 0.52);
+
+		Glow(UpperCenter, {Size.X * 0.53, Size.Y * 0.78}, Palette.Edge.CopyWithNewOpacity(0.10f));
+		Glow(LowerCenter, {Size.X * 0.50, Size.Y * 0.58}, Palette.Line.CopyWithNewOpacity(0.08f));
+		Glow(MiddleCenter, {Size.X * 0.34, Size.Y * 0.62}, Palette.HoverSurface.CopyWithNewOpacity(0.05f));
+
+		FSlateDrawElement::MakeCustomVerts(Elements, Layer, Resource, Vertices, Indices, nullptr, 0, 0);
+
+		return Layer + 1;
+	}
+
+	class SMazeAmbientBackground : public SLeafWidget
+	{
+	public:
+		SLATE_BEGIN_ARGS(SMazeAmbientBackground)
+		{
+		}
+		SLATE_END_ARGS()
+
+		void Construct(const FArguments&)
+		{
+		}
+
+		virtual FVector2D ComputeDesiredSize(float) const override
+		{
+			return FVector2D(1920.f, 1080.f);
+		}
+
+		virtual int32 OnPaint(const FPaintArgs&,
+		                      const FGeometry& Geometry,
+		                      const FSlateRect&,
+		                      FSlateWindowElementList& Elements,
+		                      int32 Layer,
+		                      const FWidgetStyle& Style,
+		                      bool) const override
+		{
+			return PaintAmbientBackground(Geometry, Elements, Layer, Style.GetColorAndOpacityTint());
+		}
+	};
+}
+
+TSharedRef<SWidget> UMazeMenuWidget::RebuildWidget()
+{
+	return SNew(SOverlay) + SOverlay::Slot()[SNew(SMazeAmbientBackground)] + SOverlay::Slot()[Super::RebuildWidget()];
 }
 
 void UMazeMenuWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 {
 	Super::NativeTick(Geometry, DeltaSeconds);
+
+	if (const auto Widget = GetCachedWidget())
+		Widget->Invalidate(EInvalidateWidgetReason::Paint);
+
+	UpdateAudioSettings();
 
 	if (!ControlsVisible(*this))
 	{
@@ -61,9 +181,6 @@ void UMazeMenuWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 			else
 				Scroll.Elapsed += DeltaSeconds;
 		}
-
-	if (const auto Widget = GetCachedWidget())
-		Widget->Invalidate(EInvalidateWidgetReason::Paint);
 }
 
 int32 UMazeMenuWidget::NativePaint(const FPaintArgs& Args,
@@ -85,7 +202,8 @@ int32 UMazeMenuWidget::NativePaint(const FPaintArgs& Args,
 	for (const auto& Binding : MazeKeyBindings::Definitions())
 		if (const auto* Selector = Cast<UInputKeySelector>(GetWidgetFromName(Binding.WidgetName())))
 		{
-			const FGeometry& KeyGeometry = Selector->GetCachedGeometry();
+			// Use this paint pass, not last tick's desktop-space geometry (ScaleBox/DPI/captures).
+			const FGeometry& KeyGeometry = Selector->GetPaintSpaceGeometry();
 			const FVector2D Size = KeyGeometry.GetLocalSize();
 			const float Width = Size.X - 2.f * LabelPadding;
 

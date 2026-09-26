@@ -12,13 +12,10 @@ public:
 	void CenterOnPlayer();
 
 protected:
-	virtual int32 NativePaint(const FPaintArgs& Args,
-	                          const FGeometry& Geometry,
-	                          const FSlateRect& CullingRect,
-	                          FSlateWindowElementList& Elements,
-	                          int32 Layer,
-	                          const FWidgetStyle& Style,
-	                          bool bParentEnabled) const override;
+	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
+	virtual void NativeTick(const FGeometry& Geometry, float DeltaTime) override;
+	virtual TSharedRef<SWidget> RebuildWidget() override;
 	virtual FReply NativeOnKeyDown(const FGeometry& Geometry, const FKeyEvent& Event) override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& Geometry, const FPointerEvent& Event) override;
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& Geometry, const FPointerEvent& Event) override;
@@ -26,6 +23,15 @@ protected:
 	virtual FReply NativeOnMouseWheel(const FGeometry& Geometry, const FPointerEvent& Event) override;
 
 private:
+	friend class SMazeMapSurface;
+	UFUNCTION()
+	void CloseMap();
+	void RefreshControls();
+	int32 PaintMap(const FGeometry& Geometry,
+	               FSlateWindowElementList& Elements,
+	               int32 Layer,
+	               const FWidgetStyle& Style) const;
+
 	FVector2D Center = FVector2D::ZeroVector;
 	float Zoom = 24.f;
 

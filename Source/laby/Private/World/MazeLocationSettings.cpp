@@ -12,6 +12,11 @@ TSoftObjectPtr<UMaterialInterface> UMazeLocationSettings::WaterMaterial() const
 	    FSoftObjectPath(TEXT("/Game/Materials/Laboratory/MI_RoomWater.MI_RoomWater")));
 }
 
+TSoftObjectPtr<USoundWave> UMazeLocationSettings::MenuAmbientSound() const
+{
+	return TSoftObjectPtr<USoundWave>(FSoftObjectPath(TEXT("/Game/UI/Glass/S_MenuAmbient.S_MenuAmbient")));
+}
+
 bool UMazeLocationSettings::Validate(FString& Error) const
 {
 	if (ChunkCells < 2 || ChunkCells > 32 || LoadRadius < 1 || LoadRadius > 8 || UnloadRadius <= LoadRadius ||

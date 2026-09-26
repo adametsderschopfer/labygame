@@ -8,6 +8,86 @@
 #include "UI/MazeInterfacePreferences.h"
 #include "Input/Reply.h"
 #include "EngineUtils.h"
+#include "Components/Button.h"
+#include "Widgets/SCompoundWidget.h"
+
+// UUserWidget::NativePaint runs AFTER the WidgetTree has painted. A native
+// underlay reserves the map's layers first, then paints the editable UMG controls.
+class SMazeMapSurface final : public SCompoundWidget
+{
+public:
+	SLATE_BEGIN_ARGS(SMazeMapSurface)
+	{
+	}
+	SLATE_ARGUMENT(TWeakObjectPtr<UMazeExplorationMapWidget>, Owner)
+	SLATE_DEFAULT_SLOT(FArguments, Content)
+	SLATE_END_ARGS()
+
+	void Construct(const FArguments& Args)
+	{
+		Owner = Args._Owner;
+		ChildSlot[Args._Content.Widget];
+	}
+
+	virtual int32 OnPaint(const FPaintArgs& Args,
+	                      const FGeometry& Geometry,
+	                      const FSlateRect& CullingRect,
+	                      FSlateWindowElementList& Elements,
+	                      int32 Layer,
+	                      const FWidgetStyle& Style,
+	                      bool bParentEnabled) const override
+	{
+		if (const auto* Map = Owner.Get())
+			Layer = Map->PaintMap(Geometry, Elements, Layer, Style);
+
+		return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
+	}
+
+private:
+	TWeakObjectPtr<UMazeExplorationMapWidget> Owner;
+};
+
+void UMazeExplorationMapWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("CloseMapButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeExplorationMapWidget::CloseMap);
+
+	RefreshControls();
+}
+
+void UMazeExplorationMapWidget::NativeDestruct()
+{
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("CloseMapButton"))))
+		Button->OnClicked.RemoveDynamic(this, &UMazeExplorationMapWidget::CloseMap);
+
+	Super::NativeDestruct();
+}
+
+void UMazeExplorationMapWidget::NativeTick(const FGeometry& Geometry, float DeltaTime)
+{
+	Super::NativeTick(Geometry, DeltaTime);
+	RefreshControls();
+}
+
+void UMazeExplorationMapWidget::RefreshControls()
+{
+	const auto* Controller = GetOwningPlayer<AMazePlayerController>();
+
+	if (auto* Controls = GetWidgetFromName(TEXT("FullMapControls")))
+		Controls->SetVisibility(IsDesignTime() || (Controller && Controller->IsMapOpen() && !Controller->IsMenuOpen())
+		                            ? ESlateVisibility::SelfHitTestInvisible
+		                            : ESlateVisibility::Collapsed);
+}
+
+void UMazeExplorationMapWidget::CloseMap()
+{
+	if (auto* Controller = GetOwningPlayer<AMazePlayerController>(); Controller && Controller->IsMapOpen())
+		Controller->ToggleMap();
+
+	RefreshControls();
+}
 
 void UMazeExplorationMapWidget::CenterOnPlayer()
 {
@@ -44,16 +124,16 @@ void UMazeExplorationMapWidget::ClampCenter()
 	Center.Y = FMath::Clamp(Center.Y, 0.0, double(Maze.Data->Layout.Size));
 }
 
-int32 UMazeExplorationMapWidget::NativePaint(const FPaintArgs& Args,
-                                             const FGeometry& Geometry,
-                                             const FSlateRect& CullingRect,
-                                             FSlateWindowElementList& Elements,
-                                             int32 Layer,
-                                             const FWidgetStyle& Style,
-                                             bool bParentEnabled) const
+TSharedRef<SWidget> UMazeExplorationMapWidget::RebuildWidget()
 {
-	Layer = Super::NativePaint(Args, Geometry, CullingRect, Elements, Layer, Style, bParentEnabled);
+	return SNew(SMazeMapSurface).Owner(this)[Super::RebuildWidget()];
+}
 
+int32 UMazeExplorationMapWidget::PaintMap(const FGeometry& Geometry,
+                                          FSlateWindowElementList& Elements,
+                                          int32 Layer,
+                                          const FWidgetStyle& Style) const
+{
 	const FVector2D ViewSize = Geometry.GetLocalSize();
 	FMazeMapPaintView View;
 
@@ -84,8 +164,8 @@ int32 UMazeExplorationMapWidget::NativePaint(const FPaintArgs& Args,
 	if (Side <= 64)
 		return Layer;
 
-	View.Size = View.bFull ? FVector2D(ViewSize.X - 52, ViewSize.Y - 52) : FVector2D(Side, Side);
-	View.Origin = View.bFull ? (ViewSize - View.Size) * 0.5 : ViewSize - View.Size - FVector2D(36, 64);
+	View.Size = View.bFull ? ViewSize : FVector2D(320, 320);
+	View.Origin = View.bFull ? FVector2D::ZeroVector : ViewSize - View.Size - FVector2D(38, 38);
 
 	// Both panels retain editable layout bounds in the Widget Blueprint.
 	if (!View.bPreview)
@@ -163,7 +243,7 @@ int32 UMazeExplorationMapWidget::NativePaint(const FPaintArgs& Args,
 
 		const FSlateRect Content = MazeMapContentRect(View);
 
-		View.Step = View.bFull ? (Content.Right - Content.Left) / 20.f : 20.f;
+		View.Step = View.bFull ? FMath::Min(Content.Right - Content.Left, Content.Bottom - Content.Top) / 20.f : 20.f;
 
 		return PaintMazeMap(Geometry, Elements, Layer, Style.GetColorAndOpacityTint(), View);
 	}
@@ -283,8 +363,8 @@ FReply UMazeExplorationMapWidget::NativeOnMouseWheel(const FGeometry& Geometry, 
 	FMazeMapPaintView View;
 
 	View.bFull = true;
-	View.Origin = FVector2D(26, 26);
-	View.Size = Geometry.GetLocalSize() - FVector2D(52, 52);
+	View.Origin = FVector2D::ZeroVector;
+	View.Size = Geometry.GetLocalSize();
 
 	if (const auto* Bounds = GetWidgetFromName(TEXT("FullMapBounds")))
 	{

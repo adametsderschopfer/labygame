@@ -1,4 +1,5 @@
 #include "UI/MazeWidgets.h"
+#include "Blueprint/WidgetTree.h"
 #include "UI/MazeInterfaceStyle.h"
 #include "UI/MazeInterfacePreferences.h"
 #include "Player/MazePlayerController.h"
@@ -13,6 +14,7 @@
 #include "Components/TextBlock.h"
 #include "Components/WidgetSwitcher.h"
 #include "GameFramework/GameUserSettings.h"
+#include "Sound/SoundWave.h"
 
 namespace
 {
@@ -67,6 +69,13 @@ namespace
 		if (auto* Label = Find<UTextBlock>(Widget, TEXT("KeyBindingStatus")))
 			Label->SetText(Value);
 	}
+
+	void AudioPercent(UUserWidget* Widget, const TCHAR* Name, float Value)
+	{
+		if (auto* Label = Find<UTextBlock>(Widget, Name))
+			Label->SetText(FText::Format(NSLOCTEXT("Maze.Settings", "AudioPercent", "{0}%"),
+			                             FText::AsNumber(FMath::RoundToInt(Value * 100.f))));
+	}
 }
 
 void UMazeMenuWidget::ReadSettingsIntoControls()
@@ -83,6 +92,13 @@ void UMazeMenuWidget::ReadSettingsIntoControls()
 	SetCheck(this, TEXT("CameraMotionCheck"), Preferences.bCameraMotion);
 	SetSlider(this, TEXT("SensitivitySlider"), GetDefault<UMazePreferences>()->GetSensitivity());
 	ChangeSensitivity(GetDefault<UMazePreferences>()->GetSensitivity());
+
+	const FMazeMenuAudioPreferences Audio = FMazeMenuAudioPreferences::Read();
+
+	SetSlider(this, TEXT("MenuMusicSlider"), Audio.MusicVolume);
+	SetSlider(this, TEXT("InterfaceSoundsSlider"), Audio.InterfaceVolume);
+	AudioPercent(this, TEXT("MenuMusicText"), Audio.MusicVolume);
+	AudioPercent(this, TEXT("InterfaceSoundsText"), Audio.InterfaceVolume);
 
 	if (auto* Video = UGameUserSettings::GetGameUserSettings())
 	{
@@ -122,18 +138,91 @@ void UMazeMenuWidget::ReadSettingsIntoControls()
 	ReadKeyBindings();
 }
 
+void UMazeMenuWidget::RefreshInterfaceSounds(float Volume)
+{
+	if (!WidgetTree)
+		return;
+
+	WidgetTree->ForEachWidget(
+	    [Volume](UWidget* Widget)
+	    {
+		    if (auto* Button = Cast<UButton>(Widget))
+		    {
+			    FButtonStyle Style = Button->GetStyle();
+			    bool bChanged = false;
+			    const auto UpdateSound = [&](FSlateSound& SlateSound)
+			    {
+				    USoundWave* Wave = Cast<USoundWave>(SlateSound.GetResourceObject());
+
+				    if (!Wave)
+					    return;
+
+				    if (!Wave->HasAnyFlags(RF_Transient))
+				    {
+					    Wave = DuplicateObject<USoundWave>(Wave, Button);
+					    Wave->SetFlags(RF_Transient);
+					    SlateSound.SetResourceObject(Wave);
+				    }
+
+				    Wave->Volume = FMath::Clamp(Volume, 0.f, 1.f);
+				    bChanged = true;
+			    };
+
+			    UpdateSound(Style.HoveredSlateSound);
+			    UpdateSound(Style.PressedSlateSound);
+
+			    if (bChanged)
+				    Button->SetStyle(Style);
+		    }
+	    });
+}
+
+void UMazeMenuWidget::UpdateAudioSettings()
+{
+	if (bReadingSettings || !GetWidgetFromName(TEXT("SettingsPages")))
+		return;
+
+	FMazeMenuAudioPreferences Audio = FMazeMenuAudioPreferences::Read();
+	const float Music = FMath::Clamp(SliderValue(this, TEXT("MenuMusicSlider"), Audio.MusicVolume), 0.f, 1.f);
+	const float Interface =
+	    FMath::Clamp(SliderValue(this, TEXT("InterfaceSoundsSlider"), Audio.InterfaceVolume), 0.f, 1.f);
+
+	if (FMath::IsNearlyEqual(Audio.MusicVolume, Music, 0.001f) &&
+	    FMath::IsNearlyEqual(Audio.InterfaceVolume, Interface, 0.001f))
+		return;
+
+	AudioPercent(this, TEXT("MenuMusicText"), Music);
+	AudioPercent(this, TEXT("InterfaceSoundsText"), Interface);
+
+	const bool bMusicChanged = !FMath::IsNearlyEqual(Audio.MusicVolume, Music, 0.001f);
+	const bool bInterfaceChanged = !FMath::IsNearlyEqual(Audio.InterfaceVolume, Interface, 0.001f);
+
+	Audio.MusicVolume = Music;
+	Audio.InterfaceVolume = Interface;
+	Audio.Save();
+
+	if (bMusicChanged)
+		if (auto* Controller = GetOwningPlayer<AMazePlayerController>())
+			Controller->RefreshMenuAmbientVolume();
+
+	if (bInterfaceChanged)
+		RefreshInterfaceSounds(Interface);
+}
+
 void UMazeMenuWidget::SelectSettingsSection(int32 Index)
 {
 	if (auto* Pages = Find<UWidgetSwitcher>(this, TEXT("SettingsPages")))
-		Pages->SetActiveWidgetIndex(FMath::Clamp(Index, 0, 2));
+		Pages->SetActiveWidgetIndex(FMath::Clamp(Index, 0, Pages->GetChildrenCount() - 1));
 
-	const TCHAR* Buttons[] = {TEXT("VideoTabButton"), TEXT("ControlsTabButton"), TEXT("GameTabButton")};
+	const TCHAR* Buttons[] = {
+	    TEXT("VideoTabButton"), TEXT("ControlsTabButton"), TEXT("GameTabButton"), TEXT("AudioTabButton")};
 
-	const FText Titles[] = {NSLOCTEXT("Maze.Glass", "Video", "ВИДЕО"),
-	                        NSLOCTEXT("Maze.Glass", "Controls", "УПРАВЛЕНИЕ"),
-	                        NSLOCTEXT("Maze.Glass", "Game", "ИГРА")};
+	const FText Titles[] = {NSLOCTEXT("Maze.Ward", "Video", "Видео"),
+	                        NSLOCTEXT("Maze.Ward", "Controls", "Управление"),
+	                        NSLOCTEXT("Maze.Ward", "Game", "Игра"),
+	                        NSLOCTEXT("Maze.Ward", "Audio", "Звук")};
 
-	Index = FMath::Clamp(Index, 0, 2);
+	Index = FMath::Clamp(Index, 0, 3);
 
 	if (auto* Heading = Find<UTextBlock>(this, TEXT("SettingsSectionTitle")))
 		Heading->SetText(Titles[Index]);
@@ -141,7 +230,8 @@ void UMazeMenuWidget::SelectSettingsSection(int32 Index)
 	for (int32 I = 0; I < UE_ARRAY_COUNT(Buttons); ++I)
 	{
 		if (auto* Label = Find<UTextBlock>(this, *(FString(Buttons[I]) + TEXT("Label"))))
-			Label->SetColorAndOpacity(I == Index ? MazeInterfaceStyle::Accent : MazeInterfaceStyle::Ink);
+			Label->SetColorAndOpacity(I == Index ? MazeInterfaceStyle::Palette().Accent
+			                                     : MazeInterfaceStyle::Palette().Ink);
 
 		if (auto* Indicator = GetWidgetFromName(*(FString(Buttons[I]) + TEXT("Indicator"))))
 			Indicator->SetVisibility(I == Index ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden);
@@ -161,6 +251,11 @@ void UMazeMenuWidget::ShowControlSettings()
 void UMazeMenuWidget::ShowGameSettings()
 {
 	SelectSettingsSection(2);
+}
+
+void UMazeMenuWidget::ShowAudioSettings()
+{
+	SelectSettingsSection(3);
 }
 
 void UMazeMenuWidget::ChangeRenderScale(float Value)
@@ -320,6 +415,7 @@ void UMazeMenuWidget::ApplySettings()
 	Preferences.bCameraMotion = Checked(this, TEXT("CameraMotionCheck"), Preferences.bCameraMotion);
 	Preferences.Save();
 	GetMutableDefault<UMazePreferences>()->SetSensitivity(SliderValue(this, TEXT("SensitivitySlider"), 1.f));
+	UpdateAudioSettings();
 	SaveVideoSettings();
 }
 
@@ -341,6 +437,8 @@ void UMazeMenuWidget::ResetSettings()
 		SetCheck(this, TEXT("CameraMotionCheck"), true);
 		SetSlider(this, TEXT("SensitivitySlider"), 1.f);
 		SetSlider(this, TEXT("RenderScaleSlider"), 100.f);
+		SetSlider(this, TEXT("MenuMusicSlider"), 1.f);
+		SetSlider(this, TEXT("InterfaceSoundsSlider"), 1.f);
 		ChangeSensitivity(1.f);
 		ChangeRenderScale(100.f);
 	}

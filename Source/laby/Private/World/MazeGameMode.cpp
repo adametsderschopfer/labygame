@@ -2,6 +2,7 @@
 #include "Player/MazePlayerController.h"
 #include "Player/MazeCharacter.h"
 #include "UI/MazeWidgets.h"
+#include "UI/MazeUIAssets.h"
 #include "World/MazeWorld.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerStart.h"
@@ -45,7 +46,7 @@ void AMazeHUD::BeginPlay()
 	if (!PlayerOwner || !PlayerOwner->IsLocalController())
 		return;
 
-	UClass* WidgetClass = LoadClass<UMazeHUDWidget>(nullptr, TEXT("/Game/UI/WBP_HUD.WBP_HUD_C"));
+	UClass* WidgetClass = MazeUIAssets::HUD().LoadSynchronous();
 
 	if (WidgetClass)
 	{
@@ -55,7 +56,7 @@ void AMazeHUD::BeginPlay()
 			HUDWidget->AddToViewport();
 	}
 	else
-		UE_LOG(LogTemp, Error, TEXT("Missing /Game/UI/WBP_HUD. Open the editor to create UI assets."));
+		UE_LOG(LogTemp, Error, TEXT("Missing Ward HUD presentation asset."));
 }
 
 void AMazeHUD::EndPlay(const EEndPlayReason::Type Reason)

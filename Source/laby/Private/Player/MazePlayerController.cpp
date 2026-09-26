@@ -1,19 +1,122 @@
 #include "Player/MazePlayerController.h"
+#include "UI/MazeUIAssets.h"
 #include "Components/InputComponent.h"
 #include "Player/MazeCharacter.h"
 #include "Player/MazeKeyBindings.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Components/AudioComponent.h"
+#include "Engine/AssetManager.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "UI/MazeWidgets.h"
 #include "UI/MazeInterfaceStyle.h"
+#include "UI/MazeInterfacePreferences.h"
 #include "UI/MazeExplorationMapWidget.h"
 #include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/ConfigCacheIni.h"
+#include "Sound/SoundWave.h"
 #include "World/MazeGameMode.h"
+#include "World/MazeLocationSettings.h"
 #include "World/MazeOnlineGameInstance.h"
 #include "GameFramework/PlayerState.h"
 #include "Engine/GameViewportClient.h"
+
+namespace
+{
+	const FName MenuAmbientTag(TEXT("MazeMenuAmbient"));
+	constexpr float MenuAmbientVolume = 0.55f;
+
+	float CurrentMenuAmbientVolume()
+	{
+		return MenuAmbientVolume * FMazeMenuAudioPreferences::Read().MusicVolume;
+	}
+
+	UAudioComponent* FindMenuAmbient(AActor& Owner)
+	{
+		TInlineComponentArray<UAudioComponent*> Components;
+
+		Owner.GetComponents(Components);
+
+		for (UAudioComponent* Component : Components)
+			if (Component && Component->ComponentHasTag(MenuAmbientTag))
+				return Component;
+
+		return nullptr;
+	}
+
+	void StartMenuAmbient(AMazePlayerController& Owner)
+	{
+		if (Owner.GetNetMode() == NM_DedicatedServer)
+			return;
+
+		UAudioComponent* Audio = FindMenuAmbient(Owner);
+
+		if (!Audio)
+		{
+			const TSoftObjectPtr<USoundWave> AmbientSound = GetDefault<UMazeLocationSettings>()->MenuAmbientSound();
+			auto* Sound = AmbientSound.Get();
+
+			if (!Sound)
+			{
+				const TWeakObjectPtr<AMazePlayerController> WeakOwner(&Owner);
+
+				UAssetManager::GetStreamableManager().RequestAsyncLoad(
+				    AmbientSound.ToSoftObjectPath(),
+				    FStreamableDelegate::CreateLambda(
+				        [WeakOwner, AmbientSound]()
+				        {
+					        if (!AmbientSound.Get())
+					        {
+						        UE_LOG(LogTemp, Error, TEXT("Laby menu ambience could not be loaded"));
+
+						        return;
+					        }
+
+					        if (AMazePlayerController* Controller = WeakOwner.Get();
+					            Controller && Controller->IsMenuOpen())
+						        StartMenuAmbient(*Controller);
+				        }));
+
+				return;
+			}
+
+			Audio = NewObject<UAudioComponent>(&Owner, TEXT("MenuAmbientAudio"));
+			Audio->ComponentTags.Add(MenuAmbientTag);
+			Audio->bAutoActivate = false;
+			Audio->bAutoDestroy = false;
+			Audio->bStopWhenOwnerDestroyed = true;
+			Audio->bAllowSpatialization = false;
+			Audio->bIsUISound = true;
+			Audio->SetSound(Sound);
+			Audio->RegisterComponent();
+		}
+
+		if (Audio->IsPlaying())
+			Audio->AdjustVolume(2.5f, CurrentMenuAmbientVolume());
+		else
+			Audio->FadeIn(2.5f, CurrentMenuAmbientVolume());
+	}
+
+	void StopMenuAmbient(AActor& Owner, bool bDestroy)
+	{
+		if (UAudioComponent* Audio = FindMenuAmbient(Owner))
+		{
+			if (bDestroy)
+			{
+				Audio->Stop();
+				Audio->DestroyComponent();
+			}
+			else if (Audio->IsPlaying())
+				Audio->FadeOut(1.2f, 0.f);
+		}
+	}
+}
+
+void AMazePlayerController::RefreshMenuAmbientVolume()
+{
+	if (UAudioComponent* Audio = FindMenuAmbient(*this); Audio && Audio->IsPlaying())
+		Audio->AdjustVolume(0.12f, CurrentMenuAmbientVolume());
+}
 
 void UMazePreferences::SetSensitivity(float Value)
 {
@@ -48,8 +151,7 @@ void AMazePlayerController::BeginPlay()
 	ECSSubsystem = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
 	check(ECSSubsystem);
 
-	UClass* MapClass =
-	    LoadClass<UMazeExplorationMapWidget>(nullptr, TEXT("/Game/UI/WBP_ExplorationMap.WBP_ExplorationMap_C"));
+	UClass* MapClass = MazeUIAssets::Map().LoadSynchronous();
 
 	ExplorationMap =
 	    CreateWidget<UMazeExplorationMapWidget>(this, MapClass ? MapClass : UMazeExplorationMapWidget::StaticClass());
@@ -172,6 +274,7 @@ void AMazePlayerController::RemoveMenuWidget()
 void AMazePlayerController::EndPlay(const EEndPlayReason::Type Reason)
 {
 	RemoveMenuWidget();
+	StopMenuAmbient(*this, true);
 
 	if (ExplorationMap)
 		ExplorationMap->RemoveFromParent();
@@ -212,6 +315,7 @@ void AMazePlayerController::CloseMenu()
 		return;
 
 	RemoveMenuWidget();
+	StopMenuAmbient(*this, false);
 
 	if (ECSSubsystem)
 		ECSSubsystem->SetMenu(false);
@@ -276,15 +380,13 @@ void AMazePlayerController::ShowNetworkMenu(bool bJoinScreen, bool bSettingsScre
 	if (!IsLocalController() || !ECSSubsystem || !GetWorld()->GetGameViewport())
 		return;
 
-	const TCHAR* Path = bSettingsScreen                 ? TEXT("/Game/UI/WBP_Settings.WBP_Settings_C")
-	                    : ReadSession().bSessionStarted ? TEXT("/Game/UI/WBP_PauseMenu.WBP_PauseMenu_C")
-	                                                    : TEXT("/Game/UI/WBP_MainMenu.WBP_MainMenu_C");
-	UClass* Class = LoadClass<UMazeMenuWidget>(nullptr, Path);
+	const auto Asset = MazeUIAssets::Menu(bSettingsScreen, ReadSession().bSessionStarted);
+	UClass* Class = Asset.LoadSynchronous();
 	UMazeMenuWidget* NextMenu = Class ? CreateWidget<UMazeMenuWidget>(this, Class) : nullptr;
 
 	if (!NextMenu)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Laby menu asset is unavailable: %s"), Path);
+		UE_LOG(LogTemp, Error, TEXT("Laby menu asset is unavailable: %s"), *Asset.ToString());
 
 		return;
 	}
@@ -302,6 +404,7 @@ void AMazePlayerController::ShowNetworkMenu(bool bJoinScreen, bool bSettingsScre
 	FlushPressedKeys();
 	bShowMouseCursor = true;
 	MenuWidget->AddToPlayerScreen(100);
+	StartMenuAmbient(*this);
 
 	FInputModeUIOnly Mode;
 

@@ -16,3 +16,13 @@ struct LABY_API FMazeInterfacePreferences
 	static FMazeInterfacePreferences Read();
 	void Save() const;
 };
+
+// Device-local audio levels for the menu ambience and its UI feedback sounds.
+struct LABY_API FMazeMenuAudioPreferences
+{
+	float MusicVolume = 1.f;
+	float InterfaceVolume = 1.f;
+
+	static FMazeMenuAudioPreferences Read();
+	void Save() const;
+};

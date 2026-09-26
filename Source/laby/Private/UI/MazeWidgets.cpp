@@ -47,7 +47,10 @@ void UMazeMenuWidget::NativeConstruct()
 	SetIsFocusable(true);
 
 	for (const auto& Entry : MazeText::WidgetLabels())
-		Text(this, *Entry.Key.ToString(), Entry.Value);
+		if (Entry.Key != TEXT("QuitButtonLabel"))
+			Text(this, *Entry.Key.ToString(), Entry.Value);
+
+	Text(this, TEXT("QuitButtonLabel"), NSLOCTEXT("Maze.Glass", "Quit", "ВЫХОД"));
 
 	Text(this,
 	     TEXT("Subtitle"),
@@ -85,6 +88,9 @@ void UMazeMenuWidget::NativeConstruct()
 	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("GameTabButton"))))
 		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ShowGameSettings);
 
+	if (auto* Button = Cast<UButton>(GetWidgetFromName(TEXT("AudioTabButton"))))
+		Button->OnClicked.AddUniqueDynamic(this, &UMazeMenuWidget::ShowAudioSettings);
+
 	if (auto* Slider = Cast<USlider>(GetWidgetFromName(TEXT("RenderScaleSlider"))))
 		Slider->OnValueChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeRenderScale);
 
@@ -101,6 +107,7 @@ void UMazeMenuWidget::NativeConstruct()
 
 	Text(this, TEXT("SensitivityText"), SensitivityText(Sensitivity));
 	ReadSettingsIntoControls();
+	RefreshInterfaceSounds(FMazeMenuAudioPreferences::Read().InterfaceVolume);
 	BindSettingsEvents();
 	SelectSettingsSection(0);
 }
@@ -256,6 +263,10 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 		     TEXT("StaminaText"),
 		     Vitals.bExhausted ? NSLOCTEXT("Maze.HUD", "StaminaRecovering", "ВОССТАНОВЛЕНИЕ")
 		                       : MazeText::Widget(TEXT("StaminaText")));
+		Text(this,
+		     TEXT("WardStaminaCaption"),
+		     Vitals.bExhausted ? NSLOCTEXT("Maze.Ward", "Recovering", "Восстановление")
+		                       : NSLOCTEXT("Maze.Ward", "Stamina", "Выносливость"));
 
 		if (auto* Bar = Cast<UProgressBar>(GetWidgetFromName(TEXT("HealthBar"))))
 			Bar->SetPercent(FMath::Clamp(Vitals.Health / FMazeVitals::Maximum, 0.f, 1.f));

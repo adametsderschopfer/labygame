@@ -2,6 +2,7 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Layout/WidgetPath.h"
 #include "Rendering/DrawElements.h"
+#include "Rendering/SlateRenderer.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/SLeafWidget.h"
 #include "Widgets/Images/SThrobber.h"
@@ -27,7 +28,7 @@ namespace
 
 		virtual FVector2D ComputeDesiredSize(float) const override
 		{
-			return FVector2D(28, 28);
+			return FVector2D(48, 48);
 		}
 
 		virtual void Tick(const FGeometry& Geometry, double Time, float Delta) override
@@ -59,34 +60,70 @@ namespace
 		                      const FWidgetStyle& Style,
 		                      bool) const override
 		{
-			const FVector2D Center = Geometry.GetLocalSize() * 0.5;
-			auto Arc = [&](float Amount, float Radius, FLinearColor Color, float Width)
+			// UE SlateUser centers software widgets at the pointer. Put the triangle's
+			// tip at that center so the visible point, not its middle, is the click hotspot.
+			const FVector2D Hotspot = Geometry.GetLocalSize() * 0.5;
+			const FVector2D Corners[] = {Hotspot, Hotspot + FVector2D(3, 22), Hotspot + FVector2D(18, 14)};
+			TArray<FVector2D> Outline;
+
+			for (int32 I = 0; I < 3; ++I)
 			{
-				TArray<FVector2D> Points;
-				const int32 Count = FMath::Max(2, FMath::CeilToInt(48 * Amount));
+				const FVector2D Corner = Corners[I];
+				const FVector2D Before = Corner + (Corners[(I + 2) % 3] - Corner).GetSafeNormal() * 2.f;
+				const FVector2D After = Corner + (Corners[(I + 1) % 3] - Corner).GetSafeNormal() * 2.f;
 
-				for (int32 I = 0; I <= Count; ++I)
+				for (int32 Step = 0; Step <= 6; ++Step)
 				{
-					const float Angle = -HALF_PI + 2 * PI * Amount * I / Count;
-					Points.Add(Center + FVector2D(FMath::Cos(Angle), FMath::Sin(Angle)) * Radius);
-				}
+					const double T = Step / 6.;
 
-				FSlateDrawElement::MakeLines(Elements,
-				                             ++Layer,
-				                             Geometry.ToPaintGeometry(),
-				                             Points,
-				                             ESlateDrawEffect::None,
-				                             Color * Style.GetColorAndOpacityTint(),
-				                             true,
-				                             Width);
+					Outline.Add(Before * FMath::Square(1 - T) + Corner * (2 * (1 - T) * T) + After * T * T);
+				}
+			}
+
+			const auto Palette = MazeInterfaceStyle::Palette();
+			const FLinearColor Fill = FMath::Lerp(Palette.Ink, Palette.Accent, Hover);
+			TArray<FSlateVertex> Vertices;
+			TArray<SlateIndex> Indices;
+			const auto AddVertex = [&](FVector2D P)
+			{
+				Vertices.Add(FSlateVertex::Make<ESlateVertexRounding::Disabled>(
+				    Geometry.GetAccumulatedRenderTransform(),
+				    FVector2f(P),
+				    FVector2f::ZeroVector,
+				    (Fill * Style.GetColorAndOpacityTint()).ToFColorSRGB()));
 			};
 
-			Arc(1, 10, FLinearColor(0, 0, 0, 0.8f), 4);
-			Arc(1, 10, MazeInterfaceStyle::Muted, 1);
-			Arc(0.16f + Hover * 0.84f, 10, MazeInterfaceStyle::Accent, 2);
+			AddVertex((Corners[0] + Corners[1] + Corners[2]) / 3.);
 
-			if (Hover > 0.01f)
-				Arc(1, 3 * Hover, MazeInterfaceStyle::Accent.CopyWithNewOpacity(Hover * 0.7f), 2);
+			for (int32 I = 0; I < Outline.Num(); ++I)
+			{
+				AddVertex(Outline[I]);
+				Indices.Append({0, SlateIndex(I + 1), SlateIndex((I + 1) % Outline.Num() + 1)});
+			}
+
+			const auto Resource =
+			    FSlateApplication::Get().GetRenderer()->GetResourceHandle(*FCoreStyle::Get().GetBrush("WhiteBrush"));
+
+			const FVector2D FirstPoint = Outline[0];
+
+			Outline.Add(FirstPoint);
+			FSlateDrawElement::MakeLines(Elements,
+			                             ++Layer,
+			                             Geometry.ToPaintGeometry(),
+			                             Outline,
+			                             ESlateDrawEffect::None,
+			                             Palette.OnAccent.CopyWithNewOpacity(.9f),
+			                             true,
+			                             3.f);
+			FSlateDrawElement::MakeCustomVerts(Elements, ++Layer, Resource, Vertices, Indices, nullptr, 0, 0);
+			FSlateDrawElement::MakeLines(Elements,
+			                             ++Layer,
+			                             Geometry.ToPaintGeometry(),
+			                             Outline,
+			                             ESlateDrawEffect::None,
+			                             Fill.CopyWithNewOpacity(.8f),
+			                             true,
+			                             1.f);
 
 			return Layer;
 		}

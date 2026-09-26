@@ -10,6 +10,7 @@ class LABY_API UMazeMenuWidget : public UUserWidget
 {
 	GENERATED_BODY()
 protected:
+	virtual TSharedRef<SWidget> RebuildWidget() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& Geometry, float DeltaSeconds) override;
@@ -66,6 +67,8 @@ private:
 	UFUNCTION()
 	void ShowGameSettings();
 	UFUNCTION()
+	void ShowAudioSettings();
+	UFUNCTION()
 	void ApplySettings();
 	UFUNCTION()
 	void ResetSettings();
@@ -73,6 +76,8 @@ private:
 	void ChangeRenderScale(float Value);
 	void SelectSettingsSection(int32 Index);
 	void ReadSettingsIntoControls();
+	void UpdateAudioSettings();
+	void RefreshInterfaceSounds(float Volume);
 };
 
 UCLASS(Abstract, Blueprintable)

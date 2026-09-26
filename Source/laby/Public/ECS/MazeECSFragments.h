@@ -150,7 +150,7 @@ struct FMazeGenerationFragment : public FMassFragment
 	UPROPERTY()
 	float Cell = 462.5f;
 	UPROPERTY()
-	float WallThickness = 50.f;
+	float WallThickness = 25.f;
 	UPROPERTY()
 	float WallHeight = 320.f;
 	UPROPERTY()

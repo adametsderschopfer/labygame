@@ -7,7 +7,7 @@ namespace MazeText
 	inline const TMap<FName, FText>& WidgetLabels()
 	{
 		static const TMap<FName, FText> Labels = {
-		    {TEXT("Title"), NSLOCTEXT("Maze.Widgets", "Title", "L A B Y")},
+		    {TEXT("Title"), NSLOCTEXT("Maze.Widgets", "Title", "LABY")},
 		    {TEXT("SensitivityLabel"), NSLOCTEXT("Maze.Widgets", "SensitivityLabel", "Чувствительность мыши")},
 		    {TEXT("SensitivityText"), NSLOCTEXT("Maze.Widgets", "SensitivityText", "1.00 x")},
 		    {TEXT("SettingsHint"), NSLOCTEXT("Maze.Widgets", "SettingsHint", "0.10 — 3.00")},
@@ -16,7 +16,7 @@ namespace MazeText
 		    {TEXT("ResumeButtonLabel"), NSLOCTEXT("Maze.Widgets", "ResumeButtonLabel", "ПРОДОЛЖИТЬ")},
 		    {TEXT("NewGameButtonLabel"), NSLOCTEXT("Maze.Widgets", "NewGameButtonLabel", "НАЧАТЬ ИГРУ")},
 		    {TEXT("SettingsButtonLabel"), NSLOCTEXT("Maze.Widgets", "SettingsButtonLabel", "НАСТРОЙКИ")},
-		    {TEXT("QuitButtonLabel"), NSLOCTEXT("Maze.Widgets", "QuitButtonLabel", "ВЫЙТИ ИЗ ИГРЫ")},
+		    {TEXT("QuitButtonLabel"), NSLOCTEXT("Maze.Widgets", "QuitButtonLabel", "ВЫХОД")},
 		    {TEXT("VersionText"), NSLOCTEXT("Maze.Widgets", "VersionText", "ALPHA 0.0.0.2")},
 		    {TEXT("HealthText"), NSLOCTEXT("Maze.Widgets", "HealthText", "ЗДОРОВЬЕ")},
 		    {TEXT("StaminaText"), NSLOCTEXT("Maze.Widgets", "StaminaText", "ВЫНОСЛИВОСТЬ")},

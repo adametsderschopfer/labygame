@@ -1,13 +1,9 @@
 #include "UI/MazeInterfaceStyle.h"
 #include "World/MazePreparationStatus.h"
-#include "HAL/PlatformTime.h"
 #include "Misc/ScopeLock.h"
-#include "Styling/CoreStyle.h"
+#include "Rendering/DrawElements.h"
 #include "Widgets/SCompoundWidget.h"
-#include "Widgets/Images/SThrobber.h"
-#include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
-#include "Widgets/Notifications/SProgressBar.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Text/STextBlock.h"
 
@@ -18,190 +14,80 @@ namespace
 		switch (Stage)
 		{
 		case EMazePreparationStage::Map:
-			return NSLOCTEXT("Maze.Loading", "MapStage", "ЗАГРУЗКА УРОВНЯ");
+			return NSLOCTEXT("Maze.Loading", "MapStage", "Загрузка уровня…");
 
 		case EMazePreparationStage::Topology:
-			return NSLOCTEXT("Maze.Loading", "TopologyStage", "СОЗДАНИЕ ЛАБИРИНТА");
+			return NSLOCTEXT("Maze.Loading", "TopologyStage", "Создание лабиринта…");
 
 		case EMazePreparationStage::Collision:
-			return NSLOCTEXT("Maze.Loading", "CollisionStage", "ПОДГОТОВКА ФИЗИКИ");
+			return NSLOCTEXT("Maze.Loading", "CollisionStage", "Подготовка пространства…");
 
 		case EMazePreparationStage::Assets:
-			return NSLOCTEXT("Maze.Loading", "AssetsStage", "ЗАГРУЗКА РЕСУРСОВ");
+			return NSLOCTEXT("Maze.Loading", "AssetsStage", "Загрузка ресурсов…");
 
 		case EMazePreparationStage::Geometry:
-			return NSLOCTEXT("Maze.Loading", "GeometryStage", "ПОДГОТОВКА ОКРУЖЕНИЯ");
-
 		case EMazePreparationStage::WorldStreaming:
-			return NSLOCTEXT("Maze.Loading", "StreamingStage", "ЗАГРУЗКА УЧАСТКОВ МИРА");
+			return NSLOCTEXT("Maze.Loading", "GeometryStage", "Подготовка окружения…");
 
 		case EMazePreparationStage::Shaders:
-			return NSLOCTEXT("Maze.Loading", "ShadersStage", "ПОДГОТОВКА ШЕЙДЕРОВ");
+			return NSLOCTEXT("Maze.Loading", "ShadersStage", "Подготовка графики…");
 
 		default:
-			return NSLOCTEXT("Maze.Loading", "FinalizingStage", "ПОДГОТОВКА ПЕРВОГО КАДРА");
+			return NSLOCTEXT("Maze.Loading", "FinalizingStage", "Завершение загрузки…");
 		}
 	}
 
-	FText StageDetail(const FMazePreparationStatus& Status)
-	{
-		switch (Status.Stage)
-		{
-		case EMazePreparationStage::Map:
-			return NSLOCTEXT("Maze.Loading", "MapDetail", "Читаем данные уровня и загружаем его объекты.");
-
-		case EMazePreparationStage::Topology:
-			return NSLOCTEXT("Maze.Loading", "TopologyDetail", "Создаём комнаты и проходы.");
-
-		case EMazePreparationStage::Collision:
-			return NSLOCTEXT("Maze.Loading", "CollisionDetail", "Готовим стены и пол для перемещения игрока.");
-
-		case EMazePreparationStage::Assets:
-			return Status.Total > 0
-			           ? FText::Format(
-			                 NSLOCTEXT("Maze.Loading", "AssetsCount", "Модели, материалы и звуки: {0} из {1}"),
-			                 FText::AsNumber(Status.Completed),
-			                 FText::AsNumber(Status.Total))
-			           : NSLOCTEXT("Maze.Loading", "AssetsDetail", "Загружаем модели, материалы и звуки.");
-
-		case EMazePreparationStage::Geometry:
-			return Status.Total > 0
-			           ? FText::Format(
-			                 NSLOCTEXT("Maze.Loading", "GeometryCount", "Участки рядом с игроком: {0} из {1}"),
-			                 FText::AsNumber(Status.Completed),
-			                 FText::AsNumber(Status.Total))
-			           : NSLOCTEXT("Maze.Loading", "GeometryDetail", "Ожидаем данные лабиринта и готовим окружение.");
-
-		case EMazePreparationStage::WorldStreaming:
-			return NSLOCTEXT("Maze.Loading", "StreamingDetail", "Подгружаем окружение вокруг места появления.");
-
-		case EMazePreparationStage::Shaders:
-			return FText::Format(NSLOCTEXT("Maze.Loading", "ShadersCount", "Осталось задач подготовки графики: {0}"),
-			                     FText::AsNumber(Status.PendingPSOs));
-
-		default:
-			return NSLOCTEXT("Maze.Loading", "FinalizingDetail", "Завершаем подготовку изображения.");
-		}
-	}
-
-	// MoviePlayer can paint on its loading thread while the game thread is blocked.
-	// Only copied values cross that boundary; no UObject, world or fragment bindings.
+	// MoviePlayer may paint on its loading thread. Only detached copied values
+	// cross this boundary; no UObject, world, gameplay state or timed progress.
 	class SMazeLoadingScreen final : public SCompoundWidget
 	{
 	public:
-		SLATE_BEGIN_ARGS(SMazeLoadingScreen) : _StartedAt(0)
+		SLATE_BEGIN_ARGS(SMazeLoadingScreen)
 		{
 		}
-		SLATE_ARGUMENT(double, StartedAt)
 		SLATE_END_ARGS()
 
 		void Construct(const FArguments& Args)
 		{
-			using namespace MazeInterfaceStyle;
-			StartedAt = Args._StartedAt > 0 ? Args._StartedAt : FPlatformTime::Seconds();
-			ChildSlot
-			    [SNew(SBorder)
-			         .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-			         .BorderBackgroundColor(FLinearColor(0.002f, 0.006f, 0.004f))
-			         .HAlign(HAlign_Center)
-			         .VAlign(VAlign_Center)[SNew(SBox).WidthOverride(
-			             600)[SNew(SVerticalBox) +
-			                  SVerticalBox::Slot().AutoHeight().Padding(
-			                      0, 0, 0, 18)[SNew(STextBlock)
-			                                       .Text(NSLOCTEXT("Maze.Glass", "Brand", "LABY"))
-			                                       .Font(Font(44, 500))
-			                                       .ColorAndOpacity(Ink)] +
-			                  SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 48)[SNew(SBox).HeightOverride(
-			                      1)[SNew(SBorder)
-			                             .Padding(0)
-			                             .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-			                             .BorderBackgroundColor(Line)]] +
-			                  SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 16)[SNew(STextBlock)
-			                                                                             .Text_Lambda(
-			                                                                                 [this]
-			                                                                                 {
-				                                                                                 return StageTitle(
-				                                                                                     Read().Stage);
-			                                                                                 })
-			                                                                             .Font(Font(18, 100))
-			                                                                             .ColorAndOpacity(Ink)
-			                                                                             .AutoWrapText(true)] +
-			                  SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 20)[SNew(STextBlock)
-			                                                                             .Text_Lambda(
-			                                                                                 [this]
-			                                                                                 {
-				                                                                                 return StageDetail(
-				                                                                                     Read());
-			                                                                                 })
-			                                                                             .Font(Font(14, 0))
-			                                                                             .ColorAndOpacity(Ink)
-			                                                                             .AutoWrapText(true)] +
-			                  SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 16)[SNew(SBox).HeightOverride(
-			                      4)[SNew(SProgressBar)
-			                             .FillColorAndOpacity(Accent)
-			                             .Percent_Lambda(
-			                                 [this]() -> TOptional<float>
-			                                 {
-				                                 const auto Value = Read();
-
-				                                 return Value.Total > 0
-				                                            ? TOptional<float>(FMath::Clamp(
-				                                                  float(Value.Completed) / Value.Total, 0.f, 1.f))
-				                                            : TOptional<float>();
-			                                 })]] +
-			                  SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 12)
-			                      [SNew(STextBlock)
-			                           .Text_Lambda(
-			                               [this]
-			                               {
-				                               const auto Value = Read();
-
-				                               return Value.PendingPSOs > 0 &&
-				                                              Value.Stage != EMazePreparationStage::Shaders
-				                                          ? FText::Format(
-				                                                NSLOCTEXT("Maze.Loading",
-				                                                          "ParallelShaders",
-				                                                          "Также готовим шейдеры. Осталось задач: {0}"),
-				                                                FText::AsNumber(Value.PendingPSOs))
-				                                          : FText::GetEmpty();
-			                               })
-			                           .Font(Font(12, 0))
-			                           .ColorAndOpacity(Muted)
-			                           .AutoWrapText(true)] +
-			                  SVerticalBox::Slot().AutoHeight().Padding(
-			                      0, 0, 0, 20)[SNew(STextBlock)
-			                                       .Text(NSLOCTEXT("Maze.Loading",
-			                                                       "FirstLaunchHint",
-			                                                       "При первом запуске и после обновления драйвера "
-			                                                       "подготовка графики может занять больше времени."))
-			                                       .Font(Font(12, 0))
-			                                       .ColorAndOpacity(Muted)
-			                                       .AutoWrapText(true)] +
-			                  SVerticalBox::Slot().AutoHeight()
-			                      [SNew(SHorizontalBox) +
-			                       SHorizontalBox::Slot()
-			                           .AutoWidth()
-			                           .VAlign(VAlign_Center)
-			                           .Padding(0, 0, 16, 0)[SNew(SThrobber).NumPieces(3)] +
-			                       SHorizontalBox::Slot().AutoWidth()[SNew(STextBlock)
-			                                                              .Text_Lambda(
-			                                                                  [this]
-			                                                                  {
-				                                                                  return FText::Format(
-				                                                                      NSLOCTEXT("Maze.Loading",
-				                                                                                "Elapsed",
-				                                                                                "Прошло: {0} с"),
-				                                                                      FText::AsNumber(FMath::FloorToInt(
-				                                                                          FPlatformTime::Seconds() -
-				                                                                          StartedAt)));
-			                                                                  })
-			                                                              .Font(Font(12, 0))
-			                                                              .ColorAndOpacity(Muted)]]]]];
+			ChildSlot.HAlign(HAlign_Center)
+			    .VAlign(VAlign_Center)[SNew(SBox).WidthOverride(
+			        480)[SNew(SVerticalBox) +
+			             SVerticalBox::Slot().AutoHeight().Padding(
+			                 0, 0, 0, 28)[SNew(STextBlock)
+			                                  .Text(FText::AsCultureInvariant(TEXT("LABY")))
+			                                  .Font(MazeInterfaceStyle::Font(36, 450))
+			                                  .Justification(ETextJustify::Center)
+			                                  .ColorAndOpacity(MazeInterfaceStyle::Palette().Accent)] +
+			             SVerticalBox::Slot().AutoHeight()[SNew(STextBlock)
+			                                                   .Text_Lambda(
+			                                                       [this]
+			                                                       {
+				                                                       return StageTitle(Read().Stage);
+			                                                       })
+			                                                   .Font(MazeInterfaceStyle::Font(16, 0))
+			                                                   .Justification(ETextJustify::Center)
+			                                                   .ColorAndOpacity(MazeInterfaceStyle::Palette().Ink)]]];
 		}
 
-		double GetStartedAt() const
+		virtual int32 OnPaint(const FPaintArgs& Args,
+		                      const FGeometry& Geometry,
+		                      const FSlateRect& CullingRect,
+		                      FSlateWindowElementList& Elements,
+		                      int32 Layer,
+		                      const FWidgetStyle& Style,
+		                      bool bParentEnabled) const override
 		{
-			return StartedAt;
+			const float Height = Geometry.GetLocalSize().Y;
+			const auto Palette = MazeInterfaceStyle::Palette();
+			const TArray<FSlateGradientStop> Stops = {
+			    FSlateGradientStop(FVector2f(0, 0), Palette.BackgroundMid),
+			    FSlateGradientStop(FVector2f(0, Height * .45f), Palette.BackgroundHigh),
+			    FSlateGradientStop(FVector2f(0, Height), Palette.BackgroundLow)};
+
+			// Horizontal stop lines interpolate vertically in Slate.
+			FSlateDrawElement::MakeGradient(Elements, Layer, Geometry.ToPaintGeometry(), Stops, Orient_Horizontal);
+
+			return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
 		}
 
 		void SetStatus(const FMazePreparationStatus& Value)
@@ -211,7 +97,6 @@ namespace
 			Status = Value;
 		}
 
-	private:
 		FMazePreparationStatus Read() const
 		{
 			FScopeLock Guard(&Mutex);
@@ -219,9 +104,9 @@ namespace
 			return Status;
 		}
 
+	private:
 		mutable FCriticalSection Mutex;
 		FMazePreparationStatus Status;
-		double StartedAt = 0;
 	};
 }
 
@@ -232,10 +117,13 @@ TSharedRef<SWidget> MazeInterfaceStyle::MakeLoadingScreen()
 
 TSharedRef<SWidget> MazeInterfaceStyle::MakeLoadingScreen(const TSharedPtr<SWidget>& Previous)
 {
-	// MoviePlayer may still own its widget during PostLoadMap: never give it two Slate parents.
-	const double StartedAt = Previous ? StaticCastSharedPtr<SMazeLoadingScreen>(Previous)->GetStartedAt() : 0;
+	// Preserve the last status during handover, but never give MoviePlayer's widget two parents.
+	TSharedRef<SMazeLoadingScreen> Screen = SNew(SMazeLoadingScreen);
 
-	return SNew(SMazeLoadingScreen).StartedAt(StartedAt);
+	if (Previous)
+		Screen->SetStatus(StaticCastSharedPtr<SMazeLoadingScreen>(Previous)->Read());
+
+	return Screen;
 }
 
 void MazeInterfaceStyle::UpdateLoadingScreen(const TSharedRef<SWidget>& Screen, const FMazePreparationStatus& Status)

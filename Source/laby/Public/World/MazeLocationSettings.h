@@ -5,6 +5,7 @@
 #include "MazeLocationSettings.generated.h"
 
 class UMaterialInterface;
+class USoundWave;
 
 UENUM()
 enum class EMazeLocationMode : uint8
@@ -54,6 +55,7 @@ public:
 	// Typed presentation references backed by the common location manifest.
 	TSoftObjectPtr<UMaterialInterface> PoolTileMaterial() const;
 	TSoftObjectPtr<UMaterialInterface> WaterMaterial() const;
+	TSoftObjectPtr<USoundWave> MenuAmbientSound() const;
 
 	bool Validate(FString& Error) const;
 };

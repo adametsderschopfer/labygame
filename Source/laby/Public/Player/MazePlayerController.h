@@ -36,6 +36,7 @@ public:
 	}
 
 	void StartNewGame();
+	void RefreshMenuAmbientVolume();
 	virtual void PlayerTick(float DeltaTime) override;
 	void ShowNetworkMenu(bool bJoinScreen = false, bool bSettingsScreen = false, bool bLocalJoin = false);
 	UFUNCTION(Server, Reliable)
