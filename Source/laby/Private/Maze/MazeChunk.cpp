@@ -8,10 +8,13 @@ int64 FMazeChunkData::GetGeometryBytes() const
 		return Surface.Vertices.GetAllocatedSize() + Surface.Normals.GetAllocatedSize() +
 		       Surface.Triangles.GetAllocatedSize();
 	};
-	int64 Total = Bytes(Walls) + Floors.GetAllocatedSize();
+	int64 Total = Bytes(Walls) + Floors.GetAllocatedSize() + Ceilings.GetAllocatedSize();
 
 	for (const auto& Section : Interior.Sections)
 		Total += Bytes(Section);
+
+	for (const auto& Surfaces : RoomSurfaces)
+		Total += Surfaces.GetAllocatedSize();
 
 	return Total + Interior.SocketTransforms.GetAllocatedSize() + Interior.DetectorTransforms.GetAllocatedSize();
 }

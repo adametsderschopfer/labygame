@@ -39,27 +39,29 @@ TSharedPtr<const FMazeChunkData, ESPMode::ThreadSafe> FMazeChunkSystem::Build(co
 	                    Cells.Min.Y == 0 ? -1200.f : Cells.Min.Y * Maze.Cell);
 	const FVector2D Max(Cells.Max.X == Layout.Size ? Span + 1200.f : Cells.Max.X * Maze.Cell,
 	                    Cells.Max.Y == Layout.Size ? Span + 1200.f : Cells.Max.Y * Maze.Cell);
-
-	for (const auto& Floor : Maze.Data->FloorTransforms)
+	const auto ClipBox = [&Min, &Max](const FTransform& Box, TArray<FTransform>& Output)
 	{
-		const FVector P = Floor.GetLocation(), Half = Floor.GetScale3D() * 50;
+		const FVector P = Box.GetLocation(), Half = Box.GetScale3D() * 50;
 		const float X0 = FMath::Max(Min.X, P.X - Half.X), X1 = FMath::Min(Max.X, P.X + Half.X);
 		const float Y0 = FMath::Max(Min.Y, P.Y - Half.Y), Y1 = FMath::Min(Max.Y, P.Y + Half.Y);
 
 		if (X1 > X0 && Y1 > Y0)
-			Result->Floors.Emplace(FRotator::ZeroRotator,
-			                       FVector((X0 + X1) / 2, (Y0 + Y1) / 2, P.Z),
-			                       FVector((X1 - X0) / 100, (Y1 - Y0) / 100, Floor.GetScale3D().Z));
-	}
+			Output.Emplace(FRotator::ZeroRotator,
+			               FVector((X0 + X1) / 2, (Y0 + Y1) / 2, P.Z),
+			               FVector((X1 - X0) / 100, (Y1 - Y0) / 100, Box.GetScale3D().Z));
+	};
 
-	const float X0 = Cells.Min.X * Maze.Cell - (Cells.Min.X == 0 ? Maze.WallThickness / 2 : 0);
-	const float Y0 = Cells.Min.Y * Maze.Cell - (Cells.Min.Y == 0 ? Maze.WallThickness / 2 : 0);
-	const float X1 = Cells.Max.X * Maze.Cell + (Cells.Max.X == Layout.Size ? Maze.WallThickness / 2 : 0);
-	const float Y1 = Cells.Max.Y * Maze.Cell + (Cells.Max.Y == Layout.Size ? Maze.WallThickness / 2 : 0);
+	for (const FTransform& Floor : Maze.Data->FloorTransforms)
+		ClipBox(Floor, Result->Floors);
 
-	Result->Ceiling = FTransform(FRotator::ZeroRotator,
-	                             FVector((X0 + X1) / 2, (Y0 + Y1) / 2, Maze.WallHeight + Maze.WallThickness / 2),
-	                             FVector((X1 - X0) / 100, (Y1 - Y0) / 100, Maze.WallThickness / 100));
+	for (const FTransform& Ceiling : Maze.Data->CeilingTransforms)
+		ClipBox(Ceiling, Result->Ceilings);
+
+	for (const FTransform& Ceiling : Maze.Data->RoomGeometry.Ceilings)
+		ClipBox(Ceiling, Result->Ceilings);
+
+	for (const FMazeRoomBox& Box : Maze.Data->RoomGeometry.Boxes)
+		ClipBox(Box.Transform, Result->RoomSurfaces[static_cast<int32>(Box.Surface)]);
 
 	return Result;
 }

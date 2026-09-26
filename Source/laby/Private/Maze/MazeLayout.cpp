@@ -116,8 +116,70 @@ void FMazeLayout::Generate(int32 Seed, int32 InSize)
 	}
 
 	AddRoomsAtBends(Random, ScenicFloor);
+	GenerateRoomTypes(Seed);
 	GenerateNarrowPassages(Seed, ScenicFloor);
 	GenerateHoles(Random, ScenicFloor);
+}
+
+void FMazeLayout::GenerateRoomTypes(int32 Seed)
+{
+	RoomTypes.Init(EMazeRoomType::Empty, Rooms.Num());
+
+	if (Rooms.Num() <= 1)
+		return;
+
+	FRandomStream Random(static_cast<int32>(uint32(Seed) ^ 0xA341316Cu));
+	TArray<int32> PoolCandidates;
+	TArray<int32> ShallowCandidates;
+	bool bHasPool = false;
+	bool bHasShallow = false;
+
+	for (int32 RoomIndex = 1; RoomIndex < Rooms.Num(); ++RoomIndex)
+	{
+		const FIntRect& Room = Rooms[RoomIndex];
+		int32 DoorCount = 0;
+
+		for (const FMazeRoomDoorway& Doorway : RoomDoorways())
+			DoorCount += Doorway.RoomIndex == RoomIndex;
+
+		const bool bPoolEligible = Room.Width() >= FMazeRoomDefinition::MinPoolWidthCells &&
+		                           Room.Height() >= FMazeRoomDefinition::MinPoolLengthCells && DoorCount >= 2;
+		const int32 TotalWeight = FMazeRoomDefinition::EmptyWeight + FMazeRoomDefinition::ShallowFloodedWeight +
+		                          (bPoolEligible ? FMazeRoomDefinition::PoolWeight : 0);
+		const int32 Pick = Random.RandRange(1, TotalWeight);
+
+		if (Pick <= FMazeRoomDefinition::EmptyWeight)
+			RoomTypes[RoomIndex] = EMazeRoomType::Empty;
+		else if (Pick <= FMazeRoomDefinition::EmptyWeight + FMazeRoomDefinition::ShallowFloodedWeight)
+			RoomTypes[RoomIndex] = EMazeRoomType::ShallowFlooded;
+		else
+			RoomTypes[RoomIndex] = EMazeRoomType::Pool;
+
+		ShallowCandidates.Add(RoomIndex);
+
+		if (bPoolEligible)
+			PoolCandidates.Add(RoomIndex);
+
+		bHasPool |= RoomTypes[RoomIndex] == EMazeRoomType::Pool;
+		bHasShallow |= RoomTypes[RoomIndex] == EMazeRoomType::ShallowFlooded;
+	}
+
+	// Large generated maps should always expose the new room families. These fallbacks
+	// remain deterministic and never turn a dead-end or undersized room into a pool.
+	if (!bHasPool && !PoolCandidates.IsEmpty())
+		RoomTypes[PoolCandidates[Random.RandRange(0, PoolCandidates.Num() - 1)]] = EMazeRoomType::Pool;
+
+	if (!bHasShallow && !ShallowCandidates.IsEmpty())
+	{
+		TArray<int32> Choices = ShallowCandidates.FilterByPredicate(
+		    [this](int32 RoomIndex)
+		    {
+			    return RoomType(RoomIndex) != EMazeRoomType::Pool;
+		    });
+
+		if (!Choices.IsEmpty())
+			RoomTypes[Choices[Random.RandRange(0, Choices.Num() - 1)]] = EMazeRoomType::ShallowFlooded;
+	}
 }
 
 void FMazeLayout::GenerateNarrowPassages(int32 Seed, const TArray<int32>& ScenicFloor)
@@ -462,24 +524,26 @@ void FMazeLayout::GenerateHoles(FRandomStream& Random, const TArray<int32>& Scen
 TArray<FMazeRoomDoorway> FMazeLayout::RoomDoorways() const
 {
 	TArray<FMazeRoomDoorway> Result;
-	const auto Add = [&](int32 X, int32 Y, int32 Direction)
+	const auto Add = [&](int32 X, int32 Y, int32 Direction, int32 RoomIndex)
 	{
 		if (!(Walls[Y * Size + X] & (1 << Direction)))
-			Result.Add({FIntPoint(X, Y), Direction});
+			Result.Add({FIntPoint(X, Y), Direction, RoomIndex});
 	};
 
-	for (const FIntRect& Room : Rooms)
+	for (int32 RoomIndex = 0; RoomIndex < Rooms.Num(); ++RoomIndex)
 	{
+		const FIntRect& Room = Rooms[RoomIndex];
+
 		for (int32 X = Room.Min.X; X < Room.Max.X; ++X)
 		{
-			Add(X, Room.Min.Y, 0);
-			Add(X, Room.Max.Y - 1, 2);
+			Add(X, Room.Min.Y, 0, RoomIndex);
+			Add(X, Room.Max.Y - 1, 2, RoomIndex);
 		}
 
 		for (int32 Y = Room.Min.Y; Y < Room.Max.Y; ++Y)
 		{
-			Add(Room.Min.X, Y, 3);
-			Add(Room.Max.X - 1, Y, 1);
+			Add(Room.Min.X, Y, 3, RoomIndex);
+			Add(Room.Max.X - 1, Y, 1, RoomIndex);
 		}
 	}
 

@@ -8,6 +8,7 @@
 #include "ECS/MazePlayerControlDefinition.h"
 #include "ECS/MazeSignal.h"
 #include "Maze/MazeSurface.h"
+#include "Maze/MazeRoomGeometry.h"
 #include "MazeECSFragments.generated.h"
 
 USTRUCT()
@@ -130,7 +131,8 @@ struct FMazeGeneratedData
 {
 	FMazeLayout Layout;
 	TArray<FTransform> FloorTransforms;
-	FTransform CeilingTransform;
+	TArray<FTransform> CeilingTransforms;
+	FMazeRoomGeometry RoomGeometry;
 	FVector Start = FVector::ZeroVector;
 	TArray<FVector> PlayerStarts;
 	TArray<FVector> ExitPositions;

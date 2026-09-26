@@ -12,6 +12,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 	bool FoundTinyRoom = false, FoundLargestRoom = false;
 	bool FoundBendSideRoom = false, FoundBendThroughRoom = false;
 	bool FoundNarrowRoomDoor = false;
+	bool FoundShallowRoom = false, FoundPoolRoom = false;
 
 	for (int32 Seed = 1; Seed <= 100; ++Seed)
 	{
@@ -28,6 +29,8 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 
 		TestTrue(TEXT("Default maze retains sector coverage and respects room quotas"),
 		         Maze.Rooms.Num() >= 1 + BaseSectors * BaseSectors && Maze.Rooms.Num() <= MaxBaseRooms + MaxBendRooms);
+		TestEqual(TEXT("Every room has one deterministic type"), Maze.RoomTypes.Num(), Maze.Rooms.Num());
+		TestTrue(TEXT("Entrance room remains empty"), Maze.RoomType(0) == EMazeRoomType::Empty);
 
 		// Base slots may be skipped when crowded; entries beyond their maximum are always bend rooms.
 		for (int32 I = MaxBaseRooms; I < Maze.Rooms.Num(); ++I)
@@ -54,6 +57,21 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 			FoundTinyRoom |= Room.Width() == 1 && Room.Height() == 1;
 			FoundLargestRoom |=
 			    Room.Width() == FMazeRoomDefinition::MaxWidth && Room.Height() == FMazeRoomDefinition::MaxLength;
+			FoundShallowRoom |= Maze.RoomType(I) == EMazeRoomType::ShallowFlooded;
+			FoundPoolRoom |= Maze.RoomType(I) == EMazeRoomType::Pool;
+
+			if (Maze.RoomType(I) == EMazeRoomType::Pool)
+			{
+				int32 DoorCount = 0;
+
+				for (const FMazeRoomDoorway& Doorway : Maze.RoomDoorways())
+					DoorCount += Doorway.RoomIndex == I;
+
+				TestTrue(TEXT("Pool rooms are large enough for water and a bridge"),
+				         Room.Width() >= FMazeRoomDefinition::MinPoolWidthCells &&
+				             Room.Height() >= FMazeRoomDefinition::MinPoolLengthCells);
+				TestTrue(TEXT("Pool rooms are always through-rooms"), DoorCount >= 2);
+			}
 
 			for (int32 J = 0; J < I; ++J)
 			{
@@ -86,9 +104,10 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 			}
 
 		Copy.Generate(Seed);
-		TestTrue(TEXT("Same seed reproduces topology, rooms, narrow passages and holes"),
+		TestTrue(TEXT("Same seed reproduces topology, room types, narrow passages and holes"),
 		         Maze.Walls == Copy.Walls && Maze.Exits == Copy.Exits && Maze.Rooms == Copy.Rooms &&
-		             Maze.NarrowPassages == Copy.NarrowPassages && Maze.Holes == Copy.Holes);
+		             Maze.RoomTypes == Copy.RoomTypes && Maze.NarrowPassages == Copy.NarrowPassages &&
+		             Maze.Holes == Copy.Holes);
 
 		int32 NarrowCells = 0;
 		const TArray<uint8> RoomDoorSides = Maze.RoomDoorApproachSides();
@@ -214,6 +233,8 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Seed corpus includes side rooms near bends"), FoundBendSideRoom);
 	TestTrue(TEXT("Seed corpus includes through-rooms on bends"), FoundBendThroughRoom);
 	TestTrue(TEXT("Seed corpus includes room doors opening inside narrow passages"), FoundNarrowRoomDoor);
+	TestTrue(TEXT("Seed corpus includes shallow flooded rooms"), FoundShallowRoom);
+	TestTrue(TEXT("Seed corpus includes bridged pool rooms"), FoundPoolRoom);
 
 	return true;
 }

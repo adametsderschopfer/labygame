@@ -58,7 +58,7 @@ AMazeWorld::AMazeWorld()
 	Floor->SetCollisionProfileName(TEXT("BlockAll"));
 	Ceiling->SetStaticMesh(Cube.Object);
 	Ceiling->SetMaterial(0, PlainMaterial.Object);
-	Ceiling->SetCollisionProfileName(TEXT("BlockAll"));
+	Ceiling->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Ceiling->SetCanEverAffectNavigation(false);
 	Walls->SetMaterial(0, PlainMaterial.Object);
 	Walls->SetCollisionProfileName(TEXT("BlockAll"));
@@ -231,7 +231,12 @@ void AMazeWorld::Build()
 	Walls->ClearAllMeshSections();
 	Floor->ClearInstances();
 	Floor->AddInstances(Data->FloorTransforms, false);
-	Ceiling->SetRelativeTransform(Data->CeilingTransform);
+	Floor->AddInstances(Data->CeilingTransforms, false);
+	Floor->AddInstances(Data->RoomGeometry.Ceilings, false);
+
+	for (const FMazeRoomBox& Box : Data->RoomGeometry.Boxes)
+		if (Box.bCollision)
+			Floor->AddInstance(Box.Transform, false);
 
 	ClearChunks();
 	bInitialChunksReady = false;
@@ -343,7 +348,12 @@ void AMazeWorld::PrepareMaterials()
 	    LoadObject<UMaterialInterface>(nullptr,
 	                                   TEXT("/Game/Materials/Laboratory/MI_LabServiceRecess.MI_LabServiceRecess")),
 	    Ground,
-	    Ceiling->GetMaterial(0)};
+	    Ceiling->GetMaterial(0),
+	    GetDefault<UMazeLocationSettings>()->PoolTileMaterial().Get(),
+	    GetDefault<UMazeLocationSettings>()->WaterMaterial().Get()};
+
+	if (!VisualMaterials[7] || !VisualMaterials[8])
+		GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->Fail(TEXT("Room presentation materials are unavailable"));
 
 	if (const auto Lamps = ECSSubsystem->BuildMazeLampLocations(MazeEntity))
 		MazeLampAudio::Rebuild(*this, *Lamps);

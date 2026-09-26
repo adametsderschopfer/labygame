@@ -17,26 +17,42 @@ struct FMazeGenerationSystem
 			Data->Layout.Generate(Maze.Seed, Maze.Size);
 		}
 		const float Span = Data->Layout.Size * Maze.Cell;
-		// A solid slab covers rooms and floor holes, meeting the tops of the outer walls.
-		Data->CeilingTransform = FTransform(
-		    FRotator::ZeroRotator,
-		    FVector(Span / 2, Span / 2, Maze.WallHeight + Maze.WallThickness / 2),
-		    FVector((Span + Maze.WallThickness) / 100, (Span + Maze.WallThickness) / 100, Maze.WallThickness / 100));
 		auto FloorRect = [&Data](float X, float Y, float Width, float Height)
 		{
 			Data->FloorTransforms.Add(FTransform(FRotator::ZeroRotator,
 			                                     FVector(X + Width / 2, Y + Height / 2, -25),
 			                                     FVector(Width / 100, Height / 100, 0.5f)));
 		};
+		auto CeilingRect = [&Data, &Maze](float X, float Y, float Width, float Height)
+		{
+			Data->CeilingTransforms.Add(
+			    FTransform(FRotator::ZeroRotator,
+			               FVector(X + Width / 2, Y + Height / 2, Maze.WallHeight + Maze.WallThickness / 2),
+			               FVector(Width / 100, Height / 100, Maze.WallThickness / 100)));
+		};
+		TArray<int32> RoomIndices;
 
-		// Merge intact row runs, leaving actual gaps in both rendering and collision.
+		RoomIndices.Init(INDEX_NONE, Data->Layout.Walls.Num());
+
+		for (int32 RoomIndex = 0; RoomIndex < Data->Layout.Rooms.Num(); ++RoomIndex)
+			for (int32 Y = Data->Layout.Rooms[RoomIndex].Min.Y; Y < Data->Layout.Rooms[RoomIndex].Max.Y; ++Y)
+				for (int32 X = Data->Layout.Rooms[RoomIndex].Min.X; X < Data->Layout.Rooms[RoomIndex].Max.X; ++X)
+					RoomIndices[Y * Data->Layout.Size + X] = RoomIndex;
+
+		const auto IsSpecialRoomCell = [&Data, &RoomIndices](int32 CellIndex)
+		{
+			return RoomIndices.IsValidIndex(CellIndex) && RoomIndices[CellIndex] != INDEX_NONE &&
+			       Data->Layout.RoomType(RoomIndices[CellIndex]) != EMazeRoomType::Empty;
+		};
+
+		// Merge intact row runs, leaving holes and lowered rooms for their dedicated geometry.
 		for (int32 Y = 0; Y < Data->Layout.Size; ++Y)
 		{
 			int32 X = 0;
 
 			while (X < Data->Layout.Size)
 			{
-				if (!Data->Layout.HasFloor(Y * Data->Layout.Size + X))
+				if (!Data->Layout.HasFloor(Y * Data->Layout.Size + X) || IsSpecialRoomCell(Y * Data->Layout.Size + X))
 				{
 					++X;
 					continue;
@@ -44,12 +60,38 @@ struct FMazeGenerationSystem
 
 				const int32 Begin = X;
 
-				while (X < Data->Layout.Size && Data->Layout.HasFloor(Y * Data->Layout.Size + X))
+				while (X < Data->Layout.Size && Data->Layout.HasFloor(Y * Data->Layout.Size + X) &&
+				       !IsSpecialRoomCell(Y * Data->Layout.Size + X))
 					++X;
 
 				FloorRect(Begin * Maze.Cell, Y * Maze.Cell, (X - Begin) * Maze.Cell, Maze.Cell);
 			}
 		}
+
+		// The ordinary ceiling is likewise cut around tall rooms; their raised slabs
+		// and perimeter extensions are deterministic room geometry.
+		for (int32 Y = 0; Y < Data->Layout.Size; ++Y)
+		{
+			int32 X = 0;
+
+			while (X < Data->Layout.Size)
+			{
+				if (IsSpecialRoomCell(Y * Data->Layout.Size + X))
+				{
+					++X;
+					continue;
+				}
+
+				const int32 Begin = X;
+
+				while (X < Data->Layout.Size && !IsSpecialRoomCell(Y * Data->Layout.Size + X))
+					++X;
+
+				CeilingRect(Begin * Maze.Cell, Y * Maze.Cell, (X - Begin) * Maze.Cell, Maze.Cell);
+			}
+		}
+
+		Data->RoomGeometry = FMazeRoomGeometry::Build(Data->Layout, Maze.Cell, Maze.WallThickness, Maze.WallHeight);
 
 		// Preserve the exterior landing beyond the exit, without bridging any holes.
 		constexpr float Apron = 1200.f;

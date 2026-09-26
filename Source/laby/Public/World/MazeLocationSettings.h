@@ -4,6 +4,8 @@
 #include "UObject/Object.h"
 #include "MazeLocationSettings.generated.h"
 
+class UMaterialInterface;
+
 UENUM()
 enum class EMazeLocationMode : uint8
 {
@@ -48,6 +50,10 @@ public:
 
 	UPROPERTY(Config, EditAnywhere, Category = Streaming)
 	TArray<FMazeLocationDefinition> Locations;
+
+	// Typed presentation references backed by the common location manifest.
+	TSoftObjectPtr<UMaterialInterface> PoolTileMaterial() const;
+	TSoftObjectPtr<UMaterialInterface> WaterMaterial() const;
 
 	bool Validate(FString& Error) const;
 };

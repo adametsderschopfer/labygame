@@ -49,7 +49,7 @@ AMazeChunkView::AMazeChunkView()
 
 void AMazeChunkView::Apply(const FMazeChunkData& Data, UStaticMesh* Cube, const TArray<UMaterialInterface*>& Materials)
 {
-	check(Materials.Num() == 7);
+	check(Materials.Num() == 9);
 	GeometryBytes = Data.GetGeometryBytes();
 
 	for (int32 Index = 0; Index < 5; ++Index)
@@ -72,9 +72,35 @@ void AMazeChunkView::Apply(const FMazeChunkData& Data, UStaticMesh* Cube, const 
 	Floor->SetMaterial(0, Materials[5]);
 	Floor->AddInstances(Data.Floors, false, false, false);
 	Floor->PrecachePSOs();
-	Ceiling->SetStaticMesh(Cube);
-	Ceiling->SetMaterial(0, Materials[6]);
-	Ceiling->SetRelativeTransform(Data.Ceiling);
-	Ceiling->PrecachePSOs();
+	Ceiling->SetStaticMesh(nullptr);
+
+	const auto AddInstances =
+	    [this, Cube, &Materials](FName Name, const TArray<FTransform>& Instances, int32 MaterialIndex)
+	{
+		if (Instances.IsEmpty())
+			return;
+
+		auto* Component = NewObject<UInstancedStaticMeshComponent>(this, Name);
+
+		Component->SetupAttachment(Mesh);
+		Component->SetStaticMesh(Cube);
+		Component->SetMaterial(0, Materials[MaterialIndex]);
+		Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Component->SetCanEverAffectNavigation(false);
+		AddInstanceComponent(Component);
+		Component->RegisterComponent();
+		Component->AddInstances(Instances, false, false, false);
+		Component->PrecachePSOs();
+	};
+
+	AddInstances(TEXT("CeilingInstances"), Data.Ceilings, 6);
+
+	const int32 MaterialIndices[] = {5, 0, 7, 8, 2};
+	const TCHAR* Names[] = {
+	    TEXT("ShallowFloor"), TEXT("RoomCeramic"), TEXT("PoolTile"), TEXT("Water"), TEXT("BridgeMetal")};
+
+	for (int32 Surface = 0; Surface < static_cast<int32>(EMazeRoomSurface::Count); ++Surface)
+		AddInstances(FName(Names[Surface]), Data.RoomSurfaces[Surface], MaterialIndices[Surface]);
+
 	MazeFixtureMeshes::Rebuild(*this, Data.Interior);
 }

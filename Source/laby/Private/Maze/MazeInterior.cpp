@@ -257,6 +257,14 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 		return V - FMath::FloorToFloat(V);
 	};
 	const uint32 PatternSeed = static_cast<uint32>(Seed);
+	const auto CellCeilingHeight = [&Layout, Height](int32 Col, int32 Row)
+	{
+		for (int32 RoomIndex = 1; RoomIndex < Layout.Rooms.Num(); ++RoomIndex)
+			if (Layout.Rooms[RoomIndex].Contains(FIntPoint(Col, Row)))
+				return FMazeRoomDefinition::CeilingHeight(Layout.RoomType(RoomIndex), Height);
+
+		return Height;
+	};
 
 	if (LampTile * Panel >= Thickness * 0.5f && (LampTile + 1) * Panel <= Cell - Thickness * 0.5f)
 		for (int32 Row = 0; Row < Layout.Size; ++Row)
@@ -274,8 +282,9 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 				ZHash += Dot;
 
 				if (Frac((XHash + YHash) * ZHash) >= 0.18f)
-					Result.LampLocations.Emplace(
-					    Col * Cell + (LampTile + 0.5f) * Panel, Row * Cell + (LampTile + 0.5f) * Panel, Height - 3.f);
+					Result.LampLocations.Emplace(Col * Cell + (LampTile + 0.5f) * Panel,
+					                             Row * Cell + (LampTile + 0.5f) * Panel,
+					                             CellCeilingHeight(Col, Row) - 3.f);
 			}
 
 	if (bLampsOnly)
@@ -299,7 +308,9 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 				if (Choice >= 0.15f)
 					continue;
 
-				const FVector P(Col * Cell + (Tile + 0.5f) * Panel, Row * Cell + (Tile + 0.5f) * Panel, Height);
+				const FVector P(Col * Cell + (Tile + 0.5f) * Panel,
+				                Row * Cell + (Tile + 0.5f) * Panel,
+				                CellCeilingHeight(Col, Row));
 
 				if (Choice < 0.075f)
 				{

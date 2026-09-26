@@ -153,6 +153,22 @@ preparation overlay again; it does not change server authority or physics.
 
 ## Execution and lifetime
 
+Flooded-room geometry follows the same split as the rest of the procedural maze.
+Room type and transforms are immutable data in the generation payload. Solid
+lower floors, stairs, pool bridges, lower wall liners, raised wall extensions
+and per-room ceilings are copied into the world-resident collision ISM so a
+remote player never loses physics when a local visual chunk unloads. Water has
+no collision and, together with pool tiles and the visible copies of the solid
+geometry, is clipped and batched by the existing visual chunk lifecycle.
+
+`MI_PoolTile` and `MI_RoomWater` are production dependencies in the Maze location
+manifest. The adapter obtains them through typed soft references in
+`UMazeLocationSettings` after `AreAssetsReady()`; no first-use synchronous load
+is hidden in a chunk worker. Workers only copy transforms and surface identifiers,
+never materials or other UObjects. Pool rooms add vertical sightlines up to
+600 cm but do not expand the horizontal chunk radius or change the current
+resident-physics memory policy.
+
 1. The world resource subsystem validates settings and requests the registered
    dependency list through `UAssetManager::GetStreamableManager`.
 2. GameMode creates the maze. ECS generates topology synchronously, then its

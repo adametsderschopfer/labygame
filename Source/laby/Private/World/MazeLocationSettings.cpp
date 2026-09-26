@@ -1,5 +1,17 @@
 #include "World/MazeLocationSettings.h"
 
+TSoftObjectPtr<UMaterialInterface> UMazeLocationSettings::PoolTileMaterial() const
+{
+	return TSoftObjectPtr<UMaterialInterface>(
+	    FSoftObjectPath(TEXT("/Game/Materials/Laboratory/MI_PoolTile.MI_PoolTile")));
+}
+
+TSoftObjectPtr<UMaterialInterface> UMazeLocationSettings::WaterMaterial() const
+{
+	return TSoftObjectPtr<UMaterialInterface>(
+	    FSoftObjectPath(TEXT("/Game/Materials/Laboratory/MI_RoomWater.MI_RoomWater")));
+}
+
 bool UMazeLocationSettings::Validate(FString& Error) const
 {
 	if (ChunkCells < 2 || ChunkCells > 32 || LoadRadius < 1 || LoadRadius > 8 || UnloadRadius <= LoadRadius ||
@@ -12,6 +24,13 @@ bool UMazeLocationSettings::Validate(FString& Error) const
 	}
 
 	TSet<FString> Maps;
+
+	if (PoolTileMaterial().IsNull() || WaterMaterial().IsNull())
+	{
+		Error = TEXT("Room presentation materials must be configured");
+
+		return false;
+	}
 
 	for (const auto& Location : Locations)
 	{

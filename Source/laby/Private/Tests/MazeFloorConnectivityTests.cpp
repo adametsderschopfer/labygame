@@ -63,8 +63,9 @@ bool FMazeFloorConnectivityTest::RunTest(const FString& Parameters)
 
 			int32 TotalDoors = 0, ThroughRooms = 0;
 
-			for (const auto& Room : Layout.Rooms)
+			for (int32 RoomIndex = 0; RoomIndex < Layout.Rooms.Num(); ++RoomIndex)
 			{
+				const auto& Room = Layout.Rooms[RoomIndex];
 				int32 DoorCount = 0;
 				uint8 DoorSides = 0;
 
@@ -109,6 +110,9 @@ bool FMazeFloorConnectivityTest::RunTest(const FString& Parameters)
 					         DoorSides != 5 && DoorSides != 10);
 				}
 
+				if (Layout.RoomType(RoomIndex) == EMazeRoomType::Pool)
+					TestTrue(TEXT("Pool geometry is reserved for through-rooms"), DoorCount >= 2);
+
 				TotalDoors += DoorCount;
 			}
 
@@ -126,17 +130,27 @@ bool FMazeFloorConnectivityTest::RunTest(const FString& Parameters)
 			for (int32 C = 0; C < Layout.Holes.Num(); ++C)
 			{
 				const FVector Point((C % Size + 0.5f) * Generation.Cell, (C / Size + 0.5f) * Generation.Cell, 0);
-				int32 CoverCount = 0;
+				bool bCovered = false;
 
 				for (const auto& Transform : Data.FloorTransforms)
 				{
 					const FVector Local = Transform.InverseTransformPosition(Point);
 
 					if (FMath::Abs(Local.X) < 50.f && FMath::Abs(Local.Y) < 50.f)
-						++CoverCount;
+						bCovered = true;
 				}
 
-				TestEqual(TEXT("Floor geometry matches hole mask"), CoverCount, Layout.Holes[C] ? 0 : 1);
+				for (const FMazeRoomBox& Box : Data.RoomGeometry.Boxes)
+					if (Box.bCollision &&
+					    (Box.Surface == EMazeRoomSurface::ShallowFloor || Box.Surface == EMazeRoomSurface::PoolTile))
+					{
+						const FVector Local = Box.Transform.InverseTransformPosition(Point);
+
+						if (FMath::Abs(Local.X) < 50.f && FMath::Abs(Local.Y) < 50.f)
+							bCovered = true;
+					}
+
+				TestEqual(TEXT("Floor geometry matches hole mask"), bCovered, Layout.Holes[C] == 0);
 			}
 
 			TestEqual(TEXT("Falling below the exit is not a win"),

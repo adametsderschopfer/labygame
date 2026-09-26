@@ -8,6 +8,7 @@ struct FMazeChunkData
 	FMazeSurface Walls;
 	FMazeInterior Interior;
 	TArray<FTransform> Floors;
-	FTransform Ceiling;
+	TArray<FTransform> Ceilings;
+	TArray<FTransform> RoomSurfaces[static_cast<int32>(EMazeRoomSurface::Count)];
 	int64 GetGeometryBytes() const;
 };
