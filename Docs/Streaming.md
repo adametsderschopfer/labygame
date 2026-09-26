@@ -132,21 +132,9 @@ The collision wall component creates no render proxy. This is not a complete
 bounded-memory solution for arbitrarily large worlds; collision/topology growth
 must be budgeted separately before increasing map size substantially.
 
-Generated room doors follow the same resident-physics rule. Their frame, left
-leaf, right leaf and emissive status pieces are shared ISM meshes; the source
-geometry is stored once and rendered with Nanite, while per-door transforms are
-updated by the world adapter. Two invisible cube instances provide the actual
-moving collision and remain resident on every authority and client regardless of
-visual readiness. Door gameplay entities and their stable generation-revision
-identity therefore survive any visual chunk creation or eviction. The door meshes,
-material instance, status material and four PBR textures are explicit dependencies
-of the Maze location manifest and are loaded by the existing location handle.
-
-Automatic doors are currently disabled by `FMazeDoorDefinition::bEnabled`.
-Their visual/collision instances and gameplay updates are absent; existing
-instances are cleared once after Live Coding. Assets and manifest entries are
-retained for restoration, so this does not claim reduced asset-preload memory.
-Room portals, room types and other resident world collision are unchanged.
+Automatic room doors are disabled. Their frame and leaf assets are absent from
+the Maze location manifest, and the door adapter creates no visual or collision
+instances. Room portals and other resident world collision are unchanged.
 
 The generated payload no longer retains the full wall vertex/normal/index
 arrays. Collision construction uses a transient surface; visual workers build

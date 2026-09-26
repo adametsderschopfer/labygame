@@ -53,7 +53,10 @@ public:
 	void SetInputAction(FMassEntityHandle Entity, EMazeInputAction Action, bool bPressed);
 	void ClearPlayerInput();
 	void ClearInput(FMassEntityHandle Entity);
-	FMazePlayerCommandFragment ResolvePlayer(FMassEntityHandle Entity, const FMazePlayerPoseFragment& Pose);
+	FMazePlayerCommandFragment ResolvePlayer(FMassEntityHandle Entity,
+	                                         const FMazePlayerPoseFragment& Pose,
+	                                         const FVector& FeetLocation,
+	                                         const FVector& EyeLocation);
 	bool RequestSignal(FMassEntityHandle Entity, FMazeSignalSnapshot& OutSignal);
 	bool ReceiveSignal(FMassEntityHandle Entity, const FMazeSignalSnapshot& Signal);
 	FMazeSignalView ReadSignal(FMassEntityHandle Entity) const;

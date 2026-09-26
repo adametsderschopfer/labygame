@@ -3,6 +3,7 @@
 #include "ECS/MazeECSFragments.h"
 #include "ECS/MazeVitalsSystem.h"
 #include "ECS/MazePlayerControlDefinition.h"
+#include "ECS/MazeWaterDefinition.h"
 
 struct FMazeGenerationSystem
 {
@@ -225,7 +226,8 @@ struct FMazePlayerControlSystem
 	static FMazePlayerCommandFragment Resolve(FMazePlayerInputFragment& Input,
 	                                          const FMazePlayerPoseFragment& Pose,
 	                                          const FMazeVitals& Vitals,
-	                                          FMazeLocomotionFragment& Locomotion)
+	                                          FMazeLocomotionFragment& Locomotion,
+	                                          bool bWading)
 	{
 		FMazePlayerCommandFragment Command;
 		Command.bDead = !FMazeVitalsSystem::IsAlive(Vitals);
@@ -236,10 +238,12 @@ struct FMazePlayerControlSystem
 		Command.bCrouch = Input.bCrouchHeld;
 		const bool bLowStance = Command.bCrouch || Pose.bCrouched;
 		const bool bSprint =
-		    !bLowStance && Pose.bInputEnabled && Input.bSprintHeld && FMazeVitalsSystem::CanSprint(Vitals);
-		Command.Speed = bLowStance ? FMazePlayerControlDefinition::CrouchSpeed
-		                : bSprint  ? FMazePlayerControlDefinition::SprintSpeed
-		                           : FMazePlayerControlDefinition::WalkSpeed;
+		    !bWading && !bLowStance && Pose.bInputEnabled && Input.bSprintHeld && FMazeVitalsSystem::CanSprint(Vitals);
+		Command.Speed = bWading
+		                    ? (bLowStance ? FMazeWaterDefinition::CrouchedWadeSpeed : FMazeWaterDefinition::WadeSpeed)
+		                : bLowStance ? FMazePlayerControlDefinition::CrouchSpeed
+		                : bSprint    ? FMazePlayerControlDefinition::SprintSpeed
+		                             : FMazePlayerControlDefinition::WalkSpeed;
 
 		if (!Command.bDead && Pose.bInputEnabled)
 		{

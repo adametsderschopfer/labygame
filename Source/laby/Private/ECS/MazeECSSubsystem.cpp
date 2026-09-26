@@ -6,6 +6,7 @@
 #include "ECS/MazeItemSystem.h"
 #include "ECS/MazeSignal.h"
 #include "ECS/MazeDoorSystem.h"
+#include "ECS/MazeWaterSystem.h"
 #include "MassEntitySubsystem.h"
 #include "MassExecutionContext.h"
 #include "Engine/World.h"
@@ -353,7 +354,9 @@ void UMazeECSSubsystem::ClearPlayerInput()
 }
 
 FMazePlayerCommandFragment UMazeECSSubsystem::ResolvePlayer(FMassEntityHandle Entity,
-                                                            const FMazePlayerPoseFragment& Pose)
+                                                            const FMazePlayerPoseFragment& Pose,
+                                                            const FVector& FeetLocation,
+                                                            const FVector& EyeLocation)
 {
 	auto* Input = FindFragment<FMazePlayerInputFragment>(Entity);
 	auto* StoredPose = FindFragment<FMazePlayerPoseFragment>(Entity);
@@ -375,15 +378,22 @@ FMazePlayerCommandFragment UMazeECSSubsystem::ResolvePlayer(FMassEntityHandle En
 
 	const FMassEntityHandle MazeEntity = ReadSession().Maze;
 	const auto* Maze = FindFragment<FMazeGenerationFragment>(MazeEntity);
+	const FMazeWaterExposure Water =
+	    Maze ? FMazeWaterSystem::Evaluate(*Maze, FeetLocation, EyeLocation) : FMazeWaterExposure();
 
 	if (auto* Exploration = FindFragment<FMazeExplorationFragment>(Entity); Exploration && Maze)
 		FMazeExplorationSystem::Update(
 		    *Exploration, MazeEntity, *Maze, *StoredPose, FMazeVitalsSystem::IsAlive(*Vitals));
 
-	if (GetWorld()->GetNetMode() != NM_Client && Maze)
-		FMazeHazardSystem::Apply(*Maze, *StoredPose, *Vitals);
+	if (GetWorld()->GetNetMode() != NM_Client)
+	{
+		if (Maze)
+			FMazeHazardSystem::Apply(*Maze, *StoredPose, *Vitals);
 
-	*Command = FMazePlayerControlSystem::Resolve(*Input, *StoredPose, *Vitals, *Locomotion);
+		FMazeWaterSystem::ApplySubmersion(Water, *Vitals);
+	}
+
+	*Command = FMazePlayerControlSystem::Resolve(*Input, *StoredPose, *Vitals, *Locomotion, Water.bWading);
 
 	if (GetWorld()->GetNetMode() != NM_Client)
 		UpdateProgress(Entity);

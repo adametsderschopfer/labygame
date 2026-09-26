@@ -429,7 +429,9 @@ void AMazeCharacter::Tick(float DeltaSeconds)
 
 	Pose.Sensitivity = GetDefault<UMazePreferences>()->GetSensitivity();
 
-	const auto Command = ECSSubsystem->ResolvePlayer(PlayerEntity, Pose);
+	const FVector FeetLocation =
+	    Pose.Location - FVector::UpVector * GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const auto Command = ECSSubsystem->ResolvePlayer(PlayerEntity, Pose, FeetLocation, GetPawnViewLocation());
 
 	Movement->MaxWalkSpeed = Command.Speed;
 
