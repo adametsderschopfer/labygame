@@ -135,6 +135,10 @@ must be budgeted separately before increasing map size substantially.
 Automatic room doors are disabled. Their frame and leaf assets are absent from
 the Maze location manifest, and the door adapter creates no visual or collision
 instances. Room portals and other resident world collision are unchanged.
+In the editor, each new world rebuilds the cached Game config hierarchy before
+reloading `UMazeLocationSettings`. The reload clears the previous location array
+first, so an editor kept open across manifest edits does not retain removed asset
+paths in its settings default object. Packaged games use their startup config.
 
 The generated payload no longer retains the full wall vertex/normal/index
 arrays. Collision construction uses a transient surface; visual workers build
@@ -182,9 +186,8 @@ resident-physics memory policy.
    asynchronous body. This initial work is still covered by the loading movie.
 3. The world Actor registers as a preparation participant, including on clients
    waiting for a replicated seed. After assets finish loading, it creates shared
-   material instances, assigns the preloaded door presentation resources and
-   creates the existing bounded lamp-audio pool. Door collision already exists
-   independently of presentation readiness.
+   material instances and the existing bounded lamp-audio pool. Automatic door
+   resources and collision remain disabled.
 4. The Actor's `TG_PrePhysics` tick requests `RequestMazeChunk`. The subsystem
    copies generation parameters and an immutable **thread-safe** shared payload
    into a thread-pool task. The worker runs `FMazeChunkSystem::Build` without

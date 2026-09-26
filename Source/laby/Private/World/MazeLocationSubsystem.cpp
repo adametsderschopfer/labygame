@@ -2,7 +2,9 @@
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/World.h"
+#include "Misc/ConfigCacheIni.h"
 #include "ShaderPipelineCache.h"
+#include "UObject/Package.h"
 #include "WorldPartition/WorldPartitionSubsystem.h"
 #include "World/MazeOnlineGameInstance.h"
 
@@ -10,7 +12,22 @@ void UMazeLocationSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
-	const auto* Settings = GetDefault<UMazeLocationSettings>();
+#if WITH_EDITOR
+
+	// PIE can outlive edits to DefaultGame.ini; rebuild the cached Game hierarchy.
+	if (GIsEditor && !FConfigCacheIni::LoadGlobalIniFile(GGameIni, TEXT("Game"), nullptr, true))
+	{
+		Fail(TEXT("Unable to reload location configuration"));
+
+		return;
+	}
+
+#endif
+
+	auto* Settings = GetMutableDefault<UMazeLocationSettings>();
+
+	Settings->Locations.Reset();
+	Settings->ReloadConfig();
 
 	if (!Settings->Validate(Failure))
 	{
