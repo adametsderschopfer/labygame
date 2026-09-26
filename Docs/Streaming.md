@@ -20,6 +20,12 @@ remove an item, reset a cooldown, respawn loot or change AI decisions.
 
 ## Current implementation and budgets
 
+Narrow-passage generation is currently disabled. New generation payloads contain
+an all-zero narrow mask, so no narrowing geometry is built for rendering or
+resident collision. Existing payloads remain unchanged until regeneration.
+The retained generator and its original resource policy are documented below;
+chunk budgets and asset dependencies are unchanged.
+
 Full-height narrow passages are generated as 2–3-cell straight segments with a
 soft target of 5% of eligible corridor cells. Their 145 cm opening tapers over
 120 cm at both ends. The immutable layout mask is shared by resident collision,
@@ -135,6 +141,12 @@ visual readiness. Door gameplay entities and their stable generation-revision
 identity therefore survive any visual chunk creation or eviction. The door meshes,
 material instance, status material and four PBR textures are explicit dependencies
 of the Maze location manifest and are loaded by the existing location handle.
+
+Automatic doors are currently disabled by `FMazeDoorDefinition::bEnabled`.
+Their visual/collision instances and gameplay updates are absent; existing
+instances are cleared once after Live Coding. Assets and manifest entries are
+retained for restoration, so this does not claim reduced asset-preload memory.
+Room portals, room types and other resident world collision are unchanged.
 
 The generated payload no longer retains the full wall vertex/normal/index
 arrays. Collision construction uses a transient surface; visual workers build

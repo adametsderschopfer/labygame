@@ -117,7 +117,9 @@ void FMazeLayout::Generate(int32 Seed, int32 InSize)
 
 	AddRoomsAtBends(Random, ScenicFloor);
 	GenerateRoomTypes(Seed);
-	GenerateNarrowPassages(Seed, ScenicFloor);
+	// Temporarily disabled; retain the generator for restoration.
+	// GenerateNarrowPassages(Seed, ScenicFloor);
+	NarrowPassages.Init(0, Walls.Num());
 	GenerateHoles(Random, ScenicFloor);
 }
 

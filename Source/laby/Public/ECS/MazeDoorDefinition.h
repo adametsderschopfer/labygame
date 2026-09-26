@@ -4,6 +4,8 @@
 // Distances are Unreal centimeters; durations are seconds.
 struct FMazeDoorDefinition
 {
+	// Temporary local removal; keep portals and retained assets available for restoration.
+	static constexpr bool bEnabled = false;
 	static constexpr float OpenRadiusCm = 230.f;
 	static constexpr float KeepOpenRadiusCm = 285.f;
 	static constexpr float VerticalRangeCm = 190.f;

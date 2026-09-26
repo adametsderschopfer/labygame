@@ -54,7 +54,7 @@ void AMazeWorld::RebuildDoorInstances()
 	DoorCollisionRight->ClearInstances();
 	DoorStatusLights->ClearInstances();
 
-	if (!ECSSubsystem)
+	if (!FMazeDoorDefinition::bEnabled || !ECSSubsystem)
 		return;
 
 	const TArray<FMazeDoorView> Doors = ECSSubsystem->ReadDoors(MazeEntity);
@@ -87,7 +87,7 @@ void AMazeWorld::RebuildDoorInstances()
 
 void AMazeWorld::PrepareDoorAssets()
 {
-	if (GetNetMode() == NM_DedicatedServer)
+	if (!FMazeDoorDefinition::bEnabled || GetNetMode() == NM_DedicatedServer)
 		return;
 
 	const auto* Settings = GetDefault<UMazeDoorSettings>();
@@ -116,6 +116,23 @@ void AMazeWorld::PrepareDoorAssets()
 
 void AMazeWorld::UpdateDoors()
 {
+	if (!FMazeDoorDefinition::bEnabled)
+	{
+		// Clear existing rendering and physics once; no transform uploads or ECS reads afterward.
+		if (DoorFrames->GetInstanceCount() || DoorLeavesLeft->GetInstanceCount() ||
+		    DoorLeavesRight->GetInstanceCount() || DoorStatusLights->GetInstanceCount() ||
+		    DoorCollisionLeft->GetInstanceCount() || DoorCollisionRight->GetInstanceCount())
+			RebuildDoorInstances();
+
+		if (HasAuthority() && !ReplicatedDoorTargets.IsEmpty())
+		{
+			ReplicatedDoorTargets.Reset();
+			ForceNetUpdate();
+		}
+
+		return;
+	}
+
 	if (HasAuthority())
 	{
 		TArray<uint8> Targets = ECSSubsystem->ReadDoorTargets(MazeEntity);

@@ -126,28 +126,42 @@ void UMazeECSSubsystem::Tick(float DeltaSeconds)
 			                                FMazeSignalSystem::Update(Signal, DeltaSeconds, bAuthority);
 	                                });
 
-	TArray<FVector> PlayerLocations;
+	if (!FMazeDoorDefinition::bEnabled)
+	{
+		// Drop pre-patch entities once when Live Coding is applied to an existing world.
+		auto& Manager = MassSubsystem->GetMutableEntityManager();
 
-	if (bAuthority)
-		DoorPlayerQuery->ForEachEntityChunk(Context,
-		                                    [&PlayerLocations](FMassExecutionContext& Chunk)
-		                                    {
-			                                    const auto Poses = Chunk.GetFragmentView<FMazePlayerPoseFragment>();
-			                                    const auto Vitals = Chunk.GetFragmentView<FMazeVitalsFragment>();
+		for (const FMassEntityHandle Entity : DoorEntities)
+			if (Manager.IsEntityValid(Entity))
+				Manager.DestroyEntity(Entity);
 
-			                                    for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
-				                                    if (FMazeVitalsSystem::IsAlive(Vitals[Index].Value))
-					                                    PlayerLocations.Add(Poses[Index].Location);
-		                                    });
+		DoorEntities.Reset();
+	}
+	else
+	{
+		TArray<FVector> PlayerLocations;
 
-	DoorQuery->ForEachEntityChunk(Context,
-	                              [DeltaSeconds, bAuthority, &PlayerLocations](FMassExecutionContext& Chunk)
-	                              {
-		                              auto Doors = Chunk.GetMutableFragmentView<FMazeDoorFragment>();
+		if (bAuthority)
+			DoorPlayerQuery->ForEachEntityChunk(Context,
+			                                    [&PlayerLocations](FMassExecutionContext& Chunk)
+			                                    {
+				                                    const auto Poses = Chunk.GetFragmentView<FMazePlayerPoseFragment>();
+				                                    const auto Vitals = Chunk.GetFragmentView<FMazeVitalsFragment>();
 
-		                              for (auto& Door : Doors)
-			                              FMazeDoorSystem::Update(Door, DeltaSeconds, PlayerLocations, bAuthority);
-	                              });
+				                                    for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
+					                                    if (FMazeVitalsSystem::IsAlive(Vitals[Index].Value))
+						                                    PlayerLocations.Add(Poses[Index].Location);
+			                                    });
+
+		DoorQuery->ForEachEntityChunk(Context,
+		                              [DeltaSeconds, bAuthority, &PlayerLocations](FMassExecutionContext& Chunk)
+		                              {
+			                              auto Doors = Chunk.GetMutableFragmentView<FMazeDoorFragment>();
+
+			                              for (auto& Door : Doors)
+				                              FMazeDoorSystem::Update(Door, DeltaSeconds, PlayerLocations, bAuthority);
+		                              });
+	}
 
 	if (!bAuthority)
 		return;
@@ -560,6 +574,9 @@ void UMazeECSSubsystem::RebuildDoors(FMassEntityHandle MazeEntity)
 {
 	DestroyDoors(MazeEntity);
 
+	if (!FMazeDoorDefinition::bEnabled)
+		return;
+
 	const auto* Maze = FindFragment<FMazeGenerationFragment>(MazeEntity);
 
 	if (!MassSubsystem || !Maze || !Maze->Data)
@@ -596,6 +613,10 @@ void UMazeECSSubsystem::RebuildDoors(FMassEntityHandle MazeEntity)
 TArray<FMazeDoorView> UMazeECSSubsystem::ReadDoors(FMassEntityHandle MazeEntity) const
 {
 	TArray<FMazeDoorView> Result;
+
+	if (!FMazeDoorDefinition::bEnabled)
+		return Result;
+
 	const auto* Maze = FindFragment<FMazeGenerationFragment>(MazeEntity);
 
 	if (!Maze)
@@ -633,7 +654,7 @@ TArray<uint8> UMazeECSSubsystem::ReadDoorTargets(FMassEntityHandle MazeEntity) c
 
 void UMazeECSSubsystem::ReceiveDoorTargets(FMassEntityHandle MazeEntity, TConstArrayView<uint8> Targets)
 {
-	if (GetWorld()->GetNetMode() != NM_Client)
+	if (!FMazeDoorDefinition::bEnabled || GetWorld()->GetNetMode() != NM_Client)
 		return;
 
 	for (const FMassEntityHandle Entity : DoorEntities)
