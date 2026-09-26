@@ -11,6 +11,7 @@ class UStaticMeshComponent;
 class AMazeChunkView;
 
 struct FMazeChunkJob;
+struct FMazeDoorView;
 
 UCLASS()
 class LABY_API AMazeWorld : public AActor
@@ -45,8 +46,15 @@ public:
 private:
 	UFUNCTION()
 	void OnRep_Seed();
+	UFUNCTION()
+	void OnRep_DoorTargets();
 	void Build();
 	void PrepareMaterials();
+	void PrepareDoorAssets();
+	void RebuildDoorInstances();
+	void UpdateDoors();
+	FTransform DoorLeafTransform(const FMazeDoorView& Door, float Side) const;
+	FTransform DoorCollisionTransform(const FMazeDoorView& Door, float Side) const;
 	void ClearChunks();
 	void UpdateChunks();
 
@@ -67,6 +75,27 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UStaticMeshComponent> Ceiling;
+
+	UPROPERTY()
+	TObjectPtr<UInstancedStaticMeshComponent> DoorFrames;
+
+	UPROPERTY()
+	TObjectPtr<UInstancedStaticMeshComponent> DoorLeavesLeft;
+
+	UPROPERTY()
+	TObjectPtr<UInstancedStaticMeshComponent> DoorLeavesRight;
+
+	UPROPERTY()
+	TObjectPtr<UInstancedStaticMeshComponent> DoorCollisionLeft;
+
+	UPROPERTY()
+	TObjectPtr<UInstancedStaticMeshComponent> DoorCollisionRight;
+
+	UPROPERTY()
+	TObjectPtr<UInstancedStaticMeshComponent> DoorStatusLights;
+
+	UPROPERTY(ReplicatedUsing = OnRep_DoorTargets)
+	TArray<uint8> ReplicatedDoorTargets;
 
 	UPROPERTY(Transient)
 	FMassEntityHandle MazeEntity;

@@ -148,6 +148,32 @@ set material/collision/import properties deliberately, report failures and be
 safe to rerun or clearly warn that it replaces packages. Generated Unreal assets
 remain tracked outputs; scripts do not replace visual inspection.
 
+### Meshy-generated source assets
+
+Meshy is the approved default cloud generator for new 3D source assets when a
+task benefits from image-to-3D, text-to-3D, texturing, remeshing, rigging or
+animation. Follow `Docs/Meshy.md`. Meshy is not an alternative runtime asset
+system and does not bypass this document:
+
+- Store references, downloaded models, texture maps, rendered previews and a
+  provenance/readme record under the owning `ArtSource/<Feature>/` folder.
+- Record the Meshy resource type and task ID, generation date, account plan or
+  license basis, input description or reference provenance, actual credits
+  consumed and any follow-up processing tasks. Never record credentials or
+  signed download URLs.
+- Treat a generated model as untrusted source art until scale, axes, pivots,
+  topology, UVs, PBR channel meanings, material slots, collision and separated
+  moving parts have been checked. A thumbnail establishes appearance only.
+- Prefer one approved source generation and local deterministic preparation.
+  Reuse the existing Meshy task for LODs, conversion, retexture or rigging; do
+  not regenerate merely to obtain another format or a lower polygon count.
+- For interactive assemblies such as doors, request or prepare separate rigid
+  parts with deliberate pivots. Meshy geometry remains presentation; Mass ECS
+  continues to own access rules, state transitions and authoritative motion.
+- Import prepared files through Unreal-aware editor tooling into the owning
+  `Content/<Feature>/` path. Generated files must never be written directly as
+  `.uasset` packages or loaded synchronously from `ArtSource` at runtime.
+
 ## Choosing a prefab-like representation
 
 Unreal has several prefab-like tools. Choose by runtime responsibility rather

@@ -160,6 +160,41 @@ struct FMazeGenerationFragment : public FMassFragment
 	TSharedPtr<const FMazeGeneratedData, ESPMode::ThreadSafe> Data;
 };
 
+// Authoritative state for one generated room doorway. Visual meshes and collision
+// are engine-side mirrors owned by AMazeWorld.
+USTRUCT()
+struct FMazeDoorFragment : public FMassFragment
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FMassEntityHandle Maze;
+
+	UPROPERTY()
+	uint32 MazeRevision = 0;
+
+	UPROPERTY()
+	int32 Index = INDEX_NONE;
+
+	UPROPERTY()
+	FVector Center = FVector::ZeroVector;
+
+	UPROPERTY()
+	FVector SlideAxis = FVector::RightVector;
+
+	UPROPERTY()
+	FVector Normal = FVector::ForwardVector;
+
+	UPROPERTY()
+	float OpenAmount = 0.f;
+
+	UPROPERTY()
+	float CloseDelayRemaining = 0.f;
+
+	UPROPERTY()
+	bool bWantsOpen = false;
+};
+
 template <> struct TMassFragmentTraits<FMazeGenerationFragment> final
 {
 	enum

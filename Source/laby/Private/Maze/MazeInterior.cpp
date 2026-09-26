@@ -36,9 +36,6 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 	TSet<FIntPoint> DoorCorners;
 	const FVector DoorDirections[] = {FVector(0, -1, 0), FVector(1, 0, 0), FVector(0, 1, 0), FVector(-1, 0, 0)};
 	const float DoorWidth = FMazeRoomDefinition::OpeningWidth(Cell - Thickness);
-	const float DoorHeight = FMazeRoomDefinition::OpeningHeight(Height);
-	const float TrimWidth = FMath::Min3(DoorTrimWidthCm, (Cell - Thickness - DoorWidth) / 2, (Height - DoorHeight) / 2);
-	const float TrimBottom = FMath::Min(CoveHeightCm, DoorHeight / 2);
 	const float NarrowHalfWidth =
 	    FMath::Min(FMazeNarrowPassageDefinition::ClearWidthCm, Cell - Thickness - 10.f) * 0.5f;
 	const int32 DoorDX[] = {0, 1, 0, -1}, DoorDY[] = {-1, 0, 1, 0};
@@ -47,31 +44,9 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 		for (const float Side : {-1.f, 1.f})
 			DoorCorners.Add(Key(Center + Along * (Side * DoorWidth / 2)));
 	};
-	const auto AddDoorFrame = [&](FVector Center, FVector Along, FVector Normal)
-	{
-		if (bLampsOnly || !Owns(Center) || TrimWidth <= 0.f)
-			return;
 
-		const FVector Surface = Center + Normal * (CornerRadiusCm / 2 + 0.01f);
-
-		for (const float Side : {-1.f, 1.f})
-			Box(Result.Sections[1],
-			    Surface + Along * (Side * (DoorWidth + TrimWidth) / 2) + Up * ((DoorHeight + TrimBottom) / 2),
-			    Along,
-			    Up,
-			    Normal,
-			    FVector(TrimWidth, DoorHeight - TrimBottom, CornerRadiusCm));
-
-		Box(Result.Sections[1],
-		    Surface + Up * (DoorHeight + TrimWidth / 2),
-		    Along,
-		    Up,
-		    Normal,
-		    FVector(DoorWidth + 2 * TrimWidth, TrimWidth, CornerRadiusCm));
-	};
-
-	// The explicit doorway frame replaces generic full-height corner strips.
-	// Both faces share the wall strip's center-cell owner, including on chunk borders.
+	// The imported secure-door frame replaces the old procedural U-shaped trim.
+	// Keep doorway corners registered so generic full-height strips stay suppressed.
 	for (const FMazeRoomDoorway& Door : Layout.RoomDoorways())
 	{
 		const FVector Across = DoorDirections[Door.Direction];
@@ -93,11 +68,6 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 			const FVector Front = Center + Normal * (Thickness / 2);
 
 			RegisterDoorCorners(Front, Along);
-
-			// A narrow doorway keeps the room-facing frame (Face < 0) but omits the
-			// corridor-facing canonical frame hidden halfway through the long tunnel.
-			if (!bOpensFromNarrowSide || Face < 0)
-				AddDoorFrame(Front, Along, Normal);
 		}
 
 		if (bOpensFromNarrowSide)
@@ -106,9 +76,6 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 			const FVector NarrowEntrance = OutsideCenter - Across * NarrowHalfWidth;
 
 			RegisterDoorCorners(NarrowEntrance, Along);
-			// The second visible frame belongs at the narrow-corridor mouth. Together
-			// with the room-facing frame it brackets the tunnel without a middle copy.
-			AddDoorFrame(NarrowEntrance, Along, Across);
 		}
 	}
 

@@ -5,6 +5,7 @@
 #include "ECS/MazeChunkSystem.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "ProfilingDebugging/CpuProfilerTrace.h"
@@ -38,6 +39,8 @@ void AMazeWorld::Tick(float DeltaSeconds)
 
 	if (!ECSSubsystem || !GetGeneratedData())
 		return;
+
+	UpdateDoors();
 
 	auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>();
 

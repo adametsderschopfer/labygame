@@ -76,6 +76,9 @@
 # 3D assets and content pipeline
 
 - Read `Docs/AssetPipeline.md` before importing, generating, replacing, moving or wiring a 3D asset, material, texture, animation, prefab-like assembly or presentation catalog. Keep it current when the asset layout, import contract, representation policy or loading path changes.
+- Read `Docs/Meshy.md` before using cloud generation for a 3D model, texture, remesh, rig or animation. Meshy is the project's approved default cloud generator and may be proposed for relevant asset tasks, but it remains a source-art tool: its output must still pass the asset pipeline, Unreal import and runtime architecture checks below.
+- Use the installed `meshy-openai-plugin` workflow and its pinned CLI rather than hand-written HTTP calls. Reuse browser OAuth; never request or print an API key. Before a paid submission, run the CLI dry-run or use the published Meshy price source, report the planned stages and estimated credits, check the API balance, and obtain explicit user approval for that spend. Read-only health checks must not create a task.
+- Submit each approved Meshy stage once, retain its task ID and wait on that task. Never silently rerun, create extra variants or add paid remesh/retexture/convert stages. Inspect an available preview, report actual consumed credits and preserve task lineage so later edits reuse the existing asset.
 - Treat the document as the target for new and touched content. Existing assets that do not yet comply are migration candidates, not precedents and not permission for an unrelated bulk reorganization.
 - Keep editable/vendor source and provenance under `ArtSource/<Feature>/`; keep runtime Unreal packages under `Content/<Feature>/`. Never place source archives, DCC caches or exported intermediates in `Content`, and never make production content depend on `Content/Developers`.
 - Move or rename `.uasset` and `.umap` packages only through Unreal-aware editor tooling, then update references and fix redirectors. Do not move binary Unreal packages with filesystem commands.
@@ -116,6 +119,7 @@
 # Local AI/editor tools
 
 - Project MCP connections: `unreal_epic` (Epic, local HTTP) and `ue_mcp_lyon` (db-lyon/ue-mcp 1.3.8, local stdio). See `Docs/AI-Integration.md`.
+- Cloud 3D generation: the user-level `meshy-openai-plugin` and Meshy CLI. See `Docs/Meshy.md`. Installation, OAuth credentials, balances and task history are machine/account state and must not be committed.
 - Prefer Epic tools for editor inspection, logs and Live Coding; use Lyon for additional authoring. Serialize calls to the editor across both connections and verify the active project before writes. Do not perform the same mutation through both servers.
 - Use `MazeDiagnosticsToolset.ReadSnapshots` for ECS diagnostics. Snapshots are detached, world-scoped copies; client data is not authoritative server state. Never use generic Mass write tools to bypass the subsystem/gameplay systems.
 - Insights captures and Play/tests remain opt-in. `Scripts/Export-Insights.ps1` exports an existing trace without launching gameplay. No plugin-provided workflow overrides this project's architecture or editor lifecycle rules.

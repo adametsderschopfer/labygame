@@ -1,0 +1,53 @@
+{
+  "source": "C:\\ue_prj\\laby\\ArtSource\\MeshySecureAccessDoor\\Original\\Meshy_AI_Secure_Access_Door_0925014413_texture_fbx\\Meshy_AI_Secure_Access_Door_0925014413_texture.fbx",
+  "target_dimensions_m": [
+    1.8,
+    0.58,
+    2.5
+  ],
+  "open_offset_m": 0.62,
+  "meshes": {
+    "SM_MeshySecureDoor_Frame": {
+      "vertices": 70496,
+      "triangles": 141096,
+      "bounds_min": [
+        -0.9000000357627869,
+        -0.2900000512599945,
+        0.0
+      ],
+      "bounds_max": [
+        0.8999999761581421,
+        0.2900000512599945,
+        2.5
+      ]
+    },
+    "SM_MeshySecureDoor_LeafLeft": {
+      "vertices": 33154,
+      "triangles": 66233,
+      "bounds_min": [
+        -0.7288289070129395,
+        -0.09433476626873016,
+        0.04244256019592285
+      ],
+      "bounds_max": [
+        0.0006864400929771364,
+        0.05143702030181885,
+        2.2044873237609863
+      ]
+    },
+    "SM_MeshySecureDoor_LeafRight": {
+      "vertices": 33200,
+      "triangles": 66306,
+      "bounds_min": [
+        0.0006104345666244626,
+        -0.0943998396396637,
+        0.04248607158660889
+      ],
+      "bounds_max": [
+        0.7290360331535339,
+        0.051591575145721436,
+        2.204421281814575
+      ]
+    }
+  }
+}

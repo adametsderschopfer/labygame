@@ -4,12 +4,17 @@
 
 - `unreal_epic`: Epic Unreal MCP, local HTTP `http://127.0.0.1:8000/mcp`.
 - `ue_mcp_lyon`: David Lyon's `ue-mcp` **1.3.8**, local stdio Node server and the project `UE_MCP_Bridge` plugin. Installed package and lockfile are in ignored `.tools/ue-mcp/`; the plugin source is tracked in `Plugins/UE_MCP_Bridge/`.
-- Local Codex configuration: `.codex/config.toml` (ignored, machine-specific). Both entries are project-scoped.
+- `meshy-openai-plugin`: user-level Codex plugin for Meshy cloud 3D generation, texturing, topology work, rigging and animation. It is an asset-authoring service rather than an Unreal editor connection. See `Docs/Meshy.md` for authentication, spending and delivery rules.
+- Local Codex configuration: `.codex/config.toml` (ignored, machine-specific). Both Unreal MCP entries are project-scoped.
 - Epic toolsets: EditorToolset, LiveCodingToolset, UMGToolSet, SlateInspectorToolset and ToolsetRegistry. MCP auto-start and lazy tool discovery are in `Config/DefaultEditorPerProjectUserSettings.ini`.
 - `ue-mcp.yml` disables duplicate native-tool publication on the Lyon server and its feedback submission tool. Its additional HTTP server is disabled. Native tools remain discoverable through the Epic gateway.
 - The third-party bridge depends on editor facilities including PCG, Niagara, GAS, animation and audio plugins. These do not replace this project's Mass ECS gameplay architecture. Runtime modules do not depend on either MCP implementation.
 
 Use Epic tools first for editor state, logs and Live Coding; use Lyon tools for additional authoring operations. Serialize all editor calls, including calls across the two servers. Do not apply the same change through both. Confirm the connected project before mutations. Do not run Play, automation tests, or gameplay performance captures unless requested. Do not start normal builds against an open editor.
+
+Meshy does not write Unreal packages or own gameplay state. Generated files enter
+through `ArtSource/<Feature>/`, retain provenance and task metadata, and are imported
+through Unreal-aware tooling only after visual and technical review.
 
 ## Live Coding export compatibility
 
@@ -84,3 +89,11 @@ Add `-IncludeEvents` when individual timing events are needed. Reports and expor
 - Lyon MCP handshake reported version 1.3.8, 25 tool groups, live editor connection to laby and `pluginBuildStale: false`.
 - Codex CLI reads both project MCP entries. An already-running Codex session may need reconnection/restart to expose newly configured tools.
 - Export-Insights.ps1 passed PowerShell syntax validation. No performance trace was captured/exported, and no gameplay or automation tests were run.
+
+## Meshy verification on 2026-09-25
+
+- `meshy-openai-plugin` 0.6.0 was installed and enabled from the curated Codex marketplace.
+- Meshy CLI 0.4.0 ran on Node.js 24.19.0 and passed its local diagnostics.
+- Browser OAuth completed without an API key entering the conversation or repository. The stored profile verified against `https://api.meshy.ai`.
+- The read-only API health check, balance query and `image-to-3d` task listing succeeded. The reported balance is volatile account state and is not recorded as a project guarantee.
+- No generation was submitted during the final availability check. Read access and a positive balance do not prove that a particular paid task is entitled; only submit after the user approves the displayed plan and cost.

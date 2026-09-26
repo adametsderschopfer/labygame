@@ -17,6 +17,7 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Net/UnrealNetwork.h"
@@ -35,6 +36,18 @@ AMazeWorld::AMazeWorld()
 	Floor->SetupAttachment(Walls);
 	Ceiling = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Ceiling"));
 	Ceiling->SetupAttachment(Walls);
+	DoorFrames = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorFrames"));
+	DoorFrames->SetupAttachment(Walls);
+	DoorLeavesLeft = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorLeavesLeft"));
+	DoorLeavesLeft->SetupAttachment(Walls);
+	DoorLeavesRight = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorLeavesRight"));
+	DoorLeavesRight->SetupAttachment(Walls);
+	DoorCollisionLeft = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorCollisionLeft"));
+	DoorCollisionLeft->SetupAttachment(Walls);
+	DoorCollisionRight = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorCollisionRight"));
+	DoorCollisionRight->SetupAttachment(Walls);
+	DoorStatusLights = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorStatusLights"));
+	DoorStatusLights->SetupAttachment(Walls);
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PlainMaterial(
@@ -52,6 +65,25 @@ AMazeWorld::AMazeWorld()
 	Walls->bUseComplexAsSimpleCollision = true;
 	Floor->SetCanEverAffectNavigation(false);
 	Walls->SetCanEverAffectNavigation(false);
+
+	for (auto* Component : {DoorFrames.Get(), DoorLeavesLeft.Get(), DoorLeavesRight.Get(), DoorStatusLights.Get()})
+	{
+		Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Component->SetCanEverAffectNavigation(false);
+		Component->SetMobility(EComponentMobility::Movable);
+	}
+
+	for (auto* Component : {DoorCollisionLeft.Get(), DoorCollisionRight.Get()})
+	{
+		Component->SetStaticMesh(Cube.Object);
+		Component->SetCollisionProfileName(TEXT("BlockAll"));
+		Component->SetCanEverAffectNavigation(false);
+		Component->SetMobility(EComponentMobility::Movable);
+		Component->SetHiddenInGame(true);
+		Component->SetVisibility(false);
+	}
+
+	DoorStatusLights->SetStaticMesh(Cube.Object);
 	// Resident physics is independent of camera-local rendering and streaming.
 	Walls->SetHiddenInGame(true);
 	Floor->SetHiddenInGame(true);
@@ -105,6 +137,12 @@ void AMazeWorld::InitializeMaze()
 void AMazeWorld::EndPlay(const EEndPlayReason::Type Reason)
 {
 	ClearChunks();
+	DoorFrames->ClearInstances();
+	DoorLeavesLeft->ClearInstances();
+	DoorLeavesRight->ClearInstances();
+	DoorCollisionLeft->ClearInstances();
+	DoorCollisionRight->ClearInstances();
+	DoorStatusLights->ClearInstances();
 	GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->RemoveParticipant(this);
 	MazeWindAudio::Stop(*this);
 	MazeLampAudio::Stop(*this);
@@ -122,10 +160,17 @@ void AMazeWorld::OnRep_Seed()
 	InitializeMaze();
 }
 
+void AMazeWorld::OnRep_DoorTargets()
+{
+	if (ECSSubsystem)
+		ECSSubsystem->ReceiveDoorTargets(MazeEntity, ReplicatedDoorTargets);
+}
+
 void AMazeWorld::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMazeWorld, Seed);
+	DOREPLIFETIME(AMazeWorld, ReplicatedDoorTargets);
 }
 
 FVector AMazeWorld::StartLocation() const
@@ -206,6 +251,11 @@ void AMazeWorld::Build()
 		                         TArray<FColor>(),
 		                         TArray<FProcMeshTangent>(),
 		                         true);
+
+	RebuildDoorInstances();
+
+	if (!HasAuthority() && !ReplicatedDoorTargets.IsEmpty())
+		ECSSubsystem->ReceiveDoorTargets(MazeEntity, ReplicatedDoorTargets);
 
 	Location->ReportBlockingStage(EMazePreparationStage::Geometry);
 
@@ -299,5 +349,6 @@ void AMazeWorld::PrepareMaterials()
 		MazeLampAudio::Rebuild(*this, *Lamps);
 
 	MazeWindAudio::Start(*this);
+	PrepareDoorAssets();
 	bPresentationStarted = true;
 }

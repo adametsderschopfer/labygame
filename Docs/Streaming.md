@@ -126,6 +126,16 @@ The collision wall component creates no render proxy. This is not a complete
 bounded-memory solution for arbitrarily large worlds; collision/topology growth
 must be budgeted separately before increasing map size substantially.
 
+Generated room doors follow the same resident-physics rule. Their frame, left
+leaf, right leaf and emissive status pieces are shared ISM meshes; the source
+geometry is stored once and rendered with Nanite, while per-door transforms are
+updated by the world adapter. Two invisible cube instances provide the actual
+moving collision and remain resident on every authority and client regardless of
+visual readiness. Door gameplay entities and their stable generation-revision
+identity therefore survive any visual chunk creation or eviction. The door meshes,
+material instance, status material and four PBR textures are explicit dependencies
+of the Maze location manifest and are loaded by the existing location handle.
+
 The generated payload no longer retains the full wall vertex/normal/index
 arrays. Collision construction uses a transient surface; visual workers build
 only their region and a one-cell context halo for trim joins. CPU worker buffers
@@ -151,7 +161,9 @@ preparation overlay again; it does not change server authority or physics.
    asynchronous body. This initial work is still covered by the loading movie.
 3. The world Actor registers as a preparation participant, including on clients
    waiting for a replicated seed. After assets finish loading, it creates shared
-   material instances and the existing bounded lamp-audio pool.
+   material instances, assigns the preloaded door presentation resources and
+   creates the existing bounded lamp-audio pool. Door collision already exists
+   independently of presentation readiness.
 4. The Actor's `TG_PrePhysics` tick requests `RequestMazeChunk`. The subsystem
    copies generation parameters and an immutable **thread-safe** shared payload
    into a thread-pool task. The worker runs `FMazeChunkSystem::Build` without

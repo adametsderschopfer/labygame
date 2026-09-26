@@ -7,6 +7,7 @@
 #include "ECS/MazeECSFragments.h"
 #include "ECS/MazeItems.h"
 #include "ECS/MazeDiagnostics.h"
+#include "ECS/MazeDoorSystem.h"
 #include "MazeECSSubsystem.generated.h"
 
 enum class EMazeInputAxis
@@ -61,6 +62,9 @@ public:
 	void DestroyMaze(FMassEntityHandle Entity);
 	void RegenerateMaze(FMassEntityHandle Entity, int32 Seed, FVector Origin);
 	FMazeGenerationFragment ReadMaze(FMassEntityHandle Entity) const;
+	TArray<FMazeDoorView> ReadDoors(FMassEntityHandle Maze) const;
+	TArray<uint8> ReadDoorTargets(FMassEntityHandle Maze) const;
+	void ReceiveDoorTargets(FMassEntityHandle Maze, TConstArrayView<uint8> Targets);
 	TSharedPtr<const FMazeInterior> BuildMazeLampLocations(FMassEntityHandle Entity) const;
 	TSharedPtr<const FMazeSurface> BuildMazeCollision(FMassEntityHandle Entity) const;
 	TSharedPtr<FMazeChunkJob> RequestMazeChunk(FMassEntityHandle Entity, FIntPoint Chunk, int32 ChunkCells) const;
@@ -92,12 +96,18 @@ private:
 	TUniquePtr<FMassEntityQuery> GenerationQuery;
 	TUniquePtr<FMassEntityQuery> InputQuery;
 	TUniquePtr<FMassEntityQuery> SignalQuery;
+	TUniquePtr<FMassEntityQuery> DoorQuery;
+	TUniquePtr<FMassEntityQuery> DoorPlayerQuery;
 	FMassArchetypeHandle PlayerArchetype;
 	FMassArchetypeHandle MazeArchetype;
+	FMassArchetypeHandle DoorArchetype;
 	FMassEntityHandle SessionEntity;
+	TArray<FMassEntityHandle> DoorEntities;
 
 	FMazeVitals* FindVitals(FMassEntityHandle Entity) const;
 	void GeneratePending();
+	void RebuildDoors(FMassEntityHandle MazeEntity);
+	void DestroyDoors(FMassEntityHandle MazeEntity);
 	void UpdateProgress(FMassEntityHandle Entity);
 	template <typename T> T* FindFragment(FMassEntityHandle Entity) const;
 };

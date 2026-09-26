@@ -21,9 +21,9 @@ struct FMazeRoomDefinition
 	static constexpr int32 RoomsPerSector = 3;
 	// Additional compact rooms selected from actual bends and nearby dead-end branches.
 	static constexpr int32 BendSectorSide = 16;
-	static constexpr float BendThroughFraction = 0.5f;
+	static constexpr float BendThroughFraction = 0.98f;
 	static constexpr int32 PlacementAttemptsPerRoom = 20;
-	static constexpr float ThroughFraction = 0.45f;
+	static constexpr float ThroughFraction = 0.98f;
 	static constexpr float DoorWidth = 120.f;
 	static constexpr float DoorHeight = 220.f;
 	static float OpeningWidth(float Span)

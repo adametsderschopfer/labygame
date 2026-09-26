@@ -6,7 +6,7 @@
 struct FMazeNarrowPassageDefinition
 {
 	// Soft target over eligible straight corridor cells. Placement constraints take priority.
-	static constexpr float CoverageFraction = 0.05f;
+	static constexpr float CoverageFraction = 0.98f;
 	static constexpr int32 MinCells = 2;
 	static constexpr int32 MaxCells = 3;
 	static constexpr int32 MinSpacingCells = 3;
