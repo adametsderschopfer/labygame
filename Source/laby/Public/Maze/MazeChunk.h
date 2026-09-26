@@ -1,11 +1,13 @@
 #pragma once
 
 #include "Maze/MazeInterior.h"
+#include "Maze/MazeRoomGeometry.h"
 
 struct FMazeChunkData
 {
 	FIntPoint Coordinate;
 	FMazeSurface Walls;
+	FMazeSurface Water;
 	FMazeInterior Interior;
 	TArray<FTransform> Floors;
 	TArray<FTransform> Ceilings;

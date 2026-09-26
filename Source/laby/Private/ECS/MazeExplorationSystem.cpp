@@ -67,13 +67,26 @@ void FMazeExplorationSystem::Update(FMazeExplorationFragment& Exploration,
 
 	const FVector Local = Pose.Location - Maze.Origin;
 
-	if (!bAlive || !Pose.bInputEnabled || Local.Z < 0 || Local.Z > Maze.WallHeight)
+	if (!bAlive || !Pose.bInputEnabled)
 		return;
 
 	const FVector2D Position(Local.X / Maze.Cell, Local.Y / Maze.Cell);
 	const int32 CX = FMath::FloorToInt(Position.X), CY = FMath::FloorToInt(Position.Y);
 
 	if (CX < 0 || CY < 0 || CX >= Layout.Size || CY >= Layout.Size)
+		return;
+
+	float FloorHeight = 0.f, CeilingHeight = Maze.WallHeight;
+
+	for (int32 RoomIndex = 0; RoomIndex < Layout.Rooms.Num(); ++RoomIndex)
+		if (Layout.Rooms[RoomIndex].Contains(FIntPoint(CX, CY)))
+		{
+			FloorHeight = FMazeRoomDefinition::FloorHeight(Layout.RoomType(RoomIndex));
+			CeilingHeight = FMazeRoomDefinition::CeilingHeight(Layout.RoomType(RoomIndex), Maze.WallHeight);
+			break;
+		}
+
+	if (Local.Z < FloorHeight || Local.Z > CeilingHeight)
 		return;
 
 	// Reveal nearby floor when entering a cell or moving far enough inside it.

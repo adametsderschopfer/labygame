@@ -60,6 +60,9 @@ void AMazeWorld::Tick(float DeltaSeconds)
 	if (!bPresentationStarted)
 		PrepareMaterials();
 
+	if (!bPresentationStarted)
+		return;
+
 	UpdateChunks();
 }
 

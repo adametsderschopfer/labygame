@@ -97,6 +97,11 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 	{
 		const int32 X = FMath::FloorToInt(P.X / Cell), Y = FMath::FloorToInt(P.Y / Cell);
 
+		// The ordinary cove sits at Z=0; it must not hang above a lowered room floor.
+		for (int32 RoomIndex = 1; RoomIndex < Layout.Rooms.Num(); ++RoomIndex)
+			if (Layout.Rooms[RoomIndex].Contains(FIntPoint(X, Y)) && Layout.RoomType(RoomIndex) != EMazeRoomType::Empty)
+				return false;
+
 		return X >= 0 && Y >= 0 && X < Layout.Size && Y < Layout.Size && Layout.HasFloor(Y * Layout.Size + X);
 	};
 	const auto IsNarrowPassage = [&](FVector P)

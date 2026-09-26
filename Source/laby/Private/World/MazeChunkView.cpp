@@ -67,6 +67,15 @@ void AMazeChunkView::Apply(const FMazeChunkData& Data, UStaticMesh* Cube, const 
 		                        false);
 	}
 
+	Mesh->SetMaterial(5, Materials[8]);
+	Mesh->CreateMeshSection(5,
+	                        Data.Water.Vertices,
+	                        Data.Water.Triangles,
+	                        Data.Water.Normals,
+	                        TArray<FVector2D>(),
+	                        TArray<FColor>(),
+	                        TArray<FProcMeshTangent>(),
+	                        false);
 	Mesh->PrecachePSOs();
 	Floor->SetStaticMesh(Cube);
 	Floor->SetMaterial(0, Materials[5]);

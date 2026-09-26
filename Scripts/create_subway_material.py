@@ -20,6 +20,7 @@ if material is None:
     raise RuntimeError("Cannot create subway material")
 LIB.delete_all_material_expressions(material)
 material.set_editor_property("tangent_space_normal", False)
+material.set_editor_property("used_with_instanced_static_meshes", True)
 
 
 def node(cls, **properties):

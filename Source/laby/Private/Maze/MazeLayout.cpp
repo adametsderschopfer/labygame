@@ -131,15 +131,15 @@ void FMazeLayout::GenerateRoomTypes(int32 Seed)
 	FRandomStream Random(static_cast<int32>(uint32(Seed) ^ 0xA341316Cu));
 	TArray<int32> PoolCandidates;
 	TArray<int32> ShallowCandidates;
+	const TArray<FMazeRoomDoorway> Doorways = RoomDoorways();
 	bool bHasPool = false;
-	bool bHasShallow = false;
 
 	for (int32 RoomIndex = 1; RoomIndex < Rooms.Num(); ++RoomIndex)
 	{
 		const FIntRect& Room = Rooms[RoomIndex];
 		int32 DoorCount = 0;
 
-		for (const FMazeRoomDoorway& Doorway : RoomDoorways())
+		for (const FMazeRoomDoorway& Doorway : Doorways)
 			DoorCount += Doorway.RoomIndex == RoomIndex;
 
 		const bool bPoolEligible = Room.Width() >= FMazeRoomDefinition::MinPoolWidthCells &&
@@ -161,7 +161,6 @@ void FMazeLayout::GenerateRoomTypes(int32 Seed)
 			PoolCandidates.Add(RoomIndex);
 
 		bHasPool |= RoomTypes[RoomIndex] == EMazeRoomType::Pool;
-		bHasShallow |= RoomTypes[RoomIndex] == EMazeRoomType::ShallowFlooded;
 	}
 
 	// Large generated maps should always expose the new room families. These fallbacks
@@ -169,7 +168,7 @@ void FMazeLayout::GenerateRoomTypes(int32 Seed)
 	if (!bHasPool && !PoolCandidates.IsEmpty())
 		RoomTypes[PoolCandidates[Random.RandRange(0, PoolCandidates.Num() - 1)]] = EMazeRoomType::Pool;
 
-	if (!bHasShallow && !ShallowCandidates.IsEmpty())
+	if (!RoomTypes.Contains(EMazeRoomType::ShallowFlooded) && !ShallowCandidates.IsEmpty())
 	{
 		TArray<int32> Choices = ShallowCandidates.FilterByPredicate(
 		    [this](int32 RoomIndex)

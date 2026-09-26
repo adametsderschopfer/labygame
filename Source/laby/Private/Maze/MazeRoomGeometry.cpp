@@ -8,6 +8,8 @@ namespace
 		                  FVector((MinX + MaxX) * 0.5f, (MinY + MaxY) * 0.5f, (Bottom + Top) * 0.5f),
 		                  FVector((MaxX - MinX) / 100.f, (MaxY - MinY) / 100.f, (Top - Bottom) / 100.f));
 	}
+
+	const FVector2D Outward[] = {FVector2D(0, -1), FVector2D(1, 0), FVector2D(0, 1), FVector2D(-1, 0)};
 }
 
 FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
@@ -19,7 +21,6 @@ FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
 	const TArray<FMazeRoomDoorway> Doorways = Layout.RoomDoorways();
 	const float HalfWall = WallThickness * 0.5f;
 	constexpr float SlabThickness = 50.f;
-
 	const auto AddBox = [&Result](float MinX,
 	                              float MaxX,
 	                              float MinY,
@@ -29,8 +30,7 @@ FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
 	                              EMazeRoomSurface Surface,
 	                              bool bCollision = true)
 	{
-		if (MaxX - MinX > UE_KINDA_SMALL_NUMBER && MaxY - MinY > UE_KINDA_SMALL_NUMBER &&
-		    Top - Bottom > UE_KINDA_SMALL_NUMBER)
+		if (MaxX > MinX && MaxY > MinY && Top > Bottom)
 			Result.Boxes.Add({BoxTransform(MinX, MaxX, MinY, MaxY, Bottom, Top), Surface, bCollision});
 	};
 
@@ -42,10 +42,8 @@ FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
 			continue;
 
 		const FIntRect& Room = Layout.Rooms[RoomIndex];
-		const float MinX = Room.Min.X * Cell;
-		const float MaxX = Room.Max.X * Cell;
-		const float MinY = Room.Min.Y * Cell;
-		const float MaxY = Room.Max.Y * Cell;
+		const float MinX = Room.Min.X * Cell, MaxX = Room.Max.X * Cell;
+		const float MinY = Room.Min.Y * Cell, MaxY = Room.Max.Y * Cell;
 		const float FloorHeight = FMazeRoomDefinition::FloorHeight(Type);
 		const float CeilingHeight = FMazeRoomDefinition::CeilingHeight(Type, DefaultWallHeight);
 		const EMazeRoomSurface FloorSurface =
@@ -64,6 +62,7 @@ FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
 		                                 MaxY + HalfWall,
 		                                 CeilingHeight,
 		                                 CeilingHeight + SlabThickness));
+		// Bounds only: the visual worker emits one upward-facing water interface.
 		AddBox(MinX + HalfWall,
 		       MaxX - HalfWall,
 		       MinY + HalfWall,
@@ -73,187 +72,124 @@ FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
 		       EMazeRoomSurface::Water,
 		       false);
 
-		TArray<FMazeRoomDoorway> RoomDoors = Doorways.FilterByPredicate(
-		    [RoomIndex](const FMazeRoomDoorway& Doorway)
+		const auto AddWallRing = [&](float Bottom, float Top, EMazeRoomSurface Surface)
+		{
+			// Foundations are solid UNDER doors; openings belong above corridor floor.
+			AddBox(MinX - HalfWall, MaxX + HalfWall, MinY - HalfWall, MinY + HalfWall, Bottom, Top, Surface);
+			AddBox(MinX - HalfWall, MaxX + HalfWall, MaxY - HalfWall, MaxY + HalfWall, Bottom, Top, Surface);
+			AddBox(MinX - HalfWall, MinX + HalfWall, MinY + HalfWall, MaxY - HalfWall, Bottom, Top, Surface);
+			AddBox(MaxX - HalfWall, MaxX + HalfWall, MinY + HalfWall, MaxY - HalfWall, Bottom, Top, Surface);
+		};
+
+		AddWallRing(
+		    FloorHeight, 0.f, Type == EMazeRoomType::Pool ? EMazeRoomSurface::PoolTile : EMazeRoomSurface::Ceramic);
+		AddWallRing(DefaultWallHeight, CeilingHeight, EMazeRoomSurface::Ceramic);
+
+		const auto RoomDoors = Doorways.FilterByPredicate(
+		    [RoomIndex](const FMazeRoomDoorway& Door)
 		    {
-			    return Doorway.RoomIndex == RoomIndex;
+			    return Door.RoomIndex == RoomIndex;
 		    });
 		const float OpeningWidth = FMazeRoomDefinition::OpeningWidth(Cell - WallThickness);
-
-		const auto AddHorizontalWall = [&](float CenterY,
-		                                   float SegmentMinX,
-		                                   float SegmentMaxX,
-		                                   float Bottom,
-		                                   float Top,
-		                                   EMazeRoomSurface Surface,
-		                                   const FMazeRoomDoorway* Door)
+		const auto Portal = [Cell](const FMazeRoomDoorway& Door)
 		{
-			if (!Door)
-			{
-				AddBox(SegmentMinX, SegmentMaxX, CenterY - HalfWall, CenterY + HalfWall, Bottom, Top, Surface);
-
-				return;
-			}
-
-			const float CenterX = (Door->Cell.X + 0.5f) * Cell;
-			AddBox(SegmentMinX,
-			       CenterX - OpeningWidth * 0.5f,
-			       CenterY - HalfWall,
-			       CenterY + HalfWall,
-			       Bottom,
-			       Top,
-			       Surface);
-			AddBox(CenterX + OpeningWidth * 0.5f,
-			       SegmentMaxX,
-			       CenterY - HalfWall,
-			       CenterY + HalfWall,
-			       Bottom,
-			       Top,
-			       Surface);
+			return FVector2D((Door.Cell.X + 0.5f) * Cell, (Door.Cell.Y + 0.5f) * Cell) +
+			       Outward[Door.Direction] * (Cell * 0.5f);
 		};
-		const auto AddVerticalWall = [&](float CenterX,
-		                                 float SegmentMinY,
-		                                 float SegmentMaxY,
-		                                 float Bottom,
-		                                 float Top,
-		                                 EMazeRoomSurface Surface,
-		                                 const FMazeRoomDoorway* Door)
-		{
-			if (!Door)
-			{
-				AddBox(CenterX - HalfWall, CenterX + HalfWall, SegmentMinY, SegmentMaxY, Bottom, Top, Surface);
-
-				return;
-			}
-
-			const float CenterY = (Door->Cell.Y + 0.5f) * Cell;
-			AddBox(CenterX - HalfWall,
-			       CenterX + HalfWall,
-			       SegmentMinY,
-			       CenterY - OpeningWidth * 0.5f,
-			       Bottom,
-			       Top,
-			       Surface);
-			AddBox(CenterX - HalfWall,
-			       CenterX + HalfWall,
-			       CenterY + OpeningWidth * 0.5f,
-			       SegmentMaxY,
-			       Bottom,
-			       Top,
-			       Surface);
-		};
-
-		for (int32 Y = Room.Min.Y; Y < Room.Max.Y; ++Y)
-			for (const int32 Direction : {1, 3})
-			{
-				const int32 X = Direction == 1 ? Room.Max.X - 1 : Room.Min.X;
-				const float BoundaryX = Direction == 1 ? MaxX : MinX;
-				const FMazeRoomDoorway* Door = RoomDoors.FindByPredicate(
-				    [X, Y, Direction](const FMazeRoomDoorway& Candidate)
-				    {
-					    return Candidate.Cell == FIntPoint(X, Y) && Candidate.Direction == Direction;
-				    });
-				const EMazeRoomSurface LowerSurface =
-				    Type == EMazeRoomType::Pool ? EMazeRoomSurface::PoolTile : EMazeRoomSurface::Ceramic;
-
-				AddVerticalWall(BoundaryX, Y * Cell, (Y + 1) * Cell, FloorHeight, 0.f, LowerSurface, Door);
-				AddVerticalWall(BoundaryX,
-				                Y * Cell,
-				                (Y + 1) * Cell,
-				                DefaultWallHeight,
-				                CeilingHeight,
-				                EMazeRoomSurface::Ceramic,
-				                nullptr);
-			}
-
-		for (int32 X = Room.Min.X; X < Room.Max.X; ++X)
-			for (const int32 Direction : {0, 2})
-			{
-				const int32 Y = Direction == 2 ? Room.Max.Y - 1 : Room.Min.Y;
-				const float BoundaryY = Direction == 2 ? MaxY : MinY;
-				const FMazeRoomDoorway* Door = RoomDoors.FindByPredicate(
-				    [X, Y, Direction](const FMazeRoomDoorway& Candidate)
-				    {
-					    return Candidate.Cell == FIntPoint(X, Y) && Candidate.Direction == Direction;
-				    });
-				const EMazeRoomSurface LowerSurface =
-				    Type == EMazeRoomType::Pool ? EMazeRoomSurface::PoolTile : EMazeRoomSurface::Ceramic;
-
-				AddHorizontalWall(BoundaryY, X * Cell, (X + 1) * Cell, FloorHeight, 0.f, LowerSurface, Door);
-				AddHorizontalWall(BoundaryY,
-				                  X * Cell,
-				                  (X + 1) * Cell,
-				                  DefaultWallHeight,
-				                  CeilingHeight,
-				                  EMazeRoomSurface::Ceramic,
-				                  nullptr);
-			}
 
 		if (Type == EMazeRoomType::ShallowFlooded)
 		{
 			const int32 StepCount =
 			    FMath::RoundToInt(FMazeRoomDefinition::ShallowDepth / FMazeRoomDefinition::StairRise);
-			const float StepWidth = OpeningWidth - 10.f;
 
 			for (const FMazeRoomDoorway& Door : RoomDoors)
 			{
-				const FVector2D Outward[] = {
-				    FVector2D(0.f, -1.f), FVector2D(1.f, 0.f), FVector2D(0.f, 1.f), FVector2D(-1.f, 0.f)};
+				const FVector2D Boundary = Portal(Door);
 				const FVector2D Inward = -Outward[Door.Direction];
-				const FVector2D Boundary((Door.Cell.X + 0.5f) * Cell, (Door.Cell.Y + 0.5f) * Cell);
 
-				for (int32 Step = 0; Step < StepCount; ++Step)
+				// Foundation provides the level threshold. Two treads plus floor make three descents.
+				for (int32 Step = 1; Step < StepCount; ++Step)
 				{
-					const float Begin = Step * FMazeRoomDefinition::StairTread;
-					const float End = (Step + 1) * FMazeRoomDefinition::StairTread;
-					const FVector2D A = Boundary + Inward * Begin;
-					const FVector2D B = Boundary + Inward * End;
-					const float Top = -(Step + 1) * FMazeRoomDefinition::StairRise;
+					const FVector2D A = Boundary + Inward * (HalfWall + (Step - 1) * FMazeRoomDefinition::StairTread);
+					const FVector2D B = Boundary + Inward * (HalfWall + Step * FMazeRoomDefinition::StairTread);
+					const float HalfWidth = OpeningWidth * 0.5f;
+					const FVector2D Across =
+					    Door.Direction % 2 == 0 ? FVector2D(HalfWidth, 0) : FVector2D(0, HalfWidth);
 
-					if (Door.Direction == 0 || Door.Direction == 2)
-						AddBox(A.X - StepWidth * 0.5f,
-						       A.X + StepWidth * 0.5f,
-						       FMath::Min(A.Y, B.Y),
-						       FMath::Max(A.Y, B.Y),
-						       FloorHeight - 5.f,
-						       Top,
-						       EMazeRoomSurface::ShallowFloor);
-					else
-						AddBox(FMath::Min(A.X, B.X),
-						       FMath::Max(A.X, B.X),
-						       A.Y - StepWidth * 0.5f,
-						       A.Y + StepWidth * 0.5f,
-						       FloorHeight - 5.f,
-						       Top,
-						       EMazeRoomSurface::ShallowFloor);
+					AddBox(FMath::Min(A.X, B.X) - Across.X,
+					       FMath::Max(A.X, B.X) + Across.X,
+					       FMath::Min(A.Y, B.Y) - Across.Y,
+					       FMath::Max(A.Y, B.Y) + Across.Y,
+					       FloorHeight,
+					       -Step * FMazeRoomDefinition::StairRise,
+					       FloorSurface);
 				}
 			}
 		}
-		else if (Type == EMazeRoomType::Pool)
+		else
 		{
-			const FVector2D RoomCenter((MinX + MaxX) * 0.5f, (MinY + MaxY) * 0.5f);
+			const FVector2D Center((MinX + MaxX) * 0.5f, (MinY + MaxY) * 0.5f);
+			const float HalfBridge = FMazeRoomDefinition::BridgeWidth * 0.5f;
+			TArray<FBox2D> Decks;
+			const auto AddDeck = [&Decks, HalfBridge](FVector2D A, FVector2D B)
+			{
+				Decks.Emplace(FVector2D(FMath::Min(A.X, B.X) - HalfBridge, FMath::Min(A.Y, B.Y) - HalfBridge),
+				              FVector2D(FMath::Max(A.X, B.X) + HalfBridge, FMath::Max(A.Y, B.Y) + HalfBridge));
+			};
 
 			for (const FMazeRoomDoorway& Door : RoomDoors)
 			{
-				const FVector2D Boundary((Door.Cell.X + 0.5f) * Cell, (Door.Cell.Y + 0.5f) * Cell);
-				const float HalfBridge = FMazeRoomDefinition::BridgeWidth * 0.5f;
+				const FVector2D Inside = Portal(Door) - Outward[Door.Direction] * HalfWall;
+				const FVector2D Elbow =
+				    Door.Direction % 2 == 0 ? FVector2D(Inside.X, Center.Y) : FVector2D(Center.X, Inside.Y);
 
-				if (Door.Direction == 0 || Door.Direction == 2)
-					AddBox(Boundary.X - HalfBridge,
-					       Boundary.X + HalfBridge,
-					       FMath::Min(Boundary.Y, RoomCenter.Y),
-					       FMath::Max(Boundary.Y, RoomCenter.Y),
+				AddDeck(Inside, Elbow);
+				AddDeck(Elbow, Center);
+			}
+
+			// Union deck rectangles into disjoint slabs: connected with offset doors,
+			// without overlapping top faces at elbows or the central junction.
+			TArray<double> Cuts;
+
+			for (const FBox2D& Deck : Decks)
+			{
+				Cuts.AddUnique(Deck.Min.X);
+				Cuts.AddUnique(Deck.Max.X);
+			}
+
+			Cuts.Sort();
+
+			for (int32 Index = 1; Index < Cuts.Num(); ++Index)
+			{
+				const double X0 = Cuts[Index - 1], X1 = Cuts[Index];
+				TArray<FVector2D> Spans;
+
+				for (const FBox2D& Deck : Decks)
+					if (Deck.Min.X < X1 && Deck.Max.X > X0)
+						Spans.Emplace(Deck.Min.Y, Deck.Max.Y);
+
+				Spans.Sort(
+				    [](const FVector2D& A, const FVector2D& B)
+				    {
+					    return A.X < B.X;
+				    });
+
+				for (int32 Span = 0; Span < Spans.Num(); ++Span)
+				{
+					double End = Spans[Span].Y;
+					const double Begin = Spans[Span].X;
+
+					while (Span + 1 < Spans.Num() && Spans[Span + 1].X <= End)
+						End = FMath::Max(End, Spans[++Span].Y);
+
+					AddBox(FMath::Max(X0, double(MinX + HalfWall)),
+					       FMath::Min(X1, double(MaxX - HalfWall)),
+					       FMath::Max(Begin, double(MinY + HalfWall)),
+					       FMath::Min(End, double(MaxY - HalfWall)),
 					       -FMazeRoomDefinition::BridgeThickness,
 					       0.f,
 					       EMazeRoomSurface::Metal);
-				else
-					AddBox(FMath::Min(Boundary.X, RoomCenter.X),
-					       FMath::Max(Boundary.X, RoomCenter.X),
-					       Boundary.Y - HalfBridge,
-					       Boundary.Y + HalfBridge,
-					       -FMazeRoomDefinition::BridgeThickness,
-					       0.f,
-					       EMazeRoomSurface::Metal);
+				}
 			}
 		}
 	}

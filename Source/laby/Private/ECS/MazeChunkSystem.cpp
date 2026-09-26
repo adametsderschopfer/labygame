@@ -1,4 +1,5 @@
 #include "ECS/MazeChunkSystem.h"
+#include "Maze/MazeMeshPrimitives.h"
 #include "ProfilingDebugging/CpuProfilerTrace.h"
 
 TSharedPtr<const FMazeChunkData, ESPMode::ThreadSafe> FMazeChunkSystem::Build(const FMazeGenerationFragment& Maze,
@@ -62,6 +63,24 @@ TSharedPtr<const FMazeChunkData, ESPMode::ThreadSafe> FMazeChunkSystem::Build(co
 
 	for (const FMazeRoomBox& Box : Maze.Data->RoomGeometry.Boxes)
 		ClipBox(Box.Transform, Result->RoomSurfaces[static_cast<int32>(Box.Surface)]);
+
+	// Water has one upward-facing interface, never overlapping cube faces.
+	auto& WaterBounds = Result->RoomSurfaces[static_cast<int32>(EMazeRoomSurface::Water)];
+
+	for (const FTransform& Bounds : WaterBounds)
+	{
+		const FVector Half = Bounds.GetScale3D() * 50.f;
+		const FVector P = Bounds.GetLocation() + FVector(0, 0, Half.Z);
+
+		MazeMeshPrimitives::Quad(Result->Water,
+		                         P + FVector(-Half.X, -Half.Y, 0),
+		                         P + FVector(Half.X, -Half.Y, 0),
+		                         P + FVector(Half.X, Half.Y, 0),
+		                         P + FVector(-Half.X, Half.Y, 0),
+		                         FVector::UpVector);
+	}
+
+	WaterBounds.Empty();
 
 	return Result;
 }

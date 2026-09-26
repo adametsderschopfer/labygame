@@ -87,7 +87,12 @@ struct FMazeGenerationSystem
 				while (X < Data->Layout.Size && !IsSpecialRoomCell(Y * Data->Layout.Size + X))
 					++X;
 
-				CeilingRect(Begin * Maze.Cell, Y * Maze.Cell, (X - Begin) * Maze.Cell, Maze.Cell);
+				const float HalfWall = Maze.WallThickness * 0.5f;
+				const float X0 = Begin * Maze.Cell - (Begin == 0 ? HalfWall : 0.f);
+				const float X1 = X * Maze.Cell + (X == Data->Layout.Size ? HalfWall : 0.f);
+				const float Y0 = Y * Maze.Cell - (Y == 0 ? HalfWall : 0.f);
+				const float Y1 = (Y + 1) * Maze.Cell + (Y + 1 == Data->Layout.Size ? HalfWall : 0.f);
+				CeilingRect(X0, Y0, X1 - X0, Y1 - Y0);
 			}
 		}
 

@@ -2,7 +2,7 @@
 
 ## Ownership
 
-The maze entity owns the immutable topology, floor transforms, ceiling transform,
+The maze entity owns the immutable topology, floor transforms, ceiling transforms,
 seed and generation revision. Gameplay facts remain in focused Mass fragments.
 `UMazeECSSubsystem` is the only gameplay bridge. `FMazeChunkSystem` derives visual
 chunk payloads; it has no UObject, Actor, online or renderer dependencies.
@@ -164,8 +164,13 @@ geometry, is clipped and batched by the existing visual chunk lifecycle.
 `MI_PoolTile` and `MI_RoomWater` are production dependencies in the Maze location
 manifest. The adapter obtains them through typed soft references in
 `UMazeLocationSettings` after `AreAssetsReady()`; no first-use synchronous load
-is hidden in a chunk worker. Workers only copy transforms and surface identifiers,
-never materials or other UObjects. Pool rooms add vertical sightlines up to
+is hidden in a chunk worker. Workers copy transforms/surface identifiers and
+emit one upward-facing water quad per clipped rectangle, never materials or
+other UObjects. Water uses the native Single Layer Water deferred pass; solid
+surfaces remain ISMs with explicitly compiled instancing usage. Water has no
+duplicated underside/side faces, and its world-space normals are continuous
+across chunks. It contributes to the existing procedural-mesh PSO preparation
+and geometry-byte estimate. Pool rooms add vertical sightlines up to
 600 cm but do not expand the horizontal chunk radius or change the current
 resident-physics memory policy.
 

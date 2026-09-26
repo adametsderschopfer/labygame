@@ -11,7 +11,7 @@ def properties(obj, **values):
     return obj
 
 
-def create(name, scalars, colors, code, instanced=False, animated=False, textures=None):
+def create(name, scalars, colors, code, instanced=False, animated=False, textures=None, configure=None):
     editor = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
     if editor is not None and editor.is_in_play_in_editor():
         raise RuntimeError("Stop Play before rebuilding materials; no material was changed")
@@ -74,6 +74,8 @@ def create(name, scalars, colors, code, instanced=False, animated=False, texture
                       ("Emission", unreal.MaterialProperty.MP_EMISSIVE_COLOR)]:
         if not LIB.connect_material_property(shader, pin, prop):
             raise RuntimeError(f"Cannot connect {pin}")
+    if configure is not None:
+        configure(material)
     LIB.layout_material_expressions(material)
     errors = LIB.recompile_material(material)
     if errors:

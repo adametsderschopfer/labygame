@@ -148,5 +148,5 @@ float3 acoustic = scannedColor * PanelColor.rgb * (1.0 + shade - pores * saturat
 float3 base = lerp(RailColor.rgb, acoustic, mask);
 // Off fixtures retain a visible diffuser, rather than turning into black holes.
 return lerp(base, LightColor.rgb * 0.65, lamp);
-""", animated=True, textures=textures)
+""", instanced=True, animated=True, textures=textures)
 unreal.log("LABY_ACOUSTIC_CEILING_SAVED")

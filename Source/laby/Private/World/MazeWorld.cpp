@@ -229,6 +229,11 @@ void AMazeWorld::Build()
 	Location->ReportBlockingStage(EMazePreparationStage::Collision);
 
 	Walls->ClearAllMeshSections();
+	// Also refresh old editor archetypes after Live Coding: all ceiling physics
+	// now belongs to the resident box instances, not the legacy single cube.
+	Ceiling->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Ceiling->SetHiddenInGame(true);
+	Ceiling->SetVisibility(false);
 	Floor->ClearInstances();
 	Floor->AddInstances(Data->FloorTransforms, false);
 	Floor->AddInstances(Data->CeilingTransforms, false);
@@ -353,7 +358,11 @@ void AMazeWorld::PrepareMaterials()
 	    GetDefault<UMazeLocationSettings>()->WaterMaterial().Get()};
 
 	if (!VisualMaterials[7] || !VisualMaterials[8])
+	{
 		GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->Fail(TEXT("Room presentation materials are unavailable"));
+
+		return;
+	}
 
 	if (const auto Lamps = ECSSubsystem->BuildMazeLampLocations(MazeEntity))
 		MazeLampAudio::Rebuild(*this, *Lamps);
