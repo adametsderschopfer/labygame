@@ -100,6 +100,7 @@ private:
 	TArray<TObjectPtr<class UMaterialInterface>> VisualMaterials;
 	TSharedPtr<FMazeChunkJob> PendingChunk;
 	TArray<float> AppliedDoorOpenAmounts;
+	TArray<int8> AppliedDoorSwingSigns;
 	bool bInitialChunksReady = false;
 	bool bPresentationStarted = false;
 

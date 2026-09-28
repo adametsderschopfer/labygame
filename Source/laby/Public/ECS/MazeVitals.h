@@ -7,7 +7,8 @@ USTRUCT()
 struct FMazeVitals
 {
 	GENERATED_BODY()
-	static constexpr float Maximum = 100.f;
+	static constexpr float HealthMaximum = 100.f;
+	static constexpr float StaminaMaximum = 200.f;
 	static constexpr float DrainPerSecond = 20.f;
 	static constexpr float RecoveryPerSecond = 15.f;
 	static constexpr float RecoveryDelay = 1.5f;
@@ -15,9 +16,9 @@ struct FMazeVitals
 	static constexpr float JumpCost = 15.f;
 
 	UPROPERTY()
-	float Health = Maximum;
+	float Health = HealthMaximum;
 	UPROPERTY()
-	float Stamina = Maximum;
+	float Stamina = StaminaMaximum;
 	UPROPERTY()
 	float RecoveryWait = 0.f;
 	UPROPERTY()

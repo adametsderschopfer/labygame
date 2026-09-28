@@ -746,7 +746,13 @@ TArray<FMazeDoorView> UMazeECSSubsystem::ReadDoors(FMassEntityHandle MazeEntity)
 	for (const FMassEntityHandle Entity : DoorEntities)
 		if (const auto* Door = FindFragment<FMazeDoorFragment>(Entity);
 		    Door && Door->Maze == MazeEntity && Door->MazeRevision == Maze->Revision)
-			Result.Add({Door->Index, Door->Center, Door->SlideAxis, Door->Normal, Door->OpenAmount, Door->bWantsOpen});
+			Result.Add({Door->Index,
+			            Door->Center,
+			            Door->SlideAxis,
+			            Door->Normal,
+			            Door->OpenAmount,
+			            Door->bWantsOpen,
+			            Door->SwingSign});
 
 	Result.Sort(
 	    [](const FMazeDoorView& A, const FMazeDoorView& B)
@@ -766,9 +772,8 @@ TArray<uint8> UMazeECSSubsystem::ReadDoorStates(FMassEntityHandle MazeEntity) co
 
 	for (const FMazeDoorView& Door : Doors)
 		if (Result.IsValidIndex(Door.Index))
-			Result[Door.Index] =
-			    static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Door.OpenAmount, 0.f, 1.f) * 127.f)) |
-			    (Door.bWantsOpen ? 0x80 : 0);
+			Result[Door.Index] = static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Door.OpenAmount, 0.f, 1.f) * 63.f)) |
+			                     (Door.SwingSign < 0 ? 0x40 : 0) | (Door.bWantsOpen ? 0x80 : 0);
 
 	return Result;
 }
@@ -811,7 +816,7 @@ bool UMazeECSSubsystem::ToggleDoor(FMassEntityHandle Player, int32 DoorIndex, co
 	        *Door, Eye, Aim, FMazeRoomDefinition::OpeningWidth(Maze->Cell - Maze->WallThickness)))
 		return false;
 
-	FMazeDoorSystem::Toggle(*Door);
+	FMazeDoorSystem::Toggle(*Door, Pose->Location);
 
 	return true;
 }
@@ -831,7 +836,9 @@ void UMazeECSSubsystem::ReceiveDoorStates(FMassEntityHandle MazeEntity, uint32 R
 		    Door && Door->Maze == MazeEntity && Door->MazeRevision == Revision && States.IsValidIndex(Door->Index))
 		{
 			Door->bWantsOpen = (States[Door->Index] & 0x80) != 0;
-			Door->OpenAmount = (States[Door->Index] & 0x7f) / 127.f;
+			Door->SwingSign = (States[Door->Index] & 0x40) != 0 ? -1 : 1;
+			Door->OpenAmount = (States[Door->Index] & 0x3f) / 63.f;
+			Door->PendingSwingSign = 0;
 		}
 }
 

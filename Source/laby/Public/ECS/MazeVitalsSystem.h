@@ -54,7 +54,8 @@ struct FMazeVitalsSystem
 			if (!bOnGround)
 				return;
 
-			V.Stamina = FMath::Min(FMazeVitals::Maximum, V.Stamina + FMazeVitals::RecoveryPerSecond * RecoveryTime);
+			V.Stamina =
+			    FMath::Min(FMazeVitals::StaminaMaximum, V.Stamina + FMazeVitals::RecoveryPerSecond * RecoveryTime);
 
 			if (V.Stamina >= FMazeVitals::ResumeThreshold)
 				V.bExhausted = false;

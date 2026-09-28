@@ -10,11 +10,11 @@ bool FMazeVitalsTest::RunTest(const FString& Parameters)
 	FMazeVitals V;
 
 	FMazeVitalsSystem::Update(V, 2.f, true);
-	TestEqual(TEXT("Two seconds of sprint"), V.Stamina, 60.f);
+	TestEqual(TEXT("Two seconds of sprint"), V.Stamina, 160.f);
 	FMazeVitalsSystem::Update(V, 1.f, false);
-	TestEqual(TEXT("Recovery waits after running"), V.Stamina, 60.f);
+	TestEqual(TEXT("Recovery waits after running"), V.Stamina, 160.f);
 	FMazeVitalsSystem::Update(V, 1.f, false);
-	TestEqual(TEXT("Only time after delay regenerates"), V.Stamina, 67.5f);
+	TestEqual(TEXT("Only time after delay regenerates"), V.Stamina, 167.5f);
 	FMazeVitalsSystem::Update(V, 10.f, true);
 	TestEqual(TEXT("Stamina cannot go negative"), V.Stamina, 0.f);
 	TestFalse(TEXT("Exhaustion blocks sprint"), FMazeVitalsSystem::CanSprint(V));
@@ -24,9 +24,9 @@ bool FMazeVitalsTest::RunTest(const FString& Parameters)
 	FMazeVitalsSystem::Update(V, 1.f, false);
 	TestTrue(TEXT("Sprint returns above threshold"), FMazeVitalsSystem::CanSprint(V));
 	FMazeVitalsSystem::Update(V, 100.f, false);
-	TestEqual(TEXT("Recovery caps at maximum"), V.Stamina, 100.f);
+	TestEqual(TEXT("Recovery caps at maximum"), V.Stamina, FMazeVitals::StaminaMaximum);
 	FMazeVitalsSystem::Update(V, -1.f, true);
-	TestEqual(TEXT("Negative time ignored"), V.Stamina, 100.f);
+	TestEqual(TEXT("Negative time ignored"), V.Stamina, FMazeVitals::StaminaMaximum);
 	TestEqual(TEXT("Damage applied"), FMazeVitalsSystem::Damage(V, 35.f), 35.f);
 	TestEqual(TEXT("Health decreases"), V.Health, 65.f);
 	TestEqual(TEXT("Negative damage ignored"), FMazeVitalsSystem::Damage(V, -20.f), 0.f);
@@ -35,18 +35,18 @@ bool FMazeVitalsTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Dead player cannot sprint"), FMazeVitalsSystem::CanSprint(V));
 	TestEqual(TEXT("Dead player takes no further damage"), FMazeVitalsSystem::Damage(V, 10.f), 0.f);
 	FMazeVitalsSystem::Update(V, 5.f, true);
-	TestEqual(TEXT("Dead player does not consume stamina"), V.Stamina, 100.f);
+	TestEqual(TEXT("Dead player does not consume stamina"), V.Stamina, FMazeVitals::StaminaMaximum);
 
 	FMazeVitals FreshLife;
 
-	TestEqual(TEXT("New life health"), FreshLife.Health, 100.f);
-	TestEqual(TEXT("New life stamina"), FreshLife.Stamina, 100.f);
+	TestEqual(TEXT("New life health"), FreshLife.Health, FMazeVitals::HealthMaximum);
+	TestEqual(TEXT("New life stamina"), FreshLife.Stamina, FMazeVitals::StaminaMaximum);
 	TestTrue(TEXT("Jump spends stamina"), FMazeVitalsSystem::SpendJumpStamina(FreshLife));
-	TestEqual(TEXT("Jump costs 15"), FreshLife.Stamina, 85.f);
+	TestEqual(TEXT("Jump costs 15"), FreshLife.Stamina, 185.f);
 	FMazeVitalsSystem::Update(FreshLife, 3.f, false, false);
-	TestEqual(TEXT("No recovery in air"), FreshLife.Stamina, 85.f);
+	TestEqual(TEXT("No recovery in air"), FreshLife.Stamina, 185.f);
 	FMazeVitalsSystem::Update(FreshLife, 0.5f, false, true);
-	TestEqual(TEXT("Walking or standing on ground recovers"), FreshLife.Stamina, 92.5f);
+	TestEqual(TEXT("Walking or standing on ground recovers"), FreshLife.Stamina, 192.5f);
 	FreshLife.Stamina = 14.f;
 	TestFalse(TEXT("Insufficient stamina blocks jump"), FMazeVitalsSystem::CanJump(FreshLife));
 	TestFalse(TEXT("Failed jump does not spend"), FMazeVitalsSystem::SpendJumpStamina(FreshLife));

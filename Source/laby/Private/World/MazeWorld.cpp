@@ -155,6 +155,7 @@ void AMazeWorld::EndPlay(const EEndPlayReason::Type Reason)
 	DoorHandles->ClearInstances();
 	DoorCollision->ClearInstances();
 	AppliedDoorOpenAmounts.Reset();
+	AppliedDoorSwingSigns.Reset();
 	HeadlampBody->SetVisibility(false);
 	HeadlampLens->SetVisibility(false);
 	GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->RemoveParticipant(this);

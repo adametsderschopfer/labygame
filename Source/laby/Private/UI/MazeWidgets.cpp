@@ -346,11 +346,11 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 		                       : NSLOCTEXT("Maze.Ward", "Stamina", "Выносливость"));
 
 		if (auto* Bar = Cast<UProgressBar>(GetWidgetFromName(TEXT("HealthBar"))))
-			Bar->SetPercent(FMath::Clamp(Vitals.Health / FMazeVitals::Maximum, 0.f, 1.f));
+			Bar->SetPercent(FMath::Clamp(Vitals.Health / FMazeVitals::HealthMaximum, 0.f, 1.f));
 
 		if (auto* Bar = Cast<UProgressBar>(GetWidgetFromName(TEXT("StaminaBar"))))
 		{
-			Bar->SetPercent(FMath::Clamp(Vitals.Stamina / FMazeVitals::Maximum, 0.f, 1.f));
+			Bar->SetPercent(FMath::Clamp(Vitals.Stamina / FMazeVitals::StaminaMaximum, 0.f, 1.f));
 			Bar->SetFillColorAndOpacity(Vitals.bExhausted ? ExhaustedColor : StaminaColor);
 		}
 	}

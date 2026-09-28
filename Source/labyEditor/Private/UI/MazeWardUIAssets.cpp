@@ -70,6 +70,21 @@ namespace MazeWardUI
 		return MazeInterfaceStyle::Palette().Glass.CopyWithNewOpacity(.83f);
 	}
 
+	FLinearColor HealthFill()
+	{
+		return FLinearColor(.31f, .16f, .17f);
+	}
+
+	FLinearColor StaminaFill()
+	{
+		return FLinearColor(.15f, .23f, .34f);
+	}
+
+	FLinearColor ExhaustedStaminaFill()
+	{
+		return FLinearColor(.09f, .13f, .18f);
+	}
+
 	FSlateBrush Panel(FLinearColor Fill, FLinearColor Line, float Radius = 3)
 	{
 		FSlateBrush B = *FCoreStyle::Get().GetBrush("WhiteBrush");
@@ -700,7 +715,7 @@ namespace MazeWardUI
 			Bar->SetBarFillStyle(EProgressBarFillStyle::Scale);
 			Bar->SetBorderPadding({0, 0});
 			Bar->SetPercent(1);
-			Bar->SetFillColorAndOpacity(I == 0 ? FLinearColor(.82f, .4f, .43f) : FLinearColor(.45f, .63f, .82f));
+			Bar->SetFillColorAndOpacity(I == 0 ? HealthFill() : StaminaFill());
 			Put(PanelWidget, Bar, {0, 0}, {Width, 9});
 		}
 
@@ -831,8 +846,8 @@ namespace MazeWardUI
 
 		if (auto* HUD = Cast<UMazeHUDWidget>(BP->GeneratedClass->GetDefaultObject()))
 		{
-			HUD->StaminaColor = FLinearColor(.45f, .63f, .82f);
-			HUD->ExhaustedColor = FLinearColor(.31f, .43f, .57f);
+			HUD->StaminaColor = StaminaFill();
+			HUD->ExhaustedColor = ExhaustedStaminaFill();
 		}
 
 		FSavePackageArgs Args;

@@ -192,6 +192,12 @@ struct FMazeDoorFragment : public FMassFragment
 
 	UPROPERTY()
 	bool bWantsOpen = false;
+
+	UPROPERTY()
+	int8 SwingSign = 1;
+
+	UPROPERTY()
+	int8 PendingSwingSign = 0;
 };
 
 template <> struct TMassFragmentTraits<FMazeGenerationFragment> final

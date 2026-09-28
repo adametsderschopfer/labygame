@@ -22,9 +22,9 @@ namespace
 		const float LeafWidth = Width - 2.f * FMazeDoorDefinition::FrameWidthCm;
 		const float LeafHeight = Height - FMazeDoorDefinition::FrameWidthCm;
 		const FVector Hinge = Door.Center - Door.SlideAxis * (Width * .5f - FMazeDoorDefinition::FrameWidthCm);
-		const FQuat Swing(
-		    FVector::UpVector,
-		    FMath::DegreesToRadians(FMazeDoorDefinition::SwingDegrees * FMath::SmoothStep(0.f, 1.f, Door.OpenAmount)));
+		const FQuat Swing(FVector::UpVector,
+		                  FMath::DegreesToRadians(Door.SwingSign * FMazeDoorDefinition::SwingDegrees *
+		                                          FMath::SmoothStep(0.f, 1.f, Door.OpenAmount)));
 		const FVector Axis = Swing.RotateVector(Door.SlideAxis);
 		const FVector Center = Hinge + Axis * (LeafWidth * .5f) + FVector::UpVector * (LeafHeight * .5f);
 		const FQuat Rotation = FRotationMatrix::MakeFromXZ(Axis, FVector::UpVector).ToQuat();
@@ -38,9 +38,9 @@ namespace
 	                           float WallThickness)
 	{
 		const FVector Center = FMazeDoorSystem::HandleLocation(Door, Width);
-		const FQuat Swing(
-		    FVector::UpVector,
-		    FMath::DegreesToRadians(FMazeDoorDefinition::SwingDegrees * FMath::SmoothStep(0.f, 1.f, Door.OpenAmount)));
+		const FQuat Swing(FVector::UpVector,
+		                  FMath::DegreesToRadians(Door.SwingSign * FMazeDoorDefinition::SwingDegrees *
+		                                          FMath::SmoothStep(0.f, 1.f, Door.OpenAmount)));
 		const FVector Axis = Swing.RotateVector(Door.SlideAxis);
 
 		return FTransform(FRotationMatrix::MakeFromXZ(Axis, FVector::UpVector).ToQuat(),
@@ -61,6 +61,7 @@ void AMazeWorld::RebuildDoorInstances()
 	DoorHandles->ClearInstances();
 	DoorCollision->ClearInstances();
 	AppliedDoorOpenAmounts.Reset();
+	AppliedDoorSwingSigns.Reset();
 
 	if (!ECSSubsystem)
 		return;
@@ -95,6 +96,7 @@ void AMazeWorld::RebuildDoorInstances()
 
 		DoorCollision->AddInstance(Leaf);
 		AppliedDoorOpenAmounts.Add(Door.OpenAmount);
+		AppliedDoorSwingSigns.Add(Door.SwingSign);
 	}
 }
 
@@ -178,7 +180,8 @@ void AMazeWorld::UpdateDoors(float DeltaSeconds)
 
 	const TArray<FMazeDoorView> Doors = ECSSubsystem->ReadDoors(MazeEntity);
 
-	if (DoorCollision->GetInstanceCount() != Doors.Num() || AppliedDoorOpenAmounts.Num() != Doors.Num())
+	if (DoorCollision->GetInstanceCount() != Doors.Num() || AppliedDoorOpenAmounts.Num() != Doors.Num() ||
+	    AppliedDoorSwingSigns.Num() != Doors.Num())
 	{
 		RebuildDoorInstances();
 
@@ -189,7 +192,8 @@ void AMazeWorld::UpdateDoors(float DeltaSeconds)
 
 	for (int32 Index = 0; Index < Doors.Num(); ++Index)
 	{
-		if (FMath::IsNearlyEqual(AppliedDoorOpenAmounts[Index], Doors[Index].OpenAmount))
+		if (FMath::IsNearlyEqual(AppliedDoorOpenAmounts[Index], Doors[Index].OpenAmount) &&
+		    AppliedDoorSwingSigns[Index] == Doors[Index].SwingSign)
 			continue;
 
 		const FTransform Leaf = LeafTransform(Doors[Index], GetActorLocation(), Width, Height, Maze.WallThickness);
@@ -204,5 +208,6 @@ void AMazeWorld::UpdateDoors(float DeltaSeconds)
 		}
 
 		AppliedDoorOpenAmounts[Index] = Doors[Index].OpenAmount;
+		AppliedDoorSwingSigns[Index] = Doors[Index].SwingSign;
 	}
 }
