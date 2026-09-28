@@ -704,13 +704,20 @@ namespace MazeWardUI
 			const double Width = I == 0 ? 243. : 256.;
 			const FString Prefix = I == 0 ? TEXT("WardHealth") : TEXT("WardStamina");
 
-			Shape(Tree, PanelWidget, Prefix + TEXT("Track"), {0, 0}, {Width, 9}, MazeInterfaceStyle::Palette().Track);
+			Shape(Tree,
+			      PanelWidget,
+			      Prefix + TEXT("Track"),
+			      {0, 0},
+			      {Width, 9},
+			      MazeInterfaceStyle::Palette().Track,
+			      FLinearColor::Transparent,
+			      3);
 
 			auto* Bar = Make<UProgressBar>(Tree, I == 0 ? TEXT("HealthBar") : TEXT("StaminaBar"));
 			FProgressBarStyle Style;
 
 			Style.SetBackgroundImage(Panel(FLinearColor::Transparent, FLinearColor::Transparent, 0));
-			Style.SetFillImage(*FCoreStyle::Get().GetBrush("WhiteBrush"));
+			Style.SetFillImage(Panel(FLinearColor::White, FLinearColor::Transparent, 3));
 			Bar->SetWidgetStyle(Style);
 			Bar->SetBarFillStyle(EProgressBarFillStyle::Scale);
 			Bar->SetBorderPadding({0, 0});

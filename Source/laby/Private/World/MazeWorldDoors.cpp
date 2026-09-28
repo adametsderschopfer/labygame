@@ -141,14 +141,14 @@ void AMazeWorld::UpdateDoors(float DeltaSeconds)
 
 			const float CurrentAngle = FMazeDoorDefinition::SwingDegrees * FMath::SmoothStep(0.f, 1.f, Door.OpenAmount);
 			const float DesiredAngle = FMazeDoorDefinition::SwingDegrees * FMath::SmoothStep(0.f, 1.f, Desired);
-			const int32 Steps = FMath::Max(1, FMath::CeilToInt(FMath::Abs(DesiredAngle - CurrentAngle) / 5.f));
+			const int32 StepCount = FMath::Max(1, FMath::CeilToInt(FMath::Abs(DesiredAngle - CurrentAngle) / 5.f));
 			float MaxSafeAmount = Door.OpenAmount;
 
-			for (int32 Step = 1; Step <= Steps; ++Step)
+			for (int32 Step = 1; Step <= StepCount; ++Step)
 			{
 				FMazeDoorView Candidate = Door;
 
-				Candidate.OpenAmount = FMath::Lerp(Door.OpenAmount, Desired, float(Step) / Steps);
+				Candidate.OpenAmount = FMath::Lerp(Door.OpenAmount, Desired, float(Step) / StepCount);
 
 				const FTransform Leaf = LeafTransform(Candidate, GetActorLocation(), Width, Height, Maze.WallThickness);
 				const FVector HalfExtent = Leaf.GetScale3D().GetAbs() * 50.f;

@@ -9,6 +9,7 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Rendering/DrawElements.h"
 #include "Rendering/SlateRenderer.h"
+#include "Brushes/SlateRoundedBoxBrush.h"
 #include "Styling/CoreStyle.h"
 
 namespace
@@ -36,6 +37,47 @@ namespace
 		Points.Add(FirstPoint);
 
 		return Points;
+	}
+
+	int32 PaintKeyBadge(const FGeometry& Geometry,
+	                    FSlateWindowElementList& Elements,
+	                    int32 Layer,
+	                    FVector2D Position,
+	                    FVector2D Size,
+	                    const FText& KeyText,
+	                    const FSlateFontInfo& Font,
+	                    const FLinearColor& Fill,
+	                    const FLinearColor& Outline,
+	                    const FLinearColor& Ink)
+	{
+		static const FSlateRoundedBoxBrush BadgeBrush(FLinearColor::White, 5.f);
+		const FVector2D TextSize =
+		    FSlateApplication::Get().GetRenderer()->GetFontMeasureService()->Measure(KeyText, Font);
+		const FVector2D TextPosition = Position + (Size - TextSize) * .5f;
+
+		FSlateDrawElement::MakeBox(Elements,
+		                           ++Layer,
+		                           Geometry.ToPaintGeometry(Size, FSlateLayoutTransform(Position)),
+		                           &BadgeBrush,
+		                           ESlateDrawEffect::None,
+		                           Fill);
+		FSlateDrawElement::MakeLines(Elements,
+		                             ++Layer,
+		                             Geometry.ToPaintGeometry(),
+		                             RoundedRect(Position, Size, 5.f),
+		                             ESlateDrawEffect::None,
+		                             Outline,
+		                             true,
+		                             1.f);
+		FSlateDrawElement::MakeText(Elements,
+		                            ++Layer,
+		                            Geometry.ToPaintGeometry(TextSize, FSlateLayoutTransform(TextPosition)),
+		                            KeyText,
+		                            Font,
+		                            ESlateDrawEffect::None,
+		                            Ink);
+
+		return Layer;
 	}
 
 	double Cross(FVector2D A, FVector2D B, FVector2D C)
@@ -183,10 +225,11 @@ int32 MazeItemPresentation::PaintFocus(const UUserWidget& Owner,
 	const auto KeyFont = MazeInterfaceStyle::Font(17, 0);
 	const auto Measure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
 	const float KeyWidth = FMath::Max(32.f, Measure->Measure(KeyText, KeyFont).X + 16.f);
-	const FText ItemName = NSLOCTEXT("Maze.Items", "Headlamp", "Налобный фонарик");
+	const FText ItemName = NSLOCTEXT("Maze.Items", "Headlamp", "Фонарик");
 	const auto ItemFont = MazeInterfaceStyle::Font(17, 0);
-	const float TextWidth = FMath::CeilToFloat(Measure->Measure(ItemName, ItemFont).X) + 4.f;
-	const FVector2D LabelSize(12.f + TextWidth + 12.f + KeyWidth + 12.f, 57.f);
+	const FVector2D ItemTextSize = Measure->Measure(ItemName, ItemFont);
+	const float NameAreaWidth = FMath::Max(120.f, FMath::CeilToFloat(ItemTextSize.X) + 24.f);
+	const FVector2D LabelSize(NameAreaWidth + 12.f + KeyWidth + 12.f, 57.f);
 	const FVector2D Label(FMath::Clamp(Maximum.X + 45.f, 12.f, Screen.X - LabelSize.X - 12.f),
 	                      FMath::Clamp(Minimum.Y - 78.f, 12.f, Screen.Y - LabelSize.Y - 12.f));
 
@@ -232,30 +275,25 @@ int32 MazeItemPresentation::PaintFocus(const UUserWidget& Owner,
 	FSlateDrawElement::MakeText(
 	    Elements,
 	    ++Layer,
-	    Geometry.ToPaintGeometry(FVector2D(TextWidth, 28.f), FSlateLayoutTransform(Label + FVector2D(12.f, 17.f))),
+	    Geometry.ToPaintGeometry(
+	        ItemTextSize, FSlateLayoutTransform(Label + FVector2D((NameAreaWidth - ItemTextSize.X) * .5f, 17.f))),
 	    ItemName,
 	    ItemFont,
 	    ESlateDrawEffect::None,
 	    Palette.Ink);
 
-	const FVector2D KeyPosition = Label + FVector2D(12.f + TextWidth + 12.f, 11.f);
+	const FVector2D KeyPosition = Label + FVector2D(NameAreaWidth + 12.f, 11.f);
 
-	FSlateDrawElement::MakeBox(Elements,
-	                           ++Layer,
-	                           Geometry.ToPaintGeometry(FVector2D(KeyWidth, 35.f), FSlateLayoutTransform(KeyPosition)),
-	                           FCoreStyle::Get().GetBrush("WhiteBrush"),
-	                           ESlateDrawEffect::None,
-	                           Palette.HoverAccent);
-	FSlateDrawElement::MakeText(Elements,
-	                            ++Layer,
-	                            Geometry.ToPaintGeometry(FVector2D(KeyWidth - 12.f, 25.f),
-	                                                     FSlateLayoutTransform(KeyPosition + FVector2D(8.f, 5.f))),
-	                            KeyText,
-	                            KeyFont,
-	                            ESlateDrawEffect::None,
-	                            Palette.OnAccent);
-
-	return Layer;
+	return PaintKeyBadge(Geometry,
+	                     Elements,
+	                     Layer,
+	                     KeyPosition,
+	                     FVector2D(KeyWidth, 35.f),
+	                     KeyText,
+	                     KeyFont,
+	                     Palette.HoverAccent,
+	                     Accent,
+	                     Palette.OnAccent);
 }
 
 int32 MazeItemPresentation::PaintDoorFocus(const UUserWidget& Owner,
@@ -277,7 +315,15 @@ int32 MazeItemPresentation::PaintDoorFocus(const UUserWidget& Owner,
 		return Layer;
 
 	const FVector2D Screen = Geometry.GetLocalSize();
-	const FVector2D Size(206.f, 52.f);
+	const FText KeyText = MazeKeyBindings::GetKey(TEXT("Interact")).GetDisplayName();
+	const FText ActionText =
+	    bOpen ? NSLOCTEXT("Maze.Doors", "Close", "ЗАКРЫТЬ") : NSLOCTEXT("Maze.Doors", "Open", "ОТКРЫТЬ");
+	const auto Font = MazeInterfaceStyle::Font(17, 0);
+	const auto Measure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
+	const FVector2D ActionTextSize = Measure->Measure(ActionText, Font);
+	const float NameAreaWidth = FMath::Max(132.f, FMath::CeilToFloat(ActionTextSize.X) + 24.f);
+	const float KeyWidth = FMath::Max(40.f, Measure->Measure(KeyText, Font).X + 16.f);
+	const FVector2D Size(NameAreaWidth + 12.f + KeyWidth + 12.f, 52.f);
 	const FVector2D Position(FMath::Clamp(Anchor.X + 24.f, 12.f, Screen.X - Size.X - 12.f),
 	                         FMath::Clamp(Anchor.Y - 70.f, 12.f, Screen.Y - Size.Y - 12.f));
 	const auto Palette = MazeInterfaceStyle::Palette();
@@ -304,29 +350,24 @@ int32 MazeItemPresentation::PaintDoorFocus(const UUserWidget& Owner,
 	FSlateDrawElement::MakeText(
 	    Elements,
 	    ++Layer,
-	    Geometry.ToPaintGeometry(FVector2D(132.f, 28.f), FSlateLayoutTransform(Position + FVector2D(15.f, 16.f))),
-	    bOpen ? NSLOCTEXT("Maze.Doors", "Close", "ЗАКРЫТЬ") : NSLOCTEXT("Maze.Doors", "Open", "ОТКРЫТЬ"),
-	    MazeInterfaceStyle::Font(17, 0),
+	    Geometry.ToPaintGeometry(
+	        ActionTextSize,
+	        FSlateLayoutTransform(Position + FVector2D((NameAreaWidth - ActionTextSize.X) * .5f, 16.f))),
+	    ActionText,
+	    Font,
 	    ESlateDrawEffect::None,
 	    Palette.Ink);
 
-	const FText KeyText = MazeKeyBindings::GetKey(TEXT("Interact")).GetDisplayName();
-	const FVector2D KeyPosition = Position + FVector2D(155.f, 9.f);
+	const FVector2D KeyPosition = Position + FVector2D(NameAreaWidth + 12.f, 9.f);
 
-	FSlateDrawElement::MakeBox(Elements,
-	                           ++Layer,
-	                           Geometry.ToPaintGeometry(FVector2D(40.f, 34.f), FSlateLayoutTransform(KeyPosition)),
-	                           FCoreStyle::Get().GetBrush("WhiteBrush"),
-	                           ESlateDrawEffect::None,
-	                           Palette.HoverAccent);
-	FSlateDrawElement::MakeText(
-	    Elements,
-	    ++Layer,
-	    Geometry.ToPaintGeometry(FVector2D(32.f, 25.f), FSlateLayoutTransform(KeyPosition + FVector2D(8.f, 5.f))),
-	    KeyText,
-	    MazeInterfaceStyle::Font(17, 0),
-	    ESlateDrawEffect::None,
-	    Palette.OnAccent);
-
-	return Layer;
+	return PaintKeyBadge(Geometry,
+	                     Elements,
+	                     Layer,
+	                     KeyPosition,
+	                     FVector2D(KeyWidth, 34.f),
+	                     KeyText,
+	                     Font,
+	                     Palette.HoverAccent,
+	                     Accent,
+	                     Palette.OnAccent);
 }

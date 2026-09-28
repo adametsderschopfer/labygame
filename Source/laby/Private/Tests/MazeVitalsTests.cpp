@@ -10,11 +10,11 @@ bool FMazeVitalsTest::RunTest(const FString& Parameters)
 	FMazeVitals V;
 
 	FMazeVitalsSystem::Update(V, 2.f, true);
-	TestEqual(TEXT("Two seconds of sprint"), V.Stamina, 160.f);
+	TestEqual(TEXT("Two seconds of sprint"), V.Stamina, 80.f);
 	FMazeVitalsSystem::Update(V, 1.f, false);
-	TestEqual(TEXT("Recovery waits after running"), V.Stamina, 160.f);
+	TestEqual(TEXT("Recovery waits after running"), V.Stamina, 80.f);
 	FMazeVitalsSystem::Update(V, 1.f, false);
-	TestEqual(TEXT("Only time after delay regenerates"), V.Stamina, 167.5f);
+	TestEqual(TEXT("Only time after delay regenerates"), V.Stamina, 87.5f);
 	FMazeVitalsSystem::Update(V, 10.f, true);
 	TestEqual(TEXT("Stamina cannot go negative"), V.Stamina, 0.f);
 	TestFalse(TEXT("Exhaustion blocks sprint"), FMazeVitalsSystem::CanSprint(V));
@@ -42,15 +42,15 @@ bool FMazeVitalsTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("New life health"), FreshLife.Health, FMazeVitals::HealthMaximum);
 	TestEqual(TEXT("New life stamina"), FreshLife.Stamina, FMazeVitals::StaminaMaximum);
 	TestTrue(TEXT("Jump spends stamina"), FMazeVitalsSystem::SpendJumpStamina(FreshLife));
-	TestEqual(TEXT("Jump costs 15"), FreshLife.Stamina, 185.f);
+	TestEqual(TEXT("Jump costs 7.5"), FreshLife.Stamina, 92.5f);
 	FMazeVitalsSystem::Update(FreshLife, 3.f, false, false);
-	TestEqual(TEXT("No recovery in air"), FreshLife.Stamina, 185.f);
+	TestEqual(TEXT("No recovery in air"), FreshLife.Stamina, 92.5f);
 	FMazeVitalsSystem::Update(FreshLife, 0.5f, false, true);
-	TestEqual(TEXT("Walking or standing on ground recovers"), FreshLife.Stamina, 192.5f);
-	FreshLife.Stamina = 14.f;
+	TestEqual(TEXT("Walking or standing on ground recovers"), FreshLife.Stamina, 100.f);
+	FreshLife.Stamina = 7.f;
 	TestFalse(TEXT("Insufficient stamina blocks jump"), FMazeVitalsSystem::CanJump(FreshLife));
 	TestFalse(TEXT("Failed jump does not spend"), FMazeVitalsSystem::SpendJumpStamina(FreshLife));
-	TestEqual(TEXT("Failed jump preserves stamina"), FreshLife.Stamina, 14.f);
+	TestEqual(TEXT("Failed jump preserves stamina"), FreshLife.Stamina, 7.f);
 	FreshLife.Stamina = FMazeVitals::JumpCost;
 	TestTrue(TEXT("Exact cost permits jump"), FMazeVitalsSystem::SpendJumpStamina(FreshLife));
 	TestEqual(TEXT("Exact cost leaves zero"), FreshLife.Stamina, 0.f);
