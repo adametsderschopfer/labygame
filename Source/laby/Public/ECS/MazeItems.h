@@ -87,6 +87,11 @@ struct FMazeItemDefinition
 	static constexpr float FocusRange = 250.f;
 	static constexpr float MinimumAimDot = 0.88f;
 	static constexpr float EyePoseTolerance = 130.f;
+	static constexpr float DropForwardCm = 95.f;
+	static constexpr float DropSweepRadiusCm = 12.f;
+	static constexpr float DropWallClearanceCm = 22.f;
+	static constexpr float DropHeightCm = 15.f;
+	static constexpr float DropRangeCm = 200.f;
 	static constexpr int32 InventoryCapacity = 4;
 	static FVector StartOffset()
 	{

@@ -278,11 +278,13 @@ when a packaged build is requested.
 
 ## Adding a feature
 
-The starter headlamp has a world-scoped Mass entity with a stable location
-derived from the generated start. Its small engine-owned representation and
+The headlamp has one world-scoped Mass entity. Its initial location comes from
+the generated start; dropping it updates that entity's location and availability
+without adding an Actor or resource. Its small engine-owned representation and
 query collision stay resident in `AMazeWorld`; visual chunk eviction cannot
-respawn it or erase its picked-up state. The server mirrors availability to
-clients, while each player's carried item belongs to that player's ECS fragment.
+respawn or reset it. The server mirrors location and availability to clients in
+one revision-scoped snapshot, while a carried item belongs to its player's ECS
+fragment. Server-side floor traces choose a drop location on resident collision.
 
 Before implementation, specify ECS owner, server authority, stable identity,
 reset/persistence rules, resource dependencies and near/far simulation policy.

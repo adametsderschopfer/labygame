@@ -95,3 +95,26 @@ bool FMazeItemSystem::Pickup(FMazeWorldItemFragment& WorldItem,
 
 	return true;
 }
+
+bool FMazeItemSystem::Drop(FMazeItemsFragment& Items,
+                           FMazeWorldItemFragment& WorldItem,
+                           const FVector& Location,
+                           bool bCanAct)
+{
+	const int32 Slot = Items.Value.SelectedSlot;
+
+	if (!bCanAct || WorldItem.bAvailable || Location.ContainsNaN() || !Items.Value.Items.IsValidIndex(Slot))
+		return false;
+
+	const FMazeItemInstance& Item = Items.Value.Items[Slot];
+
+	if (Item.Id == INDEX_NONE || Item.Kind != EMazeItemKind::Headlamp || Item.Kind != WorldItem.Kind ||
+	    Item.Slot != EMazeEquipmentSlot::Head)
+		return false;
+
+	Items.Value.Items.RemoveAt(Slot);
+	WorldItem.Location = Location;
+	WorldItem.bAvailable = true;
+
+	return true;
+}

@@ -88,12 +88,15 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerPickupItem();
 	UFUNCTION(Server, Reliable)
+	void ServerDropItem();
+	UFUNCTION(Server, Reliable)
 	void ServerToggleDoor(int32 DoorIndex);
 	UFUNCTION(Server, Reliable)
 	void ServerRequestSignal();
 	void ToggleHeadlamp();
 	void SelectInventorySlot(FKey Key);
 	void PickupItem();
+	void DropItem();
 	void GetInteractionView(FVector& OutEye, FVector& OutAim) const;
 	class AMazeWorld* TraceFocusedWorldItem() const;
 	int32 TraceFocusedDoor(FVector& OutHandle, bool& bOutOpen) const;

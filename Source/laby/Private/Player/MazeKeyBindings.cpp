@@ -80,6 +80,7 @@ TConstArrayView<FMazeKeyBinding> MazeKeyBindings::Definitions()
 	     EKeys::RightMouseButton,
 	     NSLOCTEXT("Maze.Keys", "Headlamp", "Фонарик")},
 	    {TEXT("Interact"), TEXT("Interact"), 0.f, EKeys::E, NSLOCTEXT("Maze.Keys", "Interact", "Подобрать")},
+	    {TEXT("DropItem"), TEXT("DropItem"), 0.f, EKeys::G, NSLOCTEXT("Maze.Keys", "DropItem", "Выбросить")},
 	    {TEXT("Signal"), TEXT("Signal"), 0.f, EKeys::X, NSLOCTEXT("Maze.Keys", "Signal", "Свисток")},
 	    {TEXT("Map"), TEXT("Map"), 0.f, EKeys::Tab, NSLOCTEXT("Maze.Keys", "Map", "Карта")},
 	    {TEXT("NewMaze"), TEXT("NewMaze"), 0.f, EKeys::R, NSLOCTEXT("Maze.Keys", "NewMaze", "Новый лабиринт")}};

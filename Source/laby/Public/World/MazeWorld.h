@@ -25,6 +25,21 @@ struct FMazeDoorNetworkSnapshot
 	TArray<uint8> States;
 };
 
+USTRUCT()
+struct FMazeWorldItemNetworkSnapshot
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	uint32 MazeRevision = 0;
+
+	UPROPERTY()
+	FVector Location = FVector::ZeroVector;
+
+	UPROPERTY()
+	bool bAvailable = true;
+};
+
 UCLASS()
 class LABY_API AMazeWorld : public AActor
 {
@@ -68,7 +83,7 @@ private:
 	UFUNCTION()
 	void OnRep_DoorStates();
 	UFUNCTION()
-	void OnRep_HeadlampAvailable();
+	void OnRep_WorldItem();
 	void Build();
 	void RefreshWorldItem();
 	void PrepareMaterials();
@@ -103,8 +118,8 @@ private:
 	UPROPERTY()
 	TObjectPtr<UStaticMeshComponent> HeadlampLens;
 
-	UPROPERTY(ReplicatedUsing = OnRep_HeadlampAvailable)
-	bool bReplicatedHeadlampAvailable = true;
+	UPROPERTY(ReplicatedUsing = OnRep_WorldItem)
+	FMazeWorldItemNetworkSnapshot ReplicatedWorldItem;
 
 	UPROPERTY()
 	TObjectPtr<UInstancedStaticMeshComponent> DoorFrames;

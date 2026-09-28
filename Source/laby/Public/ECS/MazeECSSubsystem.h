@@ -51,7 +51,8 @@ public:
 	                     int32 ItemId,
 	                     const FVector& EyeLocation,
 	                     const FVector& AimDirection);
-	void ReceiveWorldItemAvailability(FMassEntityHandle Maze, bool bAvailable);
+	bool DropSelectedItem(FMassEntityHandle Player, FMassEntityHandle Maze, const FVector& Location);
+	void ReceiveWorldItemSnapshot(FMassEntityHandle Maze, uint32 Revision, const FVector& Location, bool bAvailable);
 	void ReceiveItems(FMassEntityHandle Entity, const FMazeItemsSnapshot& Snapshot);
 	FMazeVitals ReadVitals(FMassEntityHandle Entity) const;
 	void SetLocomotion(FMassEntityHandle Entity, bool bRunning, bool bOnGround);

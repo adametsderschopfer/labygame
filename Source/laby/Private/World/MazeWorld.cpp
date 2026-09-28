@@ -174,10 +174,11 @@ void AMazeWorld::OnRep_Seed()
 	InitializeMaze();
 }
 
-void AMazeWorld::OnRep_HeadlampAvailable()
+void AMazeWorld::OnRep_WorldItem()
 {
 	if (ECSSubsystem)
-		ECSSubsystem->ReceiveWorldItemAvailability(MazeEntity, bReplicatedHeadlampAvailable);
+		ECSSubsystem->ReceiveWorldItemSnapshot(
+		    MazeEntity, ReplicatedWorldItem.MazeRevision, ReplicatedWorldItem.Location, ReplicatedWorldItem.bAvailable);
 
 	RefreshWorldItem();
 }
@@ -215,9 +216,13 @@ void AMazeWorld::RefreshWorldItem()
 
 	const FMazeWorldItemView Item = ECSSubsystem->ReadWorldItem(MazeEntity);
 
-	if (HasAuthority() && bReplicatedHeadlampAvailable != Item.bAvailable)
+	if (HasAuthority() &&
+	    (ReplicatedWorldItem.MazeRevision != ECSSubsystem->ReadMaze(MazeEntity).Revision ||
+	     !ReplicatedWorldItem.Location.Equals(Item.Location) || ReplicatedWorldItem.bAvailable != Item.bAvailable))
 	{
-		bReplicatedHeadlampAvailable = Item.bAvailable;
+		ReplicatedWorldItem.MazeRevision = ECSSubsystem->ReadMaze(MazeEntity).Revision;
+		ReplicatedWorldItem.Location = Item.Location;
+		ReplicatedWorldItem.bAvailable = Item.bAvailable;
 		ForceNetUpdate();
 	}
 
@@ -256,7 +261,7 @@ void AMazeWorld::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMazeWorld, Seed);
 	DOREPLIFETIME(AMazeWorld, ReplicatedDoorStates);
-	DOREPLIFETIME(AMazeWorld, bReplicatedHeadlampAvailable);
+	DOREPLIFETIME(AMazeWorld, ReplicatedWorldItem);
 }
 
 FVector AMazeWorld::StartLocation() const
@@ -304,7 +309,8 @@ void AMazeWorld::Build()
 	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
 
 	if (!HasAuthority())
-		ECSSubsystem->ReceiveWorldItemAvailability(MazeEntity, bReplicatedHeadlampAvailable);
+		ECSSubsystem->ReceiveWorldItemSnapshot(
+		    MazeEntity, ReplicatedWorldItem.MazeRevision, ReplicatedWorldItem.Location, ReplicatedWorldItem.bAvailable);
 
 	RefreshWorldItem();
 

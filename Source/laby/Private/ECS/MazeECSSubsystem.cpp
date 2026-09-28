@@ -258,14 +258,55 @@ bool UMazeECSSubsystem::PickupWorldItem(FMassEntityHandle Player,
 	return false;
 }
 
-void UMazeECSSubsystem::ReceiveWorldItemAvailability(FMassEntityHandle Maze, bool bAvailable)
+bool UMazeECSSubsystem::DropSelectedItem(FMassEntityHandle Player,
+                                         FMassEntityHandle MazeEntity,
+                                         const FVector& Location)
+{
+	if (GetWorld()->GetNetMode() == NM_Client || GetWorld()->IsPaused() || ReadSession().Maze != MazeEntity ||
+	    Location.ContainsNaN())
+		return false;
+
+	auto* Items = FindFragment<FMazeItemsFragment>(Player);
+	const auto* Pose = FindFragment<FMazePlayerPoseFragment>(Player);
+	const auto* Progress = FindFragment<FMazeProgressFragment>(Player);
+	const auto* Vitals = FindVitals(Player);
+	const auto* Maze = FindFragment<FMazeGenerationFragment>(MazeEntity);
+	const auto Room = ReadRoom();
+
+	if (!Items || !Pose || !Progress || !Vitals || !Maze || !Maze->Data || !Pose->bInputEnabled ||
+	    !FMazeVitalsSystem::IsAlive(*Vitals) || Progress->Maze != MazeEntity ||
+	    Progress->MazeRevision != Maze->Revision || (Room.bActive && !Room.bStarted) ||
+	    FVector::DistSquared(Location, Pose->Location) > FMath::Square(FMazeItemDefinition::DropRangeCm))
+		return false;
+
+	for (const FMassEntityHandle Entity : WorldItemEntities)
+		if (auto* Item = FindFragment<FMazeWorldItemFragment>(Entity);
+		    Item && Item->Maze == MazeEntity && Item->MazeRevision == Maze->Revision && Item->Id == 1)
+			return FMazeItemSystem::Drop(*Items, *Item, Location, true);
+
+	return false;
+}
+
+void UMazeECSSubsystem::ReceiveWorldItemSnapshot(FMassEntityHandle MazeEntity,
+                                                 uint32 Revision,
+                                                 const FVector& Location,
+                                                 bool bAvailable)
 {
 	if (GetWorld()->GetNetMode() != NM_Client)
 		return;
 
+	const auto* Maze = FindFragment<FMazeGenerationFragment>(MazeEntity);
+
+	if (!Maze || !Maze->Data || Maze->Revision != Revision || Location.ContainsNaN())
+		return;
+
 	for (const FMassEntityHandle Entity : WorldItemEntities)
-		if (auto* Item = FindFragment<FMazeWorldItemFragment>(Entity); Item && Item->Maze == Maze)
+		if (auto* Item = FindFragment<FMazeWorldItemFragment>(Entity);
+		    Item && Item->Maze == MazeEntity && Item->MazeRevision == Revision)
+		{
+			Item->Location = Location;
 			Item->bAvailable = bAvailable;
+		}
 }
 
 void UMazeECSSubsystem::DestroyPlayer(FMassEntityHandle Entity)

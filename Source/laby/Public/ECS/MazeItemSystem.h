@@ -16,5 +16,9 @@ struct LABY_API FMazeItemSystem
 	                   const FVector& EyeLocation,
 	                   const FVector& AimDirection,
 	                   bool bCanAct);
+	static bool Drop(FMazeItemsFragment& Items,
+	                 FMazeWorldItemFragment& WorldItem,
+	                 const FVector& Location,
+	                 bool bCanAct);
 	static FMazeHeadlampDefinition HeadlampDefinition();
 };

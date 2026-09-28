@@ -602,7 +602,7 @@ namespace MazeWardUI
 
 		for (const auto& Binding : MazeKeyBindings::Definitions())
 		{
-			const double X = (I / Rows) * 535., Y = 154. + (I % Rows) * 48.;
+			const double X = (I / Rows) * 535., Y = 154. + (I % Rows) * 46.;
 			const FString Name = Binding.WidgetName().ToString();
 
 			Text(Tree, Page[1], Name + TEXT("Label"), Binding.Label, {X, Y + 8}, {275, 34}, 18);
@@ -634,7 +634,7 @@ namespace MazeWardUI
 			++I;
 		}
 
-		Text(Tree, Page[1], TEXT("KeyBindingStatus"), FText::GetEmpty(), {0, 450}, {1030, 42}, 16, Mint());
+		Text(Tree, Page[1], TEXT("KeyBindingStatus"), FText::GetEmpty(), {0, 480}, {1030, 24}, 15, Mint());
 		Caption(Tree, Page[2], TEXT("WardCompassLabel"), NSLOCTEXT("Maze.Ward", "Compass", "Компас на карте"), 0);
 		Check(Tree, Page[2], TEXT("CompassCheck"), 0);
 		Caption(Tree,
@@ -677,29 +677,19 @@ namespace MazeWardUI
 
 		auto* Vitals = Make<UCanvasPanel>(Tree, TEXT("VitalsPanel"));
 
-		Put(Content, Vitals, {38, -38}, {375, 92}, {0, 1}, {0, 1});
-		Shape(Tree, Vitals, TEXT("WardVitalsGlass"), {0, 0}, {375, 92}, Glass(), Edge(), 3);
+		Put(Content, Vitals, {38, -108}, {243, 9}, {0, 1}, {0, 1});
+
+		auto* Stamina = Make<UCanvasPanel>(Tree, TEXT("StaminaPanel"));
+
+		Put(Content, Stamina, {-38, -308}, {256, 9}, {1, 1}, {1, 1});
 
 		for (int I = 0; I < 2; ++I)
 		{
-			const double Y = 9. + I * 40.;
+			auto* PanelWidget = I == 0 ? Vitals : Stamina;
+			const double Width = I == 0 ? 243. : 256.;
 			const FString Prefix = I == 0 ? TEXT("WardHealth") : TEXT("WardStamina");
 
-			Text(Tree,
-			     Vitals,
-			     Prefix + TEXT("Caption"),
-			     I == 0 ? NSLOCTEXT("Maze.Ward", "Health", "Здоровье")
-			            : NSLOCTEXT("Maze.Ward", "Stamina", "Выносливость"),
-			     {18, Y},
-			     {339, 22},
-			     13);
-			Shape(Tree,
-			      Vitals,
-			      Prefix + TEXT("Track"),
-			      {18, Y + 22},
-			      {339, 10},
-			      MazeInterfaceStyle::Palette().Track,
-			      Edge());
+			Shape(Tree, PanelWidget, Prefix + TEXT("Track"), {0, 0}, {Width, 9}, MazeInterfaceStyle::Palette().Track);
 
 			auto* Bar = Make<UProgressBar>(Tree, I == 0 ? TEXT("HealthBar") : TEXT("StaminaBar"));
 			FProgressBarStyle Style;
@@ -710,14 +700,14 @@ namespace MazeWardUI
 			Bar->SetBarFillStyle(EProgressBarFillStyle::Scale);
 			Bar->SetBorderPadding({0, 0});
 			Bar->SetPercent(1);
-			Bar->SetFillColorAndOpacity(Mint());
-			Put(Vitals, Bar, {19, Y + 23}, {337, 8});
+			Bar->SetFillColorAndOpacity(I == 0 ? FLinearColor(.82f, .4f, .43f) : FLinearColor(.45f, .63f, .82f));
+			Put(PanelWidget, Bar, {0, 0}, {Width, 9});
 		}
 
 		auto* Inventory = Make<UCanvasPanel>(Tree, TEXT("InventorySlots"));
 
 		Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
-		Put(Content, Inventory, {0, -38}, {243, 54}, {.5, 1}, {.5, 1});
+		Put(Content, Inventory, {38, -38}, {243, 54}, {0, 1}, {0, 1});
 
 		for (int I = 0; I < 4; ++I)
 		{
@@ -765,7 +755,7 @@ namespace MazeWardUI
 		auto* Root = Make<UCanvasPanel>(Tree, TEXT("WardMapRoot"));
 
 		Tree->RootWidget = Root;
-		Put(Root, Make<USizeBox>(Tree, TEXT("MinimapBounds")), {-38, -38}, {320, 320}, {1, 1}, {1, 1});
+		Put(Root, Make<USizeBox>(Tree, TEXT("MinimapBounds")), {-38, -38}, {256, 256}, {1, 1}, {1, 1});
 
 		auto* Full = Make<USizeBox>(Tree, TEXT("FullMapBounds"));
 		auto* Slot = Root->AddChildToCanvas(Full);
@@ -841,8 +831,8 @@ namespace MazeWardUI
 
 		if (auto* HUD = Cast<UMazeHUDWidget>(BP->GeneratedClass->GetDefaultObject()))
 		{
-			HUD->StaminaColor = Mint();
-			HUD->ExhaustedColor = Muted();
+			HUD->StaminaColor = FLinearColor(.45f, .63f, .82f);
+			HUD->ExhaustedColor = FLinearColor(.31f, .43f, .57f);
 		}
 
 		FSavePackageArgs Args;
@@ -924,6 +914,30 @@ namespace MazeWardUI
 
 		UE_LOG(
 		    LogTemp, Display, TEXT("Ward HUD/map build: %s"), HUDSaved && MapSaved ? TEXT("SUCCESS") : TEXT("FAILED"));
+	}
+
+	void BuildHUDOnly()
+	{
+		if (!GEditor || GEditor->PlayWorld)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Ward HUD authoring requires stopped Play."));
+
+			return;
+		}
+
+		BuildAsset(TEXT("WBP_WardHUD"), UMazeHUDWidget::StaticClass(), BuildHUD);
+	}
+
+	void BuildSettingsOnly()
+	{
+		if (!GEditor || GEditor->PlayWorld)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Ward settings authoring requires stopped Play."));
+
+			return;
+		}
+
+		BuildAsset(TEXT("WBP_WardSettings"), UMazeMenuWidget::StaticClass(), BuildSettings);
 	}
 
 	void Preview()
@@ -1055,6 +1069,13 @@ namespace MazeWardUI
 	FAutoConsoleCommand BuildHUDMapCommand(TEXT("laby.UI.BuildWardHUDMap"),
 	                                       TEXT("Replace only generated Ward HUD and map layouts, with Play stopped."),
 	                                       FConsoleCommandDelegate::CreateStatic(&BuildHUDAndMap));
+	FAutoConsoleCommand BuildHUDOnlyCommand(TEXT("laby.UI.BuildWardHUD"),
+	                                        TEXT("Replace only the generated Ward HUD layout, with Play stopped."),
+	                                        FConsoleCommandDelegate::CreateStatic(&BuildHUDOnly));
+	FAutoConsoleCommand BuildSettingsOnlyCommand(
+	    TEXT("laby.UI.BuildWardSettings"),
+	    TEXT("Replace only the generated Ward settings layout, with Play stopped."),
+	    FConsoleCommandDelegate::CreateStatic(&BuildSettingsOnly));
 	FAutoConsoleCommand BuildMainMenuCommand(TEXT("laby.UI.BuildWardMainMenu"),
 	                                         TEXT("Replace only the generated Ward main menu, with Play stopped."),
 	                                         FConsoleCommandDelegate::CreateStatic(&BuildMainMenu));

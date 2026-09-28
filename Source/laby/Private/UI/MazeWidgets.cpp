@@ -280,6 +280,7 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 	const auto* Player = Controller ? Cast<AMazeCharacter>(Controller->GetPawn()) : nullptr;
 
 	Visible(this, TEXT("VitalsPanel"), Player != nullptr);
+	Visible(this, TEXT("StaminaPanel"), Player != nullptr);
 
 	const FMazeItemsSnapshot Inventory = Player ? Player->GetItems() : FMazeItemsSnapshot();
 

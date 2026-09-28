@@ -721,6 +721,7 @@ void AMazeCharacter::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindAction(TEXT("NewMaze"), IE_Pressed, this, &AMazeCharacter::RestartMaze);
 	Input->BindAction(TEXT("Headlamp"), IE_Pressed, this, &AMazeCharacter::ToggleHeadlamp);
 	Input->BindAction(TEXT("Interact"), IE_Pressed, this, &AMazeCharacter::PickupItem);
+	Input->BindAction(TEXT("DropItem"), IE_Pressed, this, &AMazeCharacter::DropItem);
 	Input->BindAction(TEXT("Signal"), IE_Pressed, this, &AMazeCharacter::RequestSignal);
 	Input->BindKey(EKeys::One, IE_Pressed, this, &AMazeCharacter::SelectInventorySlot);
 	Input->BindKey(EKeys::Two, IE_Pressed, this, &AMazeCharacter::SelectInventorySlot);
@@ -955,6 +956,57 @@ void AMazeCharacter::ServerPickupItem_Implementation()
 	GetInteractionView(Eye, Aim);
 
 	if (!Maze || !ECSSubsystem->PickupWorldItem(PlayerEntity, Maze->GetMazeEntity(), 1, Eye, Aim))
+		return;
+
+	ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);
+	RefreshHeadlamp();
+	ForceNetUpdate();
+}
+
+void AMazeCharacter::DropItem()
+{
+	if (!IsLocallyControlled() || !Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() ||
+	    UGameplayStatics::IsGamePaused(this))
+		return;
+
+	if (const auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>(); Location && !Location->IsReady())
+		return;
+
+	ServerDropItem();
+}
+
+void AMazeCharacter::ServerDropItem_Implementation()
+{
+	if (!Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() || !ECSSubsystem)
+		return;
+
+	const FVector Forward = GetActorForwardVector().GetSafeNormal2D();
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(MazeItemDrop), false, this);
+	FHitResult ForwardHit;
+	const FVector Origin = GetActorLocation();
+	const FVector ForwardEnd = Origin + Forward * FMazeItemDefinition::DropForwardCm;
+	const bool bWall =
+	    GetWorld()->SweepSingleByChannel(ForwardHit,
+	                                     Origin,
+	                                     ForwardEnd,
+	                                     FQuat::Identity,
+	                                     ECC_Visibility,
+	                                     FCollisionShape::MakeSphere(FMazeItemDefinition::DropSweepRadiusCm),
+	                                     Query);
+	const float Distance = bWall ? FMath::Max(0.f, ForwardHit.Distance - FMazeItemDefinition::DropWallClearanceCm)
+	                             : FMazeItemDefinition::DropForwardCm;
+	const FVector Probe = Origin + Forward * Distance + FVector::UpVector * 40.f;
+	FHitResult Ground;
+
+	if (!GetWorld()->LineTraceSingleByObjectType(
+	        Ground, Probe, Probe - FVector::UpVector * 320.f, FCollisionObjectQueryParams(ECC_WorldStatic), Query) ||
+	    Ground.ImpactNormal.Z < 0.6f)
+		return;
+
+	const FVector DropLocation = Ground.ImpactPoint + FVector::UpVector * FMazeItemDefinition::DropHeightCm;
+	const auto Session = ECSSubsystem->ReadSession();
+
+	if (!ECSSubsystem->DropSelectedItem(PlayerEntity, Session.Maze, DropLocation))
 		return;
 
 	ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);
