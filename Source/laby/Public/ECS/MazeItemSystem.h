@@ -7,6 +7,7 @@ struct LABY_API FMazeItemSystem
 	static bool HasHeadlamp(const FMazeItemsFragment& Items);
 	static bool IsHeadlampEnabled(const FMazeItemsFragment& Items);
 	static bool ToggleHeadlamp(FMazeItemsFragment& Items, bool bCanAct);
+	static bool SelectSlot(FMazeItemsFragment& Items, int32 Slot, bool bCanAct);
 	static bool CanFocus(const FMazeWorldItemFragment& WorldItem,
 	                     const FVector& EyeLocation,
 	                     const FVector& AimDirection);

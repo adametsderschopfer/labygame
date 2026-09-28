@@ -43,6 +43,8 @@ struct FMazeItemsSnapshot
 	TArray<FMazeItemInstance> Items;
 	UPROPERTY()
 	int32 NextInstanceId = 1;
+	UPROPERTY()
+	uint8 SelectedSlot = 0;
 };
 
 USTRUCT()

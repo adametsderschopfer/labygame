@@ -43,6 +43,51 @@ namespace
 		return (B.X - A.X) * (C.Y - A.Y) - (B.Y - A.Y) * (C.X - A.X);
 	}
 
+	int32 GradientLeader(const FGeometry& Geometry,
+	                     FSlateWindowElementList& Elements,
+	                     int32 Layer,
+	                     const TArray<FVector2D>& Points,
+	                     const FLinearColor& StartColor,
+	                     const FLinearColor& EndColor)
+	{
+		float TotalLength = 0.f;
+
+		for (int32 Index = 1; Index < Points.Num(); ++Index)
+			TotalLength += FVector2D::Distance(Points[Index - 1], Points[Index]);
+
+		if (TotalLength <= UE_SMALL_NUMBER)
+			return Layer;
+
+		float Covered = 0.f;
+		TArray<FVector2D> Segment;
+
+		Segment.SetNum(2);
+
+		for (int32 Index = 1; Index < Points.Num(); ++Index)
+		{
+			const FVector2D From = Points[Index - 1];
+			const FVector2D To = Points[Index];
+			const float Length = FVector2D::Distance(From, To);
+			const int32 Steps = FMath::Max(1, FMath::CeilToInt(Length / 8.f));
+
+			for (int32 Step = 0; Step < Steps; ++Step)
+			{
+				Segment[0] = FMath::Lerp(From, To, float(Step) / Steps);
+				Segment[1] = FMath::Lerp(From, To, float(Step + 1) / Steps);
+
+				const float Progress = (Covered + Length * (Step + .5f) / Steps) / TotalLength;
+				const FLinearColor Color = FMath::Lerp(StartColor, EndColor, Progress);
+
+				FSlateDrawElement::MakeLines(
+				    Elements, ++Layer, Geometry.ToPaintGeometry(), Segment, ESlateDrawEffect::None, Color, true, 2.f);
+			}
+
+			Covered += Length;
+		}
+
+		return Layer;
+	}
+
 	TArray<FVector2D> ConvexOutline(TArray<FVector2D> Points, FVector2D Center)
 	{
 		Points.Sort(
@@ -160,8 +205,20 @@ int32 MazeItemPresentation::PaintFocus(const UUserWidget& Owner,
 	}
 
 	Leader.Add(Finish);
+	Layer = GradientLeader(Geometry,
+	                       Elements,
+	                       Layer,
+	                       Leader,
+	                       Palette.Ink.CopyWithNewOpacity(.85f),
+	                       Palette.Accent.CopyWithNewOpacity(.35f));
+
+	const FVector2D ArrowDirection = (Leader[1] - Start).GetSafeNormal();
+	const FVector2D ArrowNormal(-ArrowDirection.Y, ArrowDirection.X);
+	const TArray<FVector2D> Arrow = {
+	    Start + ArrowDirection * 10.f + ArrowNormal * 5.f, Start, Start + ArrowDirection * 10.f - ArrowNormal * 5.f};
+
 	FSlateDrawElement::MakeLines(
-	    Elements, ++Layer, Geometry.ToPaintGeometry(), Leader, ESlateDrawEffect::None, Accent, true, 2.f);
+	    Elements, ++Layer, Geometry.ToPaintGeometry(), Arrow, ESlateDrawEffect::None, Palette.Ink, true, 2.f);
 	FSlateDrawElement::MakeBox(Elements,
 	                           ++Layer,
 	                           Geometry.ToPaintGeometry(LabelSize, FSlateLayoutTransform(Label)),

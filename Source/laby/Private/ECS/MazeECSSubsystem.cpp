@@ -207,6 +207,22 @@ bool UMazeECSSubsystem::ToggleHeadlamp(FMassEntityHandle Entity)
 	                                                    (!Room.bActive || Room.bStarted));
 }
 
+bool UMazeECSSubsystem::SelectInventorySlot(FMassEntityHandle Entity, int32 Slot)
+{
+	if (GetWorld()->GetNetMode() == NM_Client || GetWorld()->IsPaused())
+		return false;
+
+	auto* Items = FindFragment<FMazeItemsFragment>(Entity);
+	const auto* Pose = FindFragment<FMazePlayerPoseFragment>(Entity);
+	const auto Room = ReadRoom();
+
+	return Items &&
+	       FMazeItemSystem::SelectSlot(*Items,
+	                                   Slot,
+	                                   Pose && Pose->bInputEnabled && FMazeVitalsSystem::IsAlive(ReadVitals(Entity)) &&
+	                                       (!Room.bActive || Room.bStarted));
+}
+
 void UMazeECSSubsystem::ReceiveItems(FMassEntityHandle Entity, const FMazeItemsSnapshot& Snapshot)
 {
 	if (GetWorld()->GetNetMode() != NM_Client)

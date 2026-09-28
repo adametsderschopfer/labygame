@@ -49,6 +49,16 @@ bool FMazeItemSystem::ToggleHeadlamp(FMazeItemsFragment& Items, bool bCanAct)
 	return false;
 }
 
+bool FMazeItemSystem::SelectSlot(FMazeItemsFragment& Items, int32 Slot, bool bCanAct)
+{
+	if (!bCanAct || Slot < 0 || Slot >= FMazeItemDefinition::InventoryCapacity || Items.Value.SelectedSlot == Slot)
+		return false;
+
+	Items.Value.SelectedSlot = static_cast<uint8>(Slot);
+
+	return true;
+}
+
 bool FMazeItemSystem::CanFocus(const FMazeWorldItemFragment& WorldItem,
                                const FVector& EyeLocation,
                                const FVector& AimDirection)

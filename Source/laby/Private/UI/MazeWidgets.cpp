@@ -13,6 +13,7 @@
 #include "Components/CheckBox.h"
 #include "Components/ComboBoxString.h"
 #include "Components/InputKeySelector.h"
+#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/Slider.h"
 #include "Components/TextBlock.h"
@@ -204,6 +205,18 @@ void UMazeHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	if (InventoryBrushes.IsEmpty())
+		for (int32 Index = 1; Index <= FMazeItemDefinition::InventoryCapacity; ++Index)
+			for (const TCHAR* Prefix : {TEXT("WardSlot"), TEXT("InventorySlot")})
+			{
+				const FName Name(*FString::Printf(TEXT("%s%d"), Prefix, Index));
+
+				if (const auto* Image = Cast<UImage>(GetWidgetFromName(Name)))
+					InventoryBrushes.Add(Name, Image->GetBrush());
+			}
+
+	LastShownSlot = INDEX_NONE;
+
 	if (auto* Inventory = Cast<UCanvasPanel>(GetWidgetFromName(TEXT("InventorySlots"))))
 		if (!GetWidgetFromName(TEXT("WardSlotItem1")))
 		{
@@ -269,6 +282,36 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 	Visible(this, TEXT("VitalsPanel"), Player != nullptr);
 
 	const FMazeItemsSnapshot Inventory = Player ? Player->GetItems() : FMazeItemsSnapshot();
+
+	if (LastShownSlot != Inventory.SelectedSlot)
+	{
+		const auto Palette = MazeInterfaceStyle::Palette();
+
+		for (int32 Index = 1; Index <= FMazeItemDefinition::InventoryCapacity; ++Index)
+			for (const TCHAR* Prefix : {TEXT("WardSlot"), TEXT("InventorySlot")})
+			{
+				const FName Name(*FString::Printf(TEXT("%s%d"), Prefix, Index));
+				const FSlateBrush* Base = InventoryBrushes.Find(Name);
+				auto* Image = Cast<UImage>(GetWidgetFromName(Name));
+
+				if (!Base || !Image)
+					continue;
+
+				FSlateBrush Brush = *Base;
+
+				if (Index - 1 == Inventory.SelectedSlot)
+				{
+					Brush.TintColor = Palette.HoverSurface.CopyWithNewOpacity(.92f);
+					Brush.OutlineSettings.Color = Palette.HoverAccent;
+					Brush.OutlineSettings.Width = 2.f;
+				}
+
+				Image->SetBrush(Brush);
+			}
+
+		LastShownSlot = Inventory.SelectedSlot;
+	}
+
 	const FMazeItemInstance* Lamp = Inventory.Items.FindByPredicate(
 	    [](const FMazeItemInstance& Item)
 	    {

@@ -375,8 +375,11 @@ AMazeWorld* AMazeCharacter::TraceFocusedWorldItem() const
 	if (!ECSSubsystem || !Controller)
 		return nullptr;
 
-	const FVector Eye = GetPawnViewLocation();
-	const FVector Aim = GetBaseAimRotation().Vector();
+	FVector Eye;
+	FVector Aim;
+
+	GetInteractionView(Eye, Aim);
+
 	FHitResult Hit;
 	FCollisionQueryParams Query(SCENE_QUERY_STAT(MazeItemFocus), false, this);
 
@@ -387,6 +390,22 @@ AMazeWorld* AMazeCharacter::TraceFocusedWorldItem() const
 	auto* Maze = Cast<AMazeWorld>(Hit.GetActor());
 
 	return Maze && Maze->IsPickupComponent(Hit.GetComponent()) ? Maze : nullptr;
+}
+
+void AMazeCharacter::GetInteractionView(FVector& OutEye, FVector& OutAim) const
+{
+	if (IsLocallyControlled() && Controller)
+	{
+		FRotator Rotation;
+
+		Controller->GetPlayerViewPoint(OutEye, Rotation);
+		OutAim = Rotation.Vector();
+	}
+	else
+	{
+		OutEye = GetPawnViewLocation();
+		OutAim = GetBaseAimRotation().Vector();
+	}
 }
 
 bool AMazeCharacter::GetFocusedPickup(TArray<FVector>& OutOutline, FVector& OutLocation) const
@@ -415,8 +434,11 @@ int32 AMazeCharacter::TraceFocusedDoor(FVector& OutHandle, bool& bOutOpen) const
 	if (!ECSSubsystem || !Controller)
 		return INDEX_NONE;
 
-	const FVector Eye = GetPawnViewLocation();
-	const FVector Aim = GetBaseAimRotation().Vector();
+	FVector Eye;
+	FVector Aim;
+
+	GetInteractionView(Eye, Aim);
+
 	const FMassEntityHandle MazeEntity = ECSSubsystem->ReadSession().Maze;
 	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
 
@@ -700,6 +722,10 @@ void AMazeCharacter::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindAction(TEXT("Headlamp"), IE_Pressed, this, &AMazeCharacter::ToggleHeadlamp);
 	Input->BindAction(TEXT("Interact"), IE_Pressed, this, &AMazeCharacter::PickupItem);
 	Input->BindAction(TEXT("Signal"), IE_Pressed, this, &AMazeCharacter::RequestSignal);
+	Input->BindKey(EKeys::One, IE_Pressed, this, &AMazeCharacter::SelectInventorySlot);
+	Input->BindKey(EKeys::Two, IE_Pressed, this, &AMazeCharacter::SelectInventorySlot);
+	Input->BindKey(EKeys::Three, IE_Pressed, this, &AMazeCharacter::SelectInventorySlot);
+	Input->BindKey(EKeys::Four, IE_Pressed, this, &AMazeCharacter::SelectInventorySlot);
 }
 
 void AMazeCharacter::InitializeSignalAudio()
@@ -843,6 +869,39 @@ void AMazeCharacter::ServerToggleHeadlamp_Implementation()
 	}
 }
 
+void AMazeCharacter::SelectInventorySlot(FKey Key)
+{
+	if (!IsLocallyControlled() || !Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() ||
+	    UGameplayStatics::IsGamePaused(this))
+		return;
+
+	const auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>();
+
+	if (Location && !Location->IsReady())
+		return;
+
+	const int32 Slot = Key == EKeys::One     ? 0
+	                   : Key == EKeys::Two   ? 1
+	                   : Key == EKeys::Three ? 2
+	                   : Key == EKeys::Four  ? 3
+	                                         : INDEX_NONE;
+
+	if (Slot != INDEX_NONE)
+		ServerSelectInventorySlot(Slot);
+}
+
+void AMazeCharacter::ServerSelectInventorySlot_Implementation(int32 Slot)
+{
+	if (!Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() || !ECSSubsystem)
+		return;
+
+	if (ECSSubsystem->SelectInventorySlot(PlayerEntity, Slot))
+	{
+		ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);
+		ForceNetUpdate();
+	}
+}
+
 void AMazeCharacter::PickupItem()
 {
 	if (!IsLocallyControlled() || !Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() ||
@@ -876,7 +935,11 @@ void AMazeCharacter::ServerToggleDoor_Implementation(int32 DoorIndex)
 	if (TraceFocusedDoor(Handle, bOpen) != DoorIndex)
 		return;
 
-	ECSSubsystem->ToggleDoor(PlayerEntity, DoorIndex, GetPawnViewLocation(), GetBaseAimRotation().Vector());
+	FVector Eye;
+	FVector Aim;
+
+	GetInteractionView(Eye, Aim);
+	ECSSubsystem->ToggleDoor(PlayerEntity, DoorIndex, Eye, Aim);
 }
 
 void AMazeCharacter::ServerPickupItem_Implementation()
@@ -886,8 +949,12 @@ void AMazeCharacter::ServerPickupItem_Implementation()
 
 	auto* Maze = TraceFocusedWorldItem();
 
-	if (!Maze || !ECSSubsystem->PickupWorldItem(
-	                 PlayerEntity, Maze->GetMazeEntity(), 1, GetPawnViewLocation(), GetBaseAimRotation().Vector()))
+	FVector Eye;
+	FVector Aim;
+
+	GetInteractionView(Eye, Aim);
+
+	if (!Maze || !ECSSubsystem->PickupWorldItem(PlayerEntity, Maze->GetMazeEntity(), 1, Eye, Aim))
 		return;
 
 	ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);

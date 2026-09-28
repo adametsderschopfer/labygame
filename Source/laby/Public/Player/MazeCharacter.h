@@ -5,6 +5,7 @@
 #include "ECS/MazeItems.h"
 #include "ECS/MazeSignal.h"
 #include "Mass/EntityHandle.h"
+#include "InputCoreTypes.h"
 #include "Player/MazeCameraMotion.h"
 #include "MazeCharacter.generated.h"
 
@@ -83,13 +84,17 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerToggleHeadlamp();
 	UFUNCTION(Server, Reliable)
+	void ServerSelectInventorySlot(int32 Slot);
+	UFUNCTION(Server, Reliable)
 	void ServerPickupItem();
 	UFUNCTION(Server, Reliable)
 	void ServerToggleDoor(int32 DoorIndex);
 	UFUNCTION(Server, Reliable)
 	void ServerRequestSignal();
 	void ToggleHeadlamp();
+	void SelectInventorySlot(FKey Key);
 	void PickupItem();
+	void GetInteractionView(FVector& OutEye, FVector& OutAim) const;
 	class AMazeWorld* TraceFocusedWorldItem() const;
 	int32 TraceFocusedDoor(FVector& OutHandle, bool& bOutOpen) const;
 	void RequestSignal();

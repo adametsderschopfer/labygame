@@ -44,6 +44,7 @@ public:
 	FMazeItemsSnapshot ReadItems(FMassEntityHandle Entity) const;
 	bool ReadHeadlampEnabled(FMassEntityHandle Entity) const;
 	bool ToggleHeadlamp(FMassEntityHandle Entity);
+	bool SelectInventorySlot(FMassEntityHandle Entity, int32 Slot);
 	FMazeWorldItemView ReadWorldItem(FMassEntityHandle Maze) const;
 	bool PickupWorldItem(FMassEntityHandle Player,
 	                     FMassEntityHandle Maze,

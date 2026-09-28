@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Styling/SlateBrush.h"
 #include "Framework/Commands/InputChord.h"
 #include "MazeWidgets.generated.h"
 
@@ -84,6 +85,9 @@ UCLASS(Abstract, Blueprintable)
 class LABY_API UMazeHUDWidget : public UUserWidget
 {
 	GENERATED_BODY()
+	TMap<FName, FSlateBrush> InventoryBrushes;
+	int32 LastShownSlot = INDEX_NONE;
+
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& Geometry, float DeltaSeconds) override;

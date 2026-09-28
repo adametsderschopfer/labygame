@@ -65,7 +65,9 @@ AMazeWorld::AMazeWorld()
 	HeadlampLens->SetStaticMesh(Cylinder.Object);
 	HeadlampLens->SetRelativeScale3D(FVector(.145f, .145f, .035f));
 	HeadlampLens->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
-	HeadlampLens->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HeadlampLens->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	HeadlampLens->SetCollisionResponseToAllChannels(ECR_Ignore);
+	HeadlampLens->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	HeadlampLens->SetCanEverAffectNavigation(false);
 	HeadlampBody->SetVisibility(false);
 	HeadlampLens->SetVisibility(false);
@@ -182,7 +184,8 @@ void AMazeWorld::OnRep_HeadlampAvailable()
 
 bool AMazeWorld::IsPickupComponent(const UPrimitiveComponent* Component) const
 {
-	return Component && Component == HeadlampBody && ECSSubsystem && ECSSubsystem->ReadWorldItem(MazeEntity).bAvailable;
+	return Component && (Component == HeadlampBody || Component == HeadlampLens) && ECSSubsystem &&
+	       ECSSubsystem->ReadWorldItem(MazeEntity).bAvailable;
 }
 
 bool AMazeWorld::GetPickupOutline(TArray<FVector>& OutPoints) const
@@ -237,6 +240,9 @@ void AMazeWorld::RefreshWorldItem()
 
 	if (HeadlampBody->GetCollisionEnabled() != Collision)
 		HeadlampBody->SetCollisionEnabled(Collision);
+
+	if (HeadlampLens->GetCollisionEnabled() != Collision)
+		HeadlampLens->SetCollisionEnabled(Collision);
 }
 
 void AMazeWorld::OnRep_DoorTargets()
