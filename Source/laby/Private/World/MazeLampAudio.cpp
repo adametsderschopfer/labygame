@@ -10,7 +10,7 @@
 namespace
 {
 	const FName LampTag(TEXT("MazeLampAudio"));
-	constexpr float LampVolume = 0.025f;
+	constexpr float LampVolume = 0.026f;
 	constexpr float AudibleRadius = 360.f;
 	constexpr int32 PoolSize = 8;
 

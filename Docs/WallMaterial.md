@@ -158,7 +158,7 @@ and thin gray rails. This is a material layout, not individual ceiling geometry.
 Spatial hashes of tile ID and seed assign 18% of fixtures off, 15% intermittently
 blinking and the rest steady. Off fixtures retain a pale diffuser. Each flickering
 fixture has an independent phase and a burst of one to three brief full-emission
-dropouts every roughly 4.8–7.8 seconds. Its diffuser darkens during each dropout.
+dropouts every roughly 1.6–2.6 seconds. Its diffuser darkens during each dropout.
 Material GameTime respects world pause. Phase
 is local cosmetic time; fixture selection follows seed. No gameplay state or
 additional direct-light components are introduced.

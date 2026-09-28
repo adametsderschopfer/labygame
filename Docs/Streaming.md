@@ -135,8 +135,8 @@ resident**, including the floor-hole mask and exterior landing. This deliberatel
 keeps remote players, unobserved physics and future non-player objects safe.
 Door leaf collision is also resident. The server checks each proposed swing pose
 against Pawn collision before advancing the ECS door state; visual chunk eviction
-cannot reset or bypass that check. Dry room floor accents are cosmetic chunk
-geometry over the resident floor and add no collision.
+cannot reset or bypass that check. Ordinary rooms use the resident green floor
+without a separate visual tile overlay.
 The collision wall component creates no render proxy. This is not a complete
 bounded-memory solution for arbitrarily large worlds; collision/topology growth
 must be budgeted separately before increasing map size substantially.

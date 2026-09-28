@@ -37,7 +37,7 @@ create("LabCeilingMineral", {
     "TargetPanelSizeCm": 120.0, "RailWidthCm": 2.4,
     "LightStrength": 2.3, "PoreContrast": 0.48,
     "OffFraction": 0.18, "FlickerFraction": 0.15,
-    "FlickerPeriodSeconds": 6.0,
+    "FlickerPeriodSeconds": 2.0,
 }, {"MazeOrigin": (0.0, 0.0, 0.0), "MazeSeed": (0.0, 0.0, 0.0),
     "PanelColor": (0.72, 0.74, 0.73), "RailColor": (0.42, 0.45, 0.44),
     "LightColor": (0.96, 0.98, 1.0)}, r"""
@@ -100,12 +100,12 @@ float flickerChance = clamp(FlickerFraction, 0.0, 1.0 - offChance);
 float power = state < offChance ? 0.0 : 1.0;
 float isFlickering = state >= offChance && state < offChance + flickerChance ? 1.0 : 0.0;
 float phase = pattern.Hash(id + 137.1);
-float period = max(FlickerPeriodSeconds, 3.0) * lerp(0.8, 1.3, phase);
+float period = max(FlickerPeriodSeconds, 2.0) * lerp(0.8, 1.3, phase);
 float clock = GameTime / period + phase;
 float cycle = floor(clock);
 float seconds = frac(clock) * period;
 // Each faulty lamp has a short, irregular burst and stays steadily lit between bursts.
-float eventStart = period * lerp(0.12, 0.52, pattern.Hash(id + cycle + 57.4));
+float eventStart = period * lerp(0.08, 0.25, pattern.Hash(id + cycle + 57.4));
 float blinkTime = seconds - eventStart;
 float burstLength = pattern.Hash(id + cycle + 103.8);
 float firstDuration = lerp(0.14, 0.28, pattern.Hash(id + cycle + 81.2));

@@ -567,6 +567,8 @@ void AMazeCharacter::Tick(float DeltaSeconds)
 	const auto Command = ECSSubsystem->ResolvePlayer(PlayerEntity, Pose, FeetLocation, GetPawnViewLocation());
 
 	Movement->MaxWalkSpeed = Command.Speed;
+	Movement->MaxWalkSpeedCrouched =
+	    Command.bCrouch || Pose.bCrouched ? Command.Speed : FMazePlayerControlDefinition::CrouchSpeed;
 
 	if (HasAuthority())
 	{

@@ -99,6 +99,28 @@ bool FMazeAirborneSprintTest::RunTest(const FString& Parameters)
 	const auto Landed = FMazePlayerControlSystem::Resolve(Input, Pose, Vitals, Locomotion, false);
 
 	TestEqual(TEXT("Held Shift resumes sprint on landing"), Landed.Speed, FMazePlayerControlDefinition::SprintSpeed);
+	TestTrue(TEXT("Ground sprint resumes stamina drain"), Locomotion.bRunning);
+
+	Input.bSprintHeld = false;
+
+	const auto Wade = FMazePlayerControlSystem::Resolve(Input, Pose, Vitals, Locomotion, true);
+
+	TestEqual(TEXT("Wading slows walking"), Wade.Speed, FMazeWaterDefinition::WadeSpeed);
+	TestFalse(TEXT("Normal wading does not drain stamina"), Locomotion.bRunning);
+
+	Input.bSprintHeld = true;
+
+	const auto FastWade = FMazePlayerControlSystem::Resolve(Input, Pose, Vitals, Locomotion, true);
+
+	TestEqual(TEXT("Shift wades at dry walking speed"), FastWade.Speed, FMazePlayerControlDefinition::WalkSpeed);
+	TestTrue(TEXT("Fast wading drains stamina"), Locomotion.bRunning);
+
+	Input.bCrouchHeld = true;
+
+	const auto CrouchedWade = FMazePlayerControlSystem::Resolve(Input, Pose, Vitals, Locomotion, true);
+
+	TestEqual(TEXT("Crouch slows wading even with Shift"), CrouchedWade.Speed, FMazeWaterDefinition::CrouchedWadeSpeed);
+	TestFalse(TEXT("Crouched wading does not drain sprint stamina"), Locomotion.bRunning);
 
 	return true;
 }
