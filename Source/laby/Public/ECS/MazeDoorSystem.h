@@ -14,11 +14,12 @@ struct FMazeDoorView
 	bool bWantsOpen = false;
 };
 
-// Stateless proximity, hysteresis and motion rules for automatic room doors.
+// Stateless interaction and motion rules for room doors.
 struct FMazeDoorSystem
 {
-	static void Update(FMazeDoorFragment& Door,
-	                   float DeltaSeconds,
-	                   TConstArrayView<FVector> PlayerLocations,
-	                   bool bAuthority);
+	static FVector HandleLocation(const FMazeDoorView& Door, float OpeningWidth);
+	static bool CanFocus(const FMazeDoorView& Door, const FVector& Eye, const FVector& Aim, float OpeningWidth);
+	static bool CanInteract(const FMazeDoorFragment& Door, const FVector& Eye, const FVector& Aim, float OpeningWidth);
+	static void Toggle(FMazeDoorFragment& Door);
+	static void Update(FMazeDoorFragment& Door, float DeltaSeconds);
 };

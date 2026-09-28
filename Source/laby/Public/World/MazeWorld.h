@@ -44,6 +44,7 @@ public:
 	float GetCellSize() const;
 	bool IsPickupComponent(const UPrimitiveComponent* Component) const;
 	bool GetPickupOutline(TArray<FVector>& OutPoints) const;
+	bool IsDoorCollisionComponent(const UPrimitiveComponent* Component, int32 Instance, int32 DoorIndex) const;
 	FMassEntityHandle GetMazeEntity() const
 	{
 		return MazeEntity;
@@ -62,8 +63,6 @@ private:
 	void PrepareDoorAssets();
 	void RebuildDoorInstances();
 	void UpdateDoors();
-	FTransform DoorLeafTransform(const FMazeDoorView& Door, float Side) const;
-	FTransform DoorCollisionTransform(const FMazeDoorView& Door, float Side) const;
 	void ClearChunks();
 	void UpdateChunks();
 
@@ -73,6 +72,7 @@ private:
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<class UMaterialInterface>> VisualMaterials;
 	TSharedPtr<FMazeChunkJob> PendingChunk;
+	TArray<float> AppliedDoorOpenAmounts;
 	bool bInitialChunksReady = false;
 	bool bPresentationStarted = false;
 
@@ -98,19 +98,13 @@ private:
 	TObjectPtr<UInstancedStaticMeshComponent> DoorFrames;
 
 	UPROPERTY()
-	TObjectPtr<UInstancedStaticMeshComponent> DoorLeavesLeft;
+	TObjectPtr<UInstancedStaticMeshComponent> DoorLeaves;
 
 	UPROPERTY()
-	TObjectPtr<UInstancedStaticMeshComponent> DoorLeavesRight;
+	TObjectPtr<UInstancedStaticMeshComponent> DoorHandles;
 
 	UPROPERTY()
-	TObjectPtr<UInstancedStaticMeshComponent> DoorCollisionLeft;
-
-	UPROPERTY()
-	TObjectPtr<UInstancedStaticMeshComponent> DoorCollisionRight;
-
-	UPROPERTY()
-	TObjectPtr<UInstancedStaticMeshComponent> DoorStatusLights;
+	TObjectPtr<UInstancedStaticMeshComponent> DoorCollision;
 
 	UPROPERTY(ReplicatedUsing = OnRep_DoorTargets)
 	TArray<uint8> ReplicatedDoorTargets;

@@ -139,7 +139,7 @@ Before import, establish the following explicitly:
 
 Use a skeletal mesh only when deformation or skeletal animation is needed.
 Independent rigid moving parts can remain static meshes driven by transforms,
-as the current door leaves are. Nanite is a rendering choice; it does not create
+as the current hinged door leaf is. Nanite is a rendering choice; it does not create
 gameplay collision, navigation, replication or a streaming policy.
 
 Prefer a reproducible Unreal Python/editor script for procedural, generated or
@@ -181,6 +181,11 @@ Maze location's existing metal/ivory materials. Its two small components are
 resident under `AMazeWorld`; no external source asset, new `/Game` package or
 manifest path is introduced. Their lifetime follows the world adapter, while
 the item's identity and availability belong to its Mass entity.
+
+Manual room doors use the engine cube in resident ISM components for frames,
+hinged leaves, handles and hidden leaf collision. They reuse the location's
+preloaded ivory and metal materials. No external source asset or new package
+is required; each door's identity and open state belong to Mass ECS.
 
 Unreal has several prefab-like tools. Choose by runtime responsibility rather
 than making every composition a Blueprint.

@@ -191,9 +191,6 @@ struct FMazeDoorFragment : public FMassFragment
 	float OpenAmount = 0.f;
 
 	UPROPERTY()
-	float CloseDelayRemaining = 0.f;
-
-	UPROPERTY()
 	bool bWantsOpen = false;
 };
 

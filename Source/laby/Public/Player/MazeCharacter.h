@@ -31,6 +31,7 @@ public:
 	FMazeVitals GetVitals() const;
 	FMazeItemsSnapshot GetItems() const;
 	bool GetFocusedPickup(TArray<FVector>& OutOutline, FVector& OutLocation) const;
+	bool GetFocusedDoor(FVector& OutHandle, bool& bOutOpen) const;
 	FMassEntityHandle GetPlayerEntity() const
 	{
 		return PlayerEntity;
@@ -84,10 +85,13 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerPickupItem();
 	UFUNCTION(Server, Reliable)
+	void ServerToggleDoor(int32 DoorIndex);
+	UFUNCTION(Server, Reliable)
 	void ServerRequestSignal();
 	void ToggleHeadlamp();
 	void PickupItem();
 	class AMazeWorld* TraceFocusedWorldItem() const;
+	int32 TraceFocusedDoor(FVector& OutHandle, bool& bOutOpen) const;
 	void RequestSignal();
 	void PlaySignal(const FMazeSignalSnapshot& Signal);
 	void InitializeSignalAudio();

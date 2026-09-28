@@ -326,5 +326,7 @@ int32 UMazeHUDWidget::NativePaint(const FPaintArgs& Args,
 {
 	Layer = Super::NativePaint(Args, Geometry, CullingRect, Elements, Layer, Style, bParentEnabled);
 
-	return MazeItemPresentation::PaintFocus(*this, Geometry, Elements, Layer);
+	Layer = MazeItemPresentation::PaintFocus(*this, Geometry, Elements, Layer);
+
+	return MazeItemPresentation::PaintDoorFocus(*this, Geometry, Elements, Layer);
 }

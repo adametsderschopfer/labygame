@@ -8,6 +8,8 @@
 #include "ECS/MazeECSSubsystem.h"
 #include "ECS/MazeVitalsSystem.h"
 #include "ECS/MazeItemSystem.h"
+#include "ECS/MazeDoorSystem.h"
+#include "Maze/MazeRoomDefinition.h"
 #include "ECS/MazePlayerControlDefinition.h"
 #include "Components/SpotLightComponent.h"
 #include "Camera/CameraComponent.h"
@@ -408,6 +410,69 @@ bool AMazeCharacter::GetFocusedPickup(TArray<FVector>& OutOutline, FVector& OutL
 	return true;
 }
 
+int32 AMazeCharacter::TraceFocusedDoor(FVector& OutHandle, bool& bOutOpen) const
+{
+	if (!ECSSubsystem || !Controller)
+		return INDEX_NONE;
+
+	const FVector Eye = GetPawnViewLocation();
+	const FVector Aim = GetBaseAimRotation().Vector();
+	const FMassEntityHandle MazeEntity = ECSSubsystem->ReadSession().Maze;
+	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
+
+	if (!Maze.Data)
+		return INDEX_NONE;
+
+	const float Width = FMazeRoomDefinition::OpeningWidth(Maze.Cell - Maze.WallThickness);
+	float BestDistanceSquared = TNumericLimits<float>::Max();
+	int32 BestIndex = INDEX_NONE;
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(MazeDoorFocus), false, this);
+
+	for (const FMazeDoorView& Door : ECSSubsystem->ReadDoors(MazeEntity))
+	{
+		if (!FMazeDoorSystem::CanFocus(Door, Eye, Aim, Width))
+			continue;
+
+		const FVector Handle = FMazeDoorSystem::HandleLocation(Door, Width);
+		const float DistanceSquared = FVector::DistSquared(Eye, Handle);
+
+		if (DistanceSquared >= BestDistanceSquared)
+			continue;
+
+		FHitResult Hit;
+
+		if (GetWorld()->LineTraceSingleByChannel(Hit, Eye, Handle, ECC_Visibility, Query))
+		{
+			const auto* World = Cast<AMazeWorld>(Hit.GetActor());
+
+			if (!World || World->GetMazeEntity() != MazeEntity ||
+			    !World->IsDoorCollisionComponent(Hit.GetComponent(), Hit.Item, Door.Index))
+				continue;
+		}
+
+		BestDistanceSquared = DistanceSquared;
+		BestIndex = Door.Index;
+		OutHandle = Handle;
+		bOutOpen = Door.bWantsOpen;
+	}
+
+	return BestIndex;
+}
+
+bool AMazeCharacter::GetFocusedDoor(FVector& OutHandle, bool& bOutOpen) const
+{
+	if (!IsLocallyControlled() || !Controller || !FMazeVitalsSystem::IsAlive(GetVitals()) ||
+	    UGameplayStatics::IsGamePaused(this))
+		return false;
+
+	const auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>();
+
+	if ((Location && !Location->IsReady()) || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored())
+		return false;
+
+	return TraceFocusedDoor(OutHandle, bOutOpen) != INDEX_NONE;
+}
+
 int32 AMazeCharacter::GetReachedExit() const
 {
 	return ECSSubsystem ? ECSSubsystem->ReadReachedExit(PlayerEntity) : 0;
@@ -789,6 +854,29 @@ void AMazeCharacter::PickupItem()
 
 	if (TraceFocusedWorldItem())
 		ServerPickupItem();
+	else
+	{
+		FVector Handle;
+		bool bOpen = false;
+		const int32 DoorIndex = TraceFocusedDoor(Handle, bOpen);
+
+		if (DoorIndex != INDEX_NONE)
+			ServerToggleDoor(DoorIndex);
+	}
+}
+
+void AMazeCharacter::ServerToggleDoor_Implementation(int32 DoorIndex)
+{
+	if (!Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() || !ECSSubsystem)
+		return;
+
+	FVector Handle;
+	bool bOpen = false;
+
+	if (TraceFocusedDoor(Handle, bOpen) != DoorIndex)
+		return;
+
+	ECSSubsystem->ToggleDoor(PlayerEntity, DoorIndex, GetPawnViewLocation(), GetBaseAimRotation().Vector());
 }
 
 void AMazeCharacter::ServerPickupItem_Implementation()

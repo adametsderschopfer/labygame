@@ -55,9 +55,6 @@ void UMazeECSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	InputQuery->AddRequirement<FMazeLocomotionFragment>(EMassFragmentAccess::ReadWrite);
 	SignalQuery = MakeUnique<FMassEntityQuery>(Manager.AsShared());
 	SignalQuery->AddRequirement<FMazeSignalFragment>(EMassFragmentAccess::ReadWrite);
-	DoorPlayerQuery = MakeUnique<FMassEntityQuery>(Manager.AsShared());
-	DoorPlayerQuery->AddRequirement<FMazePlayerPoseFragment>(EMassFragmentAccess::ReadOnly);
-	DoorPlayerQuery->AddRequirement<FMazeVitalsFragment>(EMassFragmentAccess::ReadOnly);
 
 	const UScriptStruct* DoorFragments[] = {FMazeDoorFragment::StaticStruct()};
 
@@ -94,7 +91,6 @@ void UMazeECSSubsystem::Deinitialize()
 	InputQuery.Reset();
 	SignalQuery.Reset();
 	DoorQuery.Reset();
-	DoorPlayerQuery.Reset();
 
 	if (MassSubsystem && MassSubsystem->GetEntityManager().IsEntityValid(SessionEntity))
 		MassSubsystem->GetMutableEntityManager().DestroyEntity(SessionEntity);
@@ -123,8 +119,8 @@ void UMazeECSSubsystem::Tick(float DeltaSeconds)
 	TRACE_CPUPROFILER_EVENT_SCOPE(Maze_ECS_Tick);
 	Super::Tick(DeltaSeconds);
 
-	if (!MassSubsystem || !VitalsQuery || !SignalQuery || !DoorQuery || !DoorPlayerQuery ||
-	    !GetWorld()->HasBegunPlay() || GetWorld()->IsPaused())
+	if (!MassSubsystem || !VitalsQuery || !SignalQuery || !DoorQuery || !GetWorld()->HasBegunPlay() ||
+	    GetWorld()->IsPaused())
 		return;
 
 	auto Context = MassSubsystem->GetMutableEntityManager().CreateExecutionContext(DeltaSeconds);
@@ -139,42 +135,14 @@ void UMazeECSSubsystem::Tick(float DeltaSeconds)
 			                                FMazeSignalSystem::Update(Signal, DeltaSeconds, bAuthority);
 	                                });
 
-	if (!FMazeDoorDefinition::bEnabled)
-	{
-		// Drop pre-patch entities once when Live Coding is applied to an existing world.
-		auto& Manager = MassSubsystem->GetMutableEntityManager();
+	DoorQuery->ForEachEntityChunk(Context,
+	                              [DeltaSeconds](FMassExecutionContext& Chunk)
+	                              {
+		                              auto Doors = Chunk.GetMutableFragmentView<FMazeDoorFragment>();
 
-		for (const FMassEntityHandle Entity : DoorEntities)
-			if (Manager.IsEntityValid(Entity))
-				Manager.DestroyEntity(Entity);
-
-		DoorEntities.Reset();
-	}
-	else
-	{
-		TArray<FVector> PlayerLocations;
-
-		if (bAuthority)
-			DoorPlayerQuery->ForEachEntityChunk(Context,
-			                                    [&PlayerLocations](FMassExecutionContext& Chunk)
-			                                    {
-				                                    const auto Poses = Chunk.GetFragmentView<FMazePlayerPoseFragment>();
-				                                    const auto Vitals = Chunk.GetFragmentView<FMazeVitalsFragment>();
-
-				                                    for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
-					                                    if (FMazeVitalsSystem::IsAlive(Vitals[Index].Value))
-						                                    PlayerLocations.Add(Poses[Index].Location);
-			                                    });
-
-		DoorQuery->ForEachEntityChunk(Context,
-		                              [DeltaSeconds, bAuthority, &PlayerLocations](FMassExecutionContext& Chunk)
-		                              {
-			                              auto Doors = Chunk.GetMutableFragmentView<FMazeDoorFragment>();
-
-			                              for (auto& Door : Doors)
-				                              FMazeDoorSystem::Update(Door, DeltaSeconds, PlayerLocations, bAuthority);
-		                              });
-	}
+		                              for (auto& Door : Doors)
+			                              FMazeDoorSystem::Update(Door, DeltaSeconds);
+	                              });
 
 	if (!bAuthority)
 		return;
@@ -687,9 +655,6 @@ void UMazeECSSubsystem::RebuildDoors(FMassEntityHandle MazeEntity)
 {
 	DestroyDoors(MazeEntity);
 
-	if (!FMazeDoorDefinition::bEnabled)
-		return;
-
 	const auto* Maze = FindFragment<FMazeGenerationFragment>(MazeEntity);
 
 	if (!MassSubsystem || !Maze || !Maze->Data)
@@ -727,9 +692,6 @@ TArray<FMazeDoorView> UMazeECSSubsystem::ReadDoors(FMassEntityHandle MazeEntity)
 {
 	TArray<FMazeDoorView> Result;
 
-	if (!FMazeDoorDefinition::bEnabled)
-		return Result;
-
 	const auto* Maze = FindFragment<FMazeGenerationFragment>(MazeEntity);
 
 	if (!Maze)
@@ -765,20 +727,38 @@ TArray<uint8> UMazeECSSubsystem::ReadDoorTargets(FMassEntityHandle MazeEntity) c
 	return Result;
 }
 
+bool UMazeECSSubsystem::ToggleDoor(FMassEntityHandle Player, int32 DoorIndex, const FVector& Eye, const FVector& Aim)
+{
+	if (GetWorld()->GetNetMode() == NM_Client || GetWorld()->IsPaused() || !DoorEntities.IsValidIndex(DoorIndex))
+		return false;
+
+	const auto* Vitals = FindVitals(Player);
+	const auto* Progress = FindFragment<FMazeProgressFragment>(Player);
+	const auto* Pose = FindFragment<FMazePlayerPoseFragment>(Player);
+	auto* Door = FindFragment<FMazeDoorFragment>(DoorEntities[DoorIndex]);
+	const auto* Maze = Door ? FindFragment<FMazeGenerationFragment>(Door->Maze) : nullptr;
+
+	if (!Vitals || !FMazeVitalsSystem::IsAlive(*Vitals) || !Progress || !Pose || !Pose->bInputEnabled || !Door ||
+	    Door->Index != DoorIndex || !Maze || !Maze->Data || Door->MazeRevision != Maze->Revision ||
+	    Progress->Maze != Door->Maze || (ReadRoom().bActive && !ReadRoom().bStarted) ||
+	    !FMazeDoorSystem::CanInteract(
+	        *Door, Eye, Aim, FMazeRoomDefinition::OpeningWidth(Maze->Cell - Maze->WallThickness)))
+		return false;
+
+	FMazeDoorSystem::Toggle(*Door);
+
+	return true;
+}
+
 void UMazeECSSubsystem::ReceiveDoorTargets(FMassEntityHandle MazeEntity, TConstArrayView<uint8> Targets)
 {
-	if (!FMazeDoorDefinition::bEnabled || GetWorld()->GetNetMode() != NM_Client)
+	if (GetWorld()->GetNetMode() != NM_Client)
 		return;
 
 	for (const FMassEntityHandle Entity : DoorEntities)
 		if (auto* Door = FindFragment<FMazeDoorFragment>(Entity);
 		    Door && Door->Maze == MazeEntity && Targets.IsValidIndex(Door->Index))
-		{
 			Door->bWantsOpen = Targets[Door->Index] != 0;
-
-			if (Door->bWantsOpen)
-				Door->CloseDelayRemaining = FMazeDoorDefinition::CloseDelaySeconds;
-		}
 }
 
 TSharedPtr<const FMazeInterior> UMazeECSSubsystem::BuildMazeLampLocations(FMassEntityHandle Entity) const

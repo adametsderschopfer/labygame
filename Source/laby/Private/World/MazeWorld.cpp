@@ -42,16 +42,12 @@ AMazeWorld::AMazeWorld()
 	HeadlampLens->SetupAttachment(Walls);
 	DoorFrames = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorFrames"));
 	DoorFrames->SetupAttachment(Walls);
-	DoorLeavesLeft = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorLeavesLeft"));
-	DoorLeavesLeft->SetupAttachment(Walls);
-	DoorLeavesRight = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorLeavesRight"));
-	DoorLeavesRight->SetupAttachment(Walls);
-	DoorCollisionLeft = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorCollisionLeft"));
-	DoorCollisionLeft->SetupAttachment(Walls);
-	DoorCollisionRight = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorCollisionRight"));
-	DoorCollisionRight->SetupAttachment(Walls);
-	DoorStatusLights = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorStatusLights"));
-	DoorStatusLights->SetupAttachment(Walls);
+	DoorLeaves = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorLeaves"));
+	DoorLeaves->SetupAttachment(Walls);
+	DoorHandles = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorHandles"));
+	DoorHandles->SetupAttachment(Walls);
+	DoorCollision = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorCollision"));
+	DoorCollision->SetupAttachment(Walls);
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cylinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
@@ -85,24 +81,20 @@ AMazeWorld::AMazeWorld()
 	Floor->SetCanEverAffectNavigation(false);
 	Walls->SetCanEverAffectNavigation(false);
 
-	for (auto* Component : {DoorFrames.Get(), DoorLeavesLeft.Get(), DoorLeavesRight.Get(), DoorStatusLights.Get()})
+	for (auto* Component : {DoorFrames.Get(), DoorLeaves.Get(), DoorHandles.Get()})
 	{
+		Component->SetStaticMesh(Cube.Object);
 		Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Component->SetCanEverAffectNavigation(false);
 		Component->SetMobility(EComponentMobility::Movable);
 	}
 
-	for (auto* Component : {DoorCollisionLeft.Get(), DoorCollisionRight.Get()})
-	{
-		Component->SetStaticMesh(Cube.Object);
-		Component->SetCollisionProfileName(TEXT("BlockAll"));
-		Component->SetCanEverAffectNavigation(false);
-		Component->SetMobility(EComponentMobility::Movable);
-		Component->SetHiddenInGame(true);
-		Component->SetVisibility(false);
-	}
-
-	DoorStatusLights->SetStaticMesh(Cube.Object);
+	DoorCollision->SetStaticMesh(Cube.Object);
+	DoorCollision->SetCollisionProfileName(TEXT("BlockAll"));
+	DoorCollision->SetCanEverAffectNavigation(false);
+	DoorCollision->SetMobility(EComponentMobility::Movable);
+	DoorCollision->SetHiddenInGame(true);
+	DoorCollision->SetVisibility(false);
 	// Resident physics is independent of camera-local rendering and streaming.
 	Walls->SetHiddenInGame(true);
 	Floor->SetHiddenInGame(true);
@@ -157,11 +149,10 @@ void AMazeWorld::EndPlay(const EEndPlayReason::Type Reason)
 {
 	ClearChunks();
 	DoorFrames->ClearInstances();
-	DoorLeavesLeft->ClearInstances();
-	DoorLeavesRight->ClearInstances();
-	DoorCollisionLeft->ClearInstances();
-	DoorCollisionRight->ClearInstances();
-	DoorStatusLights->ClearInstances();
+	DoorLeaves->ClearInstances();
+	DoorHandles->ClearInstances();
+	DoorCollision->ClearInstances();
+	AppliedDoorOpenAmounts.Reset();
 	HeadlampBody->SetVisibility(false);
 	HeadlampLens->SetVisibility(false);
 	GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->RemoveParticipant(this);

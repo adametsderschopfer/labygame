@@ -1,16 +1,14 @@
 #pragma once
 
-// Shared gameplay and presentation dimensions for generated automatic doors.
-// Distances are Unreal centimeters; durations are seconds.
+// Shared gameplay dimensions for generated manually operated doors.
 struct FMazeDoorDefinition
 {
-	// Temporary local removal; keep portals and retained assets available for restoration.
-	static constexpr bool bEnabled = false;
-	static constexpr float OpenRadiusCm = 230.f;
-	static constexpr float KeepOpenRadiusCm = 285.f;
-	static constexpr float VerticalRangeCm = 190.f;
-	static constexpr float CloseDelaySeconds = 0.85f;
-	static constexpr float OpenDurationSeconds = 0.62f;
-	static constexpr float CloseDurationSeconds = 0.82f;
-	static constexpr float LeafTravelCm = 62.f;
+	static constexpr float InteractionRangeCm = 240.f;
+	static constexpr float AimRadiusCm = 70.f;
+	static constexpr float OpenDurationSeconds = 0.65f;
+	static constexpr float CloseDurationSeconds = 0.65f;
+	static constexpr float SwingDegrees = 88.f;
+	static constexpr float FrameWidthCm = 8.f;
+	static constexpr float HandleInsetCm = 15.f;
+	static constexpr float HandleHeightCm = 110.f;
 };

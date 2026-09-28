@@ -31,7 +31,9 @@ namespace
 				                                 Radius);
 			}
 
-		Points.Add(Points[0]);
+		const FVector2D FirstPoint = Points[0];
+
+		Points.Add(FirstPoint);
 
 		return Points;
 	}
@@ -77,7 +79,9 @@ namespace
 		for (FVector2D& Point : Hull)
 			Point += (Point - Center).GetSafeNormal() * 5.f;
 
-		Hull.Add(Hull[0]);
+		const FVector2D FirstPoint = Hull[0];
+
+		Hull.Add(FirstPoint);
 
 		return Hull;
 	}
@@ -197,6 +201,79 @@ int32 MazeItemPresentation::PaintFocus(const UUserWidget& Owner,
 	                            KeyFont,
 	                            ESlateDrawEffect::None,
 	                            Palette.OnAccent);
+
+	return Layer;
+}
+
+int32 MazeItemPresentation::PaintDoorFocus(const UUserWidget& Owner,
+                                           const FGeometry& Geometry,
+                                           FSlateWindowElementList& Elements,
+                                           int32 Layer)
+{
+	const auto* Controller = Owner.GetOwningPlayer<AMazePlayerController>();
+	const auto* Player = Controller ? Cast<AMazeCharacter>(Controller->GetPawn()) : nullptr;
+	FVector Handle;
+	bool bOpen = false;
+
+	if (!Player || Controller->IsMenuOpen() || Controller->IsMapOpen() || !Player->GetFocusedDoor(Handle, bOpen))
+		return Layer;
+
+	FVector2D Anchor;
+
+	if (!UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(Controller, Handle, Anchor, true))
+		return Layer;
+
+	const FVector2D Screen = Geometry.GetLocalSize();
+	const FVector2D Size(206.f, 52.f);
+	const FVector2D Position(FMath::Clamp(Anchor.X + 24.f, 12.f, Screen.X - Size.X - 12.f),
+	                         FMath::Clamp(Anchor.Y - 70.f, 12.f, Screen.Y - Size.Y - 12.f));
+	const auto Palette = MazeInterfaceStyle::Palette();
+	const FLinearColor Accent = Palette.Accent.CopyWithNewOpacity(.95f);
+	const FVector2D Elbow(Anchor.X + 15.f, Position.Y + Size.Y * .5f);
+	const TArray<FVector2D> Leader = {Anchor, Elbow, Position + FVector2D(0.f, Size.Y * .5f)};
+
+	FSlateDrawElement::MakeLines(
+	    Elements, ++Layer, Geometry.ToPaintGeometry(), Leader, ESlateDrawEffect::None, Accent, true, 2.f);
+	FSlateDrawElement::MakeBox(Elements,
+	                           ++Layer,
+	                           Geometry.ToPaintGeometry(Size, FSlateLayoutTransform(Position)),
+	                           FCoreStyle::Get().GetBrush("WhiteBrush"),
+	                           ESlateDrawEffect::None,
+	                           Palette.BackgroundMid.CopyWithNewOpacity(.96f));
+	FSlateDrawElement::MakeLines(Elements,
+	                             ++Layer,
+	                             Geometry.ToPaintGeometry(),
+	                             RoundedRect(Position, Size, 8.f),
+	                             ESlateDrawEffect::None,
+	                             Accent,
+	                             true,
+	                             1.5f);
+	FSlateDrawElement::MakeText(
+	    Elements,
+	    ++Layer,
+	    Geometry.ToPaintGeometry(FVector2D(132.f, 28.f), FSlateLayoutTransform(Position + FVector2D(15.f, 16.f))),
+	    bOpen ? NSLOCTEXT("Maze.Doors", "Close", "ЗАКРЫТЬ") : NSLOCTEXT("Maze.Doors", "Open", "ОТКРЫТЬ"),
+	    MazeInterfaceStyle::Font(17, 0),
+	    ESlateDrawEffect::None,
+	    Palette.Ink);
+
+	const FText KeyText = MazeKeyBindings::GetKey(TEXT("Interact")).GetDisplayName();
+	const FVector2D KeyPosition = Position + FVector2D(155.f, 9.f);
+
+	FSlateDrawElement::MakeBox(Elements,
+	                           ++Layer,
+	                           Geometry.ToPaintGeometry(FVector2D(40.f, 34.f), FSlateLayoutTransform(KeyPosition)),
+	                           FCoreStyle::Get().GetBrush("WhiteBrush"),
+	                           ESlateDrawEffect::None,
+	                           Palette.HoverAccent);
+	FSlateDrawElement::MakeText(
+	    Elements,
+	    ++Layer,
+	    Geometry.ToPaintGeometry(FVector2D(32.f, 25.f), FSlateLayoutTransform(KeyPosition + FVector2D(8.f, 5.f))),
+	    KeyText,
+	    MazeInterfaceStyle::Font(17, 0),
+	    ESlateDrawEffect::None,
+	    Palette.OnAccent);
 
 	return Layer;
 }

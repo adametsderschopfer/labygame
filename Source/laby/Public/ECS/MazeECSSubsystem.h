@@ -73,6 +73,7 @@ public:
 	void RegenerateMaze(FMassEntityHandle Entity, int32 Seed, FVector Origin);
 	FMazeGenerationFragment ReadMaze(FMassEntityHandle Entity) const;
 	TArray<FMazeDoorView> ReadDoors(FMassEntityHandle Maze) const;
+	bool ToggleDoor(FMassEntityHandle Player, int32 DoorIndex, const FVector& Eye, const FVector& Aim);
 	TArray<uint8> ReadDoorTargets(FMassEntityHandle Maze) const;
 	void ReceiveDoorTargets(FMassEntityHandle Maze, TConstArrayView<uint8> Targets);
 	TSharedPtr<const FMazeInterior> BuildMazeLampLocations(FMassEntityHandle Entity) const;
@@ -107,7 +108,6 @@ private:
 	TUniquePtr<FMassEntityQuery> InputQuery;
 	TUniquePtr<FMassEntityQuery> SignalQuery;
 	TUniquePtr<FMassEntityQuery> DoorQuery;
-	TUniquePtr<FMassEntityQuery> DoorPlayerQuery;
 	FMassArchetypeHandle PlayerArchetype;
 	FMassArchetypeHandle MazeArchetype;
 	FMassArchetypeHandle DoorArchetype;

@@ -3,135 +3,118 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "ECS/MazeDoorSystem.h"
 #include "ECS/MazeECSSubsystem.h"
-#include "Engine/StaticMesh.h"
-#include "Engine/World.h"
 #include "Materials/MaterialInterface.h"
 #include "Math/RotationMatrix.h"
 #include "Maze/MazeRoomDefinition.h"
-#include "World/MazeDoorSettings.h"
-#include "World/MazeLocationSubsystem.h"
 
 namespace
 {
 	FQuat DoorRotation(const FMazeDoorView& Door)
 	{
-		return FRotationMatrix::MakeFromXY(Door.SlideAxis, Door.Normal).ToQuat();
+		return FRotationMatrix::MakeFromXZ(Door.SlideAxis, FVector::UpVector).ToQuat();
 	}
 
-	float DoorTravelAlpha(const FMazeDoorView& Door)
+	FTransform LeafTransform(
+	    const FMazeDoorView& Door, const FVector& ActorLocation, float Width, float Height, float WallThickness)
 	{
-		return FMath::SmoothStep(0.f, 1.f, Door.OpenAmount);
+		const float LeafWidth = Width - 2.f * FMazeDoorDefinition::FrameWidthCm;
+		const float LeafHeight = Height - FMazeDoorDefinition::FrameWidthCm;
+		const FVector Hinge = Door.Center - Door.SlideAxis * (Width * .5f - FMazeDoorDefinition::FrameWidthCm);
+		const FQuat Swing(
+		    FVector::UpVector,
+		    FMath::DegreesToRadians(FMazeDoorDefinition::SwingDegrees * FMath::SmoothStep(0.f, 1.f, Door.OpenAmount)));
+		const FVector Axis = Swing.RotateVector(Door.SlideAxis);
+		const FVector Center = Hinge + Axis * (LeafWidth * .5f) + FVector::UpVector * (LeafHeight * .5f);
+		const FQuat Rotation = FRotationMatrix::MakeFromXZ(Axis, FVector::UpVector).ToQuat();
+
+		return FTransform(Rotation, Center - ActorLocation, FVector(LeafWidth, WallThickness * .5f, LeafHeight) * .01f);
+	}
+
+	FTransform HandleTransform(const FMazeDoorView& Door,
+	                           const FVector& ActorLocation,
+	                           float Width,
+	                           float WallThickness)
+	{
+		const FVector Center = FMazeDoorSystem::HandleLocation(Door, Width);
+		const FQuat Swing(
+		    FVector::UpVector,
+		    FMath::DegreesToRadians(FMazeDoorDefinition::SwingDegrees * FMath::SmoothStep(0.f, 1.f, Door.OpenAmount)));
+		const FVector Axis = Swing.RotateVector(Door.SlideAxis);
+
+		return FTransform(FRotationMatrix::MakeFromXZ(Axis, FVector::UpVector).ToQuat(),
+		                  Center - ActorLocation,
+		                  FVector(12.f, WallThickness * .5f + 5.f, 5.f) * .01f);
 	}
 }
 
-FTransform AMazeWorld::DoorLeafTransform(const FMazeDoorView& Door, float Side) const
+bool AMazeWorld::IsDoorCollisionComponent(const UPrimitiveComponent* Component, int32 Instance, int32 DoorIndex) const
 {
-	const FVector Location = Door.Center - GetActorLocation() +
-	                         Door.SlideAxis * (Side * DoorTravelAlpha(Door) * FMazeDoorDefinition::LeafTravelCm);
-
-	return FTransform(DoorRotation(Door), Location);
-}
-
-FTransform AMazeWorld::DoorCollisionTransform(const FMazeDoorView& Door, float Side) const
-{
-	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
-	const float Width = FMazeRoomDefinition::OpeningWidth(Maze.Cell - Maze.WallThickness);
-	const float Height = FMazeRoomDefinition::OpeningHeight(Maze.WallHeight);
-	const float Depth = FMath::Min(Maze.WallThickness, 32.f);
-	const FVector Location =
-	    Door.Center - GetActorLocation() + FVector::UpVector * (Height * 0.5f) +
-	    Door.SlideAxis * (Side * (Width * 0.25f + DoorTravelAlpha(Door) * FMazeDoorDefinition::LeafTravelCm));
-
-	return FTransform(DoorRotation(Door), Location, FVector(Width * 0.005f, Depth * 0.01f, Height * 0.01f));
+	return Component == DoorCollision && Instance == DoorIndex;
 }
 
 void AMazeWorld::RebuildDoorInstances()
 {
 	DoorFrames->ClearInstances();
-	DoorLeavesLeft->ClearInstances();
-	DoorLeavesRight->ClearInstances();
-	DoorCollisionLeft->ClearInstances();
-	DoorCollisionRight->ClearInstances();
-	DoorStatusLights->ClearInstances();
+	DoorLeaves->ClearInstances();
+	DoorHandles->ClearInstances();
+	DoorCollision->ClearInstances();
+	AppliedDoorOpenAmounts.Reset();
 
-	if (!FMazeDoorDefinition::bEnabled || !ECSSubsystem)
+	if (!ECSSubsystem)
 		return;
 
 	const TArray<FMazeDoorView> Doors = ECSSubsystem->ReadDoors(MazeEntity);
 	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
+	const float Width = FMazeRoomDefinition::OpeningWidth(Maze.Cell - Maze.WallThickness);
+	const float Height = FMazeRoomDefinition::OpeningHeight(Maze.WallHeight);
+	const float Frame = FMazeDoorDefinition::FrameWidthCm;
+	const bool bVisual = GetNetMode() != NM_DedicatedServer;
 
 	for (const FMazeDoorView& Door : Doors)
 	{
-		const FVector BaseLocation = Door.Center - GetActorLocation();
+		const FVector Base = Door.Center - GetActorLocation();
 		const FQuat Rotation = DoorRotation(Door);
-		const FTransform Base(Rotation, BaseLocation);
+		const FTransform Leaf = LeafTransform(Door, GetActorLocation(), Width, Height, Maze.WallThickness);
 
-		DoorFrames->AddInstance(Base);
-		DoorLeavesLeft->AddInstance(DoorLeafTransform(Door, -1.f));
-		DoorLeavesRight->AddInstance(DoorLeafTransform(Door, 1.f));
-		DoorCollisionLeft->AddInstance(DoorCollisionTransform(Door, -1.f));
-		DoorCollisionRight->AddInstance(DoorCollisionTransform(Door, 1.f));
+		if (bVisual)
+		{
+			for (const float Side : {-1.f, 1.f})
+				DoorFrames->AddInstance(FTransform(Rotation,
+				                                   Base + Door.SlideAxis * (Side * (Width - Frame) * .5f) +
+				                                       FVector::UpVector * (Height * .5f),
+				                                   FVector(Frame, Maze.WallThickness, Height) * .01f));
 
-		// Thin emissive overlays make the top beacon and room-side access reader
-		// legible in the deliberately dark interior without adding per-door lights.
-		const FVector Front = -Door.Normal * (Maze.WallThickness * 0.5f + 3.f);
+			DoorFrames->AddInstance(FTransform(Rotation,
+			                                   Base + FVector::UpVector * (Height - Frame * .5f),
+			                                   FVector(Width, Maze.WallThickness, Frame) * .01f));
+			DoorLeaves->AddInstance(Leaf);
+			DoorHandles->AddInstance(HandleTransform(Door, GetActorLocation(), Width, Maze.WallThickness));
+		}
 
-		DoorStatusLights->AddInstance(
-		    FTransform(Rotation, BaseLocation + Front + FVector::UpVector * 235.f, FVector(0.24f, 0.025f, 0.05f)));
-		DoorStatusLights->AddInstance(
-		    FTransform(Rotation,
-		               BaseLocation + Front + Door.SlideAxis * 72.f + FVector::UpVector * 145.f,
-		               FVector(0.16f, 0.025f, 0.04f)));
+		DoorCollision->AddInstance(Leaf);
+		AppliedDoorOpenAmounts.Add(Door.OpenAmount);
 	}
 }
 
 void AMazeWorld::PrepareDoorAssets()
 {
-	if (!FMazeDoorDefinition::bEnabled || GetNetMode() == NM_DedicatedServer)
+	if (GetNetMode() == NM_DedicatedServer)
 		return;
 
-	const auto* Settings = GetDefault<UMazeDoorSettings>();
-	auto* FrameMesh = Settings->FrameMesh.Get();
-	auto* LeftLeafMesh = Settings->LeftLeafMesh.Get();
-	auto* RightLeafMesh = Settings->RightLeafMesh.Get();
-	auto* SurfaceMaterial = Settings->SurfaceMaterial.Get();
-	auto* StatusMaterial = Settings->StatusMaterial.Get();
-
-	if (!FrameMesh || !LeftLeafMesh || !RightLeafMesh || !SurfaceMaterial || !StatusMaterial)
+	if (VisualMaterials.IsValidIndex(3))
 	{
-		GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->Fail(
-		    TEXT("Secure door presentation assets are unavailable"));
-
-		return;
+		DoorFrames->SetMaterial(0, VisualMaterials[3]);
+		DoorLeaves->SetMaterial(0, VisualMaterials[3]);
 	}
 
-	DoorFrames->SetStaticMesh(FrameMesh);
-	DoorLeavesLeft->SetStaticMesh(LeftLeafMesh);
-	DoorLeavesRight->SetStaticMesh(RightLeafMesh);
-	DoorFrames->SetMaterial(0, SurfaceMaterial);
-	DoorLeavesLeft->SetMaterial(0, SurfaceMaterial);
-	DoorLeavesRight->SetMaterial(0, SurfaceMaterial);
-	DoorStatusLights->SetMaterial(0, StatusMaterial);
+	if (VisualMaterials.IsValidIndex(2))
+		DoorHandles->SetMaterial(0, VisualMaterials[2]);
 }
 
 void AMazeWorld::UpdateDoors()
 {
-	if (!FMazeDoorDefinition::bEnabled)
-	{
-		// Clear existing rendering and physics once; no transform uploads or ECS reads afterward.
-		if (DoorFrames->GetInstanceCount() || DoorLeavesLeft->GetInstanceCount() ||
-		    DoorLeavesRight->GetInstanceCount() || DoorStatusLights->GetInstanceCount() ||
-		    DoorCollisionLeft->GetInstanceCount() || DoorCollisionRight->GetInstanceCount())
-			RebuildDoorInstances();
-
-		if (HasAuthority() && !ReplicatedDoorTargets.IsEmpty())
-		{
-			ReplicatedDoorTargets.Reset();
-			ForceNetUpdate();
-		}
-
+	if (!ECSSubsystem)
 		return;
-	}
 
 	if (HasAuthority())
 	{
@@ -146,22 +129,34 @@ void AMazeWorld::UpdateDoors()
 
 	const TArray<FMazeDoorView> Doors = ECSSubsystem->ReadDoors(MazeEntity);
 
-	if (DoorCollisionLeft->GetInstanceCount() != Doors.Num())
+	if (DoorCollision->GetInstanceCount() != Doors.Num() || AppliedDoorOpenAmounts.Num() != Doors.Num())
 	{
 		RebuildDoorInstances();
 
 		return;
 	}
 
+	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
+	const float Width = FMazeRoomDefinition::OpeningWidth(Maze.Cell - Maze.WallThickness);
+	const float Height = FMazeRoomDefinition::OpeningHeight(Maze.WallHeight);
+	const bool bVisual = GetNetMode() != NM_DedicatedServer;
+
 	for (int32 Index = 0; Index < Doors.Num(); ++Index)
 	{
-		const bool bMarkDirty = Index == Doors.Num() - 1;
+		if (FMath::IsNearlyEqual(AppliedDoorOpenAmounts[Index], Doors[Index].OpenAmount))
+			continue;
 
-		DoorLeavesLeft->UpdateInstanceTransform(Index, DoorLeafTransform(Doors[Index], -1.f), false, bMarkDirty, true);
-		DoorLeavesRight->UpdateInstanceTransform(Index, DoorLeafTransform(Doors[Index], 1.f), false, bMarkDirty, true);
-		DoorCollisionLeft->UpdateInstanceTransform(
-		    Index, DoorCollisionTransform(Doors[Index], -1.f), false, bMarkDirty, true);
-		DoorCollisionRight->UpdateInstanceTransform(
-		    Index, DoorCollisionTransform(Doors[Index], 1.f), false, bMarkDirty, true);
+		const FTransform Leaf = LeafTransform(Doors[Index], GetActorLocation(), Width, Height, Maze.WallThickness);
+
+		DoorCollision->UpdateInstanceTransform(Index, Leaf, false, true, true);
+
+		if (bVisual)
+		{
+			DoorLeaves->UpdateInstanceTransform(Index, Leaf, false, true, true);
+			DoorHandles->UpdateInstanceTransform(
+			    Index, HandleTransform(Doors[Index], GetActorLocation(), Width, Maze.WallThickness), false, true, true);
+		}
+
+		AppliedDoorOpenAmounts[Index] = Doors[Index].OpenAmount;
 	}
 }

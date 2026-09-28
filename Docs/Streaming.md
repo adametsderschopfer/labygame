@@ -64,12 +64,14 @@ A room can straddle chunk boundaries, but its
 interior remains within the default two-chunk preload radius from any point
 inside it. Enclosed perimeters and narrow, non-aligned doorways limit new room
 sightlines; arbitrary corridor sightlines retain the limitations below.
-Door jambs and lintels belong to the wall strip's center tile, so each visual
-chunk emits its own portion once, with the same full-layout occupancy used by
-the halo and resident collision. No new asset, resource participant, map entry,
-simulation state or near/far rule is introduced. Existing creation/eviction
-budgets, readiness gating and resident physics remain unchanged. Runtime visual
-and performance checks require a user-run session; no FPS improvement is claimed.
+Door jambs and lintels in the generated wall shell belong to the wall strip's
+center tile, so each visual chunk emits its own portion once. The manual door
+entities remain in ECS across visual chunk eviction. Their primitive ISM frames
+and leaves are world-owned presentation, while hidden leaf collision stays
+resident for all players, including on a dedicated server. The doors reuse the
+engine cube and existing preloaded materials; they add no location manifest path
+or resource participant. Existing creation/eviction budgets remain unchanged.
+Runtime visual and performance checks require a user-run session.
 
 An additional pass chooses up to 75 rooms on the default map from corridor dead
 ends, including those not adjacent to bends. Each room extends one to four cells
