@@ -71,13 +71,14 @@ simulation state or near/far rule is introduced. Existing creation/eviction
 budgets, readiness gating and resident physics remain unchanged. Runtime visual
 and performance checks require a user-run session; no FPS improvement is claimed.
 
-An additional pass chooses up to 75 compact one-cell rooms on the default map
-from corridor dead ends, including those not adjacent to bends. All one-cell
-rooms have one doorway. It preserves existing cell connections and excludes
+An additional pass chooses up to 75 rooms on the default map from corridor dead
+ends, including those not adjacent to bends. Each room extends one to four cells
+along a straight branch without side openings and has one doorway. All one-cell
+rooms have one doorway. The pass preserves existing cell connections and excludes
 scenic corridors.
 The additions use existing room/door geometry, at most 75 additional doorframes,
-without new assets or view actors. Smaller footprints and single entrances do
-not extend the prior sightline bound; preload radii, budgets, readiness and
+without new assets or view actors. Their maximum four-cell length stays below
+the base room's seven-cell bound; preload radii, budgets, readiness and
 resident physics stay unchanged. Runtime cost is not measured. Map highlighting
 only changes the tint of already drawn, explored floor polygons on both maps.
 

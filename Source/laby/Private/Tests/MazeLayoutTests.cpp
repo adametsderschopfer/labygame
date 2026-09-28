@@ -37,10 +37,16 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 		for (int32 I = MaxBaseRooms; I < Maze.Rooms.Num(); ++I)
 		{
 			const FIntRect& Room = Maze.Rooms[I];
-			const uint8 Open = ~Maze.Walls[Room.Min.Y * Maze.Size + Room.Min.X] & 15;
 
-			TestTrue(TEXT("Additional rooms occupy a dead end"),
-			         Room.Width() == 1 && Room.Height() == 1 && Open != 0 && (Open & (Open - 1)) == 0);
+			int32 DoorCount = 0;
+
+			for (const FMazeRoomDoorway& Doorway : Maze.RoomDoorways())
+				DoorCount += Doorway.RoomIndex == I;
+
+			TestTrue(TEXT("Additional rooms follow a straight dead-end branch"),
+			         (Room.Width() == 1 || Room.Height() == 1) &&
+			             FMath::Max(Room.Width(), Room.Height()) <= FMazeRoomDefinition::MaxDeadEndRoomLength &&
+			             DoorCount == 1);
 		}
 
 		for (int32 I = 1; I < Maze.Rooms.Num(); ++I)

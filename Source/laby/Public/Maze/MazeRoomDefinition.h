@@ -28,6 +28,7 @@ struct FMazeRoomDefinition
 	static constexpr int32 RoomsPerSector = 3;
 	// Additional compact rooms selected from corridor dead ends.
 	static constexpr int32 DeadEndSectorSide = 16;
+	static constexpr int32 MaxDeadEndRoomLength = 4;
 	static constexpr int32 PlacementAttemptsPerRoom = 20;
 	static constexpr float ThroughFraction = 0.98f;
 	static constexpr float DoorWidth = 120.f;
