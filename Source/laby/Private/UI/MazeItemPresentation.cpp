@@ -68,14 +68,14 @@ namespace
 			const FVector2D From = Points[Index - 1];
 			const FVector2D To = Points[Index];
 			const float Length = FVector2D::Distance(From, To);
-			const int32 Steps = FMath::Max(1, FMath::CeilToInt(Length / 8.f));
+			const int32 SegmentCount = FMath::Max(1, FMath::CeilToInt(Length / 8.f));
 
-			for (int32 Step = 0; Step < Steps; ++Step)
+			for (int32 Step = 0; Step < SegmentCount; ++Step)
 			{
-				Segment[0] = FMath::Lerp(From, To, float(Step) / Steps);
-				Segment[1] = FMath::Lerp(From, To, float(Step + 1) / Steps);
+				Segment[0] = FMath::Lerp(From, To, float(Step) / SegmentCount);
+				Segment[1] = FMath::Lerp(From, To, float(Step + 1) / SegmentCount);
 
-				const float Progress = (Covered + Length * (Step + .5f) / Steps) / TotalLength;
+				const float Progress = (Covered + Length * (Step + .5f) / SegmentCount) / TotalLength;
 				const FLinearColor Color = FMath::Lerp(StartColor, EndColor, Progress);
 
 				FSlateDrawElement::MakeLines(

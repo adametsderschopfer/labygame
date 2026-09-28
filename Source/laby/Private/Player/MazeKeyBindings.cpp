@@ -81,7 +81,7 @@ TConstArrayView<FMazeKeyBinding> MazeKeyBindings::Definitions()
 	     NSLOCTEXT("Maze.Keys", "Headlamp", "Фонарик")},
 	    {TEXT("Interact"), TEXT("Interact"), 0.f, EKeys::E, NSLOCTEXT("Maze.Keys", "Interact", "Подобрать")},
 	    {TEXT("Signal"), TEXT("Signal"), 0.f, EKeys::X, NSLOCTEXT("Maze.Keys", "Signal", "Свисток")},
-	    {TEXT("Map"), TEXT("Map"), 0.f, EKeys::M, NSLOCTEXT("Maze.Keys", "Map", "Карта")},
+	    {TEXT("Map"), TEXT("Map"), 0.f, EKeys::Tab, NSLOCTEXT("Maze.Keys", "Map", "Карта")},
 	    {TEXT("NewMaze"), TEXT("NewMaze"), 0.f, EKeys::R, NSLOCTEXT("Maze.Keys", "NewMaze", "Новый лабиринт")}};
 
 	return MakeArrayView(Bindings);
@@ -171,6 +171,23 @@ void MazeKeyBindings::EnsureDefaults()
 			}
 
 		GConfig->SetBool(TEXT("MazeKeyBindings"), TEXT("HeadlampRightMouseMigrated"), true, GInputIni);
+		GConfig->Flush(false, GInputIni);
+	}
+
+	bool bMapTabMigrated = false;
+
+	GConfig->GetBool(TEXT("MazeKeyBindings"), TEXT("MapTabMigrated"), bMapTabMigrated, GInputIni);
+
+	if (!bMapTabMigrated)
+	{
+		for (const auto& Binding : Definitions())
+			if (Binding.Id == TEXT("Map") && Keys(Binding).Contains(EKeys::M))
+			{
+				Replace(Binding, EKeys::Tab);
+				bChanged = true;
+			}
+
+		GConfig->SetBool(TEXT("MazeKeyBindings"), TEXT("MapTabMigrated"), true, GInputIni);
 		GConfig->Flush(false, GInputIni);
 	}
 

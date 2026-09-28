@@ -1,7 +1,6 @@
 #include "MazeMapPaint.h"
 #include "Maze/MazeNarrowPassageDefinition.h"
 #include "Maze/MazeRoomDefinition.h"
-#include "Player/MazeKeyBindings.h"
 #include "Maze/MazeLayout.h"
 #include "UI/MazeInterfaceStyle.h"
 #include "Fonts/FontMeasure.h"
@@ -713,12 +712,6 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 			Text(Labels[I], P + FVector2D(24, -10), 14, Ink, false, ItemWidth - 32);
 		}
 	}
-	else
-		Text(FText::Format(NSLOCTEXT("Maze.Ward", "MapHint", "{0} — Карта"),
-		                   MazeKeyBindings::GetKey(TEXT("Map")).GetDisplayName()),
-		     View.Origin + FVector2D(0, -28),
-		     13,
-		     Ink);
 
 	return Layer;
 }
