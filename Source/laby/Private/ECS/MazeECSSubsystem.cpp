@@ -65,6 +65,10 @@ void UMazeECSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	DoorQuery = MakeUnique<FMassEntityQuery>(Manager.AsShared());
 	DoorQuery->AddRequirement<FMazeDoorFragment>(EMassFragmentAccess::ReadWrite);
 
+	const UScriptStruct* ItemFragments[] = {FMazeWorldItemFragment::StaticStruct()};
+
+	WorldItemArchetype = Manager.CreateArchetype(MakeArrayView(ItemFragments));
+
 	const UScriptStruct* SessionFragments[] = {FMazeSessionFragment::StaticStruct(), FMazeRoomFragment::StaticStruct()};
 
 	SessionEntity = Manager.CreateEntity(Manager.CreateArchetype(MakeArrayView(SessionFragments)));
@@ -72,6 +76,13 @@ void UMazeECSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void UMazeECSSubsystem::Deinitialize()
 {
+	if (MassSubsystem)
+		for (const FMassEntityHandle Entity : WorldItemEntities)
+			if (MassSubsystem->GetEntityManager().IsEntityValid(Entity))
+				MassSubsystem->GetMutableEntityManager().DestroyEntity(Entity);
+
+	WorldItemEntities.Reset();
+
 	if (MassSubsystem)
 		for (const FMassEntityHandle Entity : DoorEntities)
 			if (MassSubsystem->GetEntityManager().IsEntityValid(Entity))
@@ -91,6 +102,7 @@ void UMazeECSSubsystem::Deinitialize()
 	SessionEntity = FMassEntityHandle();
 	MazeArchetype = FMassArchetypeHandle();
 	DoorArchetype = FMassArchetypeHandle();
+	WorldItemArchetype = FMassArchetypeHandle();
 	PlayerArchetype = FMassArchetypeHandle();
 	MassSubsystem = nullptr;
 	Super::Deinitialize();
@@ -234,6 +246,55 @@ void UMazeECSSubsystem::ReceiveItems(FMassEntityHandle Entity, const FMazeItemsS
 
 	if (auto* Items = FindFragment<FMazeItemsFragment>(Entity))
 		Items->Value = Snapshot;
+}
+
+FMazeWorldItemView UMazeECSSubsystem::ReadWorldItem(FMassEntityHandle Maze) const
+{
+	const auto* Generation = FindFragment<FMazeGenerationFragment>(Maze);
+
+	for (const FMassEntityHandle Entity : WorldItemEntities)
+		if (const auto* Item = FindFragment<FMazeWorldItemFragment>(Entity);
+		    Item && Generation && Item->Maze == Maze && Item->MazeRevision == Generation->Revision)
+			return {Item->Id, Item->Kind, Item->Location, Item->bAvailable};
+
+	return FMazeWorldItemView();
+}
+
+bool UMazeECSSubsystem::PickupWorldItem(FMassEntityHandle Player,
+                                        FMassEntityHandle Maze,
+                                        int32 ItemId,
+                                        const FVector& EyeLocation,
+                                        const FVector& AimDirection)
+{
+	if (GetWorld()->GetNetMode() == NM_Client || GetWorld()->IsPaused() || ItemId != 1 || ReadSession().Maze != Maze)
+		return false;
+
+	auto* Items = FindFragment<FMazeItemsFragment>(Player);
+	const auto* Pose = FindFragment<FMazePlayerPoseFragment>(Player);
+	const auto* Vitals = FindVitals(Player);
+	const auto Room = ReadRoom();
+	const auto View = ReadWorldItem(Maze);
+
+	if (!Items || !Pose || !Vitals || !Pose->bInputEnabled || !FMazeVitalsSystem::IsAlive(*Vitals) ||
+	    (Room.bActive && !Room.bStarted) || !View.bAvailable || View.Id != ItemId ||
+	    FVector::DistSquared(EyeLocation, Pose->Location) > FMath::Square(FMazeItemDefinition::EyePoseTolerance))
+		return false;
+
+	for (const FMassEntityHandle Entity : WorldItemEntities)
+		if (auto* Item = FindFragment<FMazeWorldItemFragment>(Entity); Item && Item->Maze == Maze && Item->Id == ItemId)
+			return FMazeItemSystem::Pickup(*Item, *Items, EyeLocation, AimDirection, true);
+
+	return false;
+}
+
+void UMazeECSSubsystem::ReceiveWorldItemAvailability(FMassEntityHandle Maze, bool bAvailable)
+{
+	if (GetWorld()->GetNetMode() != NM_Client)
+		return;
+
+	for (const FMassEntityHandle Entity : WorldItemEntities)
+		if (auto* Item = FindFragment<FMazeWorldItemFragment>(Entity); Item && Item->Maze == Maze)
+			Item->bAvailable = bAvailable;
 }
 
 void UMazeECSSubsystem::DestroyPlayer(FMassEntityHandle Entity)
@@ -537,17 +598,59 @@ void UMazeECSSubsystem::RegenerateMaze(FMassEntityHandle Entity, int32 Seed, FVe
 		Maze->bNeedsGeneration = true;
 		GeneratePending();
 		RebuildDoors(Entity);
+		RebuildWorldItems(Entity);
 	}
 }
 
 void UMazeECSSubsystem::DestroyMaze(FMassEntityHandle Entity)
 {
 	DestroyDoors(Entity);
+	DestroyWorldItems(Entity);
 
 	if (auto* Session = FindFragment<FMazeSessionFragment>(SessionEntity); Session && Session->Maze == Entity)
 		Session->Maze = FMassEntityHandle();
 
 	DestroyPlayer(Entity);
+}
+
+void UMazeECSSubsystem::DestroyWorldItems(FMassEntityHandle MazeEntity)
+{
+	if (!MassSubsystem)
+		return;
+
+	auto& Manager = MassSubsystem->GetMutableEntityManager();
+
+	for (int32 Index = WorldItemEntities.Num() - 1; Index >= 0; --Index)
+	{
+		const FMassEntityHandle Entity = WorldItemEntities[Index];
+		const auto* Item = FindFragment<FMazeWorldItemFragment>(Entity);
+
+		if (!Item || Item->Maze == MazeEntity)
+		{
+			if (Manager.IsEntityValid(Entity))
+				Manager.DestroyEntity(Entity);
+
+			WorldItemEntities.RemoveAtSwap(Index, 1, EAllowShrinking::No);
+		}
+	}
+}
+
+void UMazeECSSubsystem::RebuildWorldItems(FMassEntityHandle MazeEntity)
+{
+	DestroyWorldItems(MazeEntity);
+
+	const auto* Maze = FindFragment<FMazeGenerationFragment>(MazeEntity);
+
+	if (!MassSubsystem || !Maze || !Maze->Data)
+		return;
+
+	const FMassEntityHandle Entity = MassSubsystem->GetMutableEntityManager().CreateEntity(WorldItemArchetype);
+	auto* Item = FindFragment<FMazeWorldItemFragment>(Entity);
+
+	Item->Maze = MazeEntity;
+	Item->MazeRevision = Maze->Revision;
+	Item->Location = Maze->Origin + Maze->Data->Start + FMazeItemDefinition::StartOffset();
+	WorldItemEntities.Add(Entity);
 }
 
 FMazeGenerationFragment UMazeECSSubsystem::ReadMaze(FMassEntityHandle Entity) const

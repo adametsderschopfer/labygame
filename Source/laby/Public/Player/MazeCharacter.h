@@ -29,6 +29,8 @@ public:
 	                         AController* EventInstigator,
 	                         AActor* DamageCauser) override;
 	FMazeVitals GetVitals() const;
+	FMazeItemsSnapshot GetItems() const;
+	bool GetFocusedPickup(TArray<FVector>& OutOutline, FVector& OutLocation) const;
 	FMassEntityHandle GetPlayerEntity() const
 	{
 		return PlayerEntity;
@@ -80,8 +82,12 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerToggleHeadlamp();
 	UFUNCTION(Server, Reliable)
+	void ServerPickupItem();
+	UFUNCTION(Server, Reliable)
 	void ServerRequestSignal();
 	void ToggleHeadlamp();
+	void PickupItem();
+	class AMazeWorld* TraceFocusedWorldItem() const;
 	void RequestSignal();
 	void PlaySignal(const FMazeSignalSnapshot& Signal);
 	void InitializeSignalAudio();

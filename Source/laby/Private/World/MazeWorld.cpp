@@ -36,6 +36,10 @@ AMazeWorld::AMazeWorld()
 	Floor->SetupAttachment(Walls);
 	Ceiling = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Ceiling"));
 	Ceiling->SetupAttachment(Walls);
+	HeadlampBody = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeadlampBody"));
+	HeadlampBody->SetupAttachment(Walls);
+	HeadlampLens = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeadlampLens"));
+	HeadlampLens->SetupAttachment(Walls);
 	DoorFrames = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorFrames"));
 	DoorFrames->SetupAttachment(Walls);
 	DoorLeavesLeft = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorLeavesLeft"));
@@ -50,10 +54,25 @@ AMazeWorld::AMazeWorld()
 	DoorStatusLights->SetupAttachment(Walls);
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cylinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PlainMaterial(
 	    TEXT("/Game/Materials/M_MazePlain.M_MazePlain"));
 
 	Floor->SetStaticMesh(Cube.Object);
+	HeadlampBody->SetStaticMesh(Cylinder.Object);
+	HeadlampBody->SetRelativeScale3D(FVector(.12f, .12f, .32f));
+	HeadlampBody->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
+	HeadlampBody->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	HeadlampBody->SetCollisionResponseToAllChannels(ECR_Ignore);
+	HeadlampBody->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	HeadlampBody->SetCanEverAffectNavigation(false);
+	HeadlampLens->SetStaticMesh(Cylinder.Object);
+	HeadlampLens->SetRelativeScale3D(FVector(.145f, .145f, .035f));
+	HeadlampLens->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
+	HeadlampLens->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HeadlampLens->SetCanEverAffectNavigation(false);
+	HeadlampBody->SetVisibility(false);
+	HeadlampLens->SetVisibility(false);
 	Floor->SetMaterial(0, PlainMaterial.Object);
 	Floor->SetCollisionProfileName(TEXT("BlockAll"));
 	Ceiling->SetStaticMesh(Cube.Object);
@@ -143,6 +162,8 @@ void AMazeWorld::EndPlay(const EEndPlayReason::Type Reason)
 	DoorCollisionLeft->ClearInstances();
 	DoorCollisionRight->ClearInstances();
 	DoorStatusLights->ClearInstances();
+	HeadlampBody->SetVisibility(false);
+	HeadlampLens->SetVisibility(false);
 	GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->RemoveParticipant(this);
 	MazeWindAudio::Stop(*this);
 	MazeLampAudio::Stop(*this);
@@ -160,6 +181,73 @@ void AMazeWorld::OnRep_Seed()
 	InitializeMaze();
 }
 
+void AMazeWorld::OnRep_HeadlampAvailable()
+{
+	if (ECSSubsystem)
+		ECSSubsystem->ReceiveWorldItemAvailability(MazeEntity, bReplicatedHeadlampAvailable);
+
+	RefreshWorldItem();
+}
+
+bool AMazeWorld::IsPickupComponent(const UPrimitiveComponent* Component) const
+{
+	return Component && Component == HeadlampBody && ECSSubsystem && ECSSubsystem->ReadWorldItem(MazeEntity).bAvailable;
+}
+
+bool AMazeWorld::GetPickupOutline(TArray<FVector>& OutPoints) const
+{
+	if (!IsPickupComponent(HeadlampBody))
+		return false;
+
+	OutPoints.Reset();
+
+	for (const UStaticMeshComponent* Part : {HeadlampBody.Get(), HeadlampLens.Get()})
+		for (const float End : {-50.f, 50.f})
+			for (int32 Step = 0; Step < 16; ++Step)
+			{
+				const float Angle = 2.f * PI * Step / 16.f;
+				const FVector Local(50.f * FMath::Cos(Angle), 50.f * FMath::Sin(Angle), End);
+
+				OutPoints.Add(Part->GetComponentTransform().TransformPosition(Local));
+			}
+
+	return true;
+}
+
+void AMazeWorld::RefreshWorldItem()
+{
+	if (!ECSSubsystem)
+		return;
+
+	const FMazeWorldItemView Item = ECSSubsystem->ReadWorldItem(MazeEntity);
+
+	if (HasAuthority() && bReplicatedHeadlampAvailable != Item.bAvailable)
+	{
+		bReplicatedHeadlampAvailable = Item.bAvailable;
+		ForceNetUpdate();
+	}
+
+	const bool bVisible = Item.bAvailable && GetNetMode() != NM_DedicatedServer;
+
+	if (!HeadlampBody->GetComponentLocation().Equals(Item.Location))
+	{
+		HeadlampBody->SetWorldLocation(Item.Location);
+		HeadlampLens->SetWorldLocation(Item.Location + FVector(17.f, 0.f, 0.f));
+	}
+
+	if (HeadlampBody->IsVisible() != bVisible)
+	{
+		HeadlampBody->SetVisibility(bVisible);
+		HeadlampLens->SetVisibility(bVisible);
+	}
+
+	const ECollisionEnabled::Type Collision =
+	    Item.bAvailable ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision;
+
+	if (HeadlampBody->GetCollisionEnabled() != Collision)
+		HeadlampBody->SetCollisionEnabled(Collision);
+}
+
 void AMazeWorld::OnRep_DoorTargets()
 {
 	if (ECSSubsystem)
@@ -171,6 +259,7 @@ void AMazeWorld::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMazeWorld, Seed);
 	DOREPLIFETIME(AMazeWorld, ReplicatedDoorTargets);
+	DOREPLIFETIME(AMazeWorld, bReplicatedHeadlampAvailable);
 }
 
 FVector AMazeWorld::StartLocation() const
@@ -216,6 +305,11 @@ void AMazeWorld::Build()
 		ECSSubsystem->RegenerateMaze(MazeEntity, Seed, GetActorLocation());
 
 	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
+
+	if (!HasAuthority())
+		ECSSubsystem->ReceiveWorldItemAvailability(MazeEntity, bReplicatedHeadlampAvailable);
+
+	RefreshWorldItem();
 
 	Seed = Maze.Seed; // Engine replication mirrors the ECS seed.
 
@@ -363,6 +457,9 @@ void AMazeWorld::PrepareMaterials()
 
 		return;
 	}
+
+	HeadlampBody->SetMaterial(0, VisualMaterials[2]);
+	HeadlampLens->SetMaterial(0, VisualMaterials[3]);
 
 	if (const auto Lamps = ECSSubsystem->BuildMazeLampLocations(MazeEntity))
 		MazeLampAudio::Rebuild(*this, *Lamps);

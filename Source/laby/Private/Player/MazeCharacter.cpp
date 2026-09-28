@@ -4,6 +4,7 @@
 #include "Materials/MaterialInterface.h"
 #include "Player/MazeFootstepAudioComponent.h"
 #include "Player/MazePlayerController.h"
+#include "World/MazeWorld.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "ECS/MazeVitalsSystem.h"
 #include "ECS/MazeItemSystem.h"
@@ -362,6 +363,51 @@ FMazeVitals AMazeCharacter::GetVitals() const
 	return Missing;
 }
 
+FMazeItemsSnapshot AMazeCharacter::GetItems() const
+{
+	return ECSSubsystem ? ECSSubsystem->ReadItems(PlayerEntity) : FMazeItemsSnapshot();
+}
+
+AMazeWorld* AMazeCharacter::TraceFocusedWorldItem() const
+{
+	if (!ECSSubsystem || !Controller)
+		return nullptr;
+
+	const FVector Eye = GetPawnViewLocation();
+	const FVector Aim = GetBaseAimRotation().Vector();
+	FHitResult Hit;
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(MazeItemFocus), false, this);
+
+	if (!GetWorld()->LineTraceSingleByChannel(
+	        Hit, Eye, Eye + Aim * FMazeItemDefinition::FocusRange, ECC_Visibility, Query))
+		return nullptr;
+
+	auto* Maze = Cast<AMazeWorld>(Hit.GetActor());
+
+	return Maze && Maze->IsPickupComponent(Hit.GetComponent()) ? Maze : nullptr;
+}
+
+bool AMazeCharacter::GetFocusedPickup(TArray<FVector>& OutOutline, FVector& OutLocation) const
+{
+	if (!IsLocallyControlled() || !Controller || !FMazeVitalsSystem::IsAlive(GetVitals()) ||
+	    UGameplayStatics::IsGamePaused(this))
+		return false;
+
+	const auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>();
+
+	if ((Location && !Location->IsReady()) || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored())
+		return false;
+
+	const auto* Maze = TraceFocusedWorldItem();
+
+	if (!Maze || !Maze->GetPickupOutline(OutOutline))
+		return false;
+
+	OutLocation = ECSSubsystem->ReadWorldItem(Maze->GetMazeEntity()).Location;
+
+	return true;
+}
+
 int32 AMazeCharacter::GetReachedExit() const
 {
 	return ECSSubsystem ? ECSSubsystem->ReadReachedExit(PlayerEntity) : 0;
@@ -587,6 +633,7 @@ void AMazeCharacter::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindAction(TEXT("Crouch"), IE_Released, this, &AMazeCharacter::CrouchStop);
 	Input->BindAction(TEXT("NewMaze"), IE_Pressed, this, &AMazeCharacter::RestartMaze);
 	Input->BindAction(TEXT("Headlamp"), IE_Pressed, this, &AMazeCharacter::ToggleHeadlamp);
+	Input->BindAction(TEXT("Interact"), IE_Pressed, this, &AMazeCharacter::PickupItem);
 	Input->BindAction(TEXT("Signal"), IE_Pressed, this, &AMazeCharacter::RequestSignal);
 }
 
@@ -729,6 +776,35 @@ void AMazeCharacter::ServerToggleHeadlamp_Implementation()
 		RefreshHeadlamp();
 		ForceNetUpdate();
 	}
+}
+
+void AMazeCharacter::PickupItem()
+{
+	if (!IsLocallyControlled() || !Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() ||
+	    UGameplayStatics::IsGamePaused(this))
+		return;
+
+	if (const auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>(); Location && !Location->IsReady())
+		return;
+
+	if (TraceFocusedWorldItem())
+		ServerPickupItem();
+}
+
+void AMazeCharacter::ServerPickupItem_Implementation()
+{
+	if (!Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() || !ECSSubsystem)
+		return;
+
+	auto* Maze = TraceFocusedWorldItem();
+
+	if (!Maze || !ECSSubsystem->PickupWorldItem(
+	                 PlayerEntity, Maze->GetMazeEntity(), 1, GetPawnViewLocation(), GetBaseAimRotation().Vector()))
+		return;
+
+	ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);
+	RefreshHeadlamp();
+	ForceNetUpdate();
 }
 
 void AMazeCharacter::Forward(float Value)

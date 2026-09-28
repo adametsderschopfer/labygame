@@ -40,6 +40,7 @@ void AMazeWorld::Tick(float DeltaSeconds)
 	if (!ECSSubsystem || !GetGeneratedData())
 		return;
 
+	RefreshWorldItem();
 	UpdateDoors();
 
 	auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>();

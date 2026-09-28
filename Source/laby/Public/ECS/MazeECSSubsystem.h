@@ -44,6 +44,13 @@ public:
 	FMazeItemsSnapshot ReadItems(FMassEntityHandle Entity) const;
 	bool ReadHeadlampEnabled(FMassEntityHandle Entity) const;
 	bool ToggleHeadlamp(FMassEntityHandle Entity);
+	FMazeWorldItemView ReadWorldItem(FMassEntityHandle Maze) const;
+	bool PickupWorldItem(FMassEntityHandle Player,
+	                     FMassEntityHandle Maze,
+	                     int32 ItemId,
+	                     const FVector& EyeLocation,
+	                     const FVector& AimDirection);
+	void ReceiveWorldItemAvailability(FMassEntityHandle Maze, bool bAvailable);
 	void ReceiveItems(FMassEntityHandle Entity, const FMazeItemsSnapshot& Snapshot);
 	FMazeVitals ReadVitals(FMassEntityHandle Entity) const;
 	void SetLocomotion(FMassEntityHandle Entity, bool bRunning, bool bOnGround);
@@ -104,13 +111,17 @@ private:
 	FMassArchetypeHandle PlayerArchetype;
 	FMassArchetypeHandle MazeArchetype;
 	FMassArchetypeHandle DoorArchetype;
+	FMassArchetypeHandle WorldItemArchetype;
 	FMassEntityHandle SessionEntity;
 	TArray<FMassEntityHandle> DoorEntities;
+	TArray<FMassEntityHandle> WorldItemEntities;
 
 	FMazeVitals* FindVitals(FMassEntityHandle Entity) const;
 	void GeneratePending();
 	void RebuildDoors(FMassEntityHandle MazeEntity);
 	void DestroyDoors(FMassEntityHandle MazeEntity);
+	void RebuildWorldItems(FMassEntityHandle MazeEntity);
+	void DestroyWorldItems(FMassEntityHandle MazeEntity);
 	void UpdateProgress(FMassEntityHandle Entity);
 	template <typename T> T* FindFragment(FMassEntityHandle Entity) const;
 };

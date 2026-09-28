@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Mass/EntityElementTypes.h"
+#include "Mass/EntityHandle.h"
 #include "MassEntityTypes.h"
 #include "MazeItems.generated.h"
 
@@ -50,6 +51,45 @@ struct FMazeItemsFragment : public FMassFragment
 	GENERATED_BODY()
 	UPROPERTY()
 	FMazeItemsSnapshot Value;
+};
+
+// One stable pickup per generated maze. The world component only presents this state.
+USTRUCT()
+struct FMazeWorldItemFragment : public FMassFragment
+{
+	GENERATED_BODY()
+	UPROPERTY()
+	FMassEntityHandle Maze;
+	UPROPERTY()
+	uint32 MazeRevision = 0;
+	UPROPERTY()
+	int32 Id = 1;
+	UPROPERTY()
+	EMazeItemKind Kind = EMazeItemKind::Headlamp;
+	UPROPERTY()
+	FVector Location = FVector::ZeroVector;
+	UPROPERTY()
+	bool bAvailable = true;
+};
+
+struct FMazeWorldItemView
+{
+	int32 Id = INDEX_NONE;
+	EMazeItemKind Kind = EMazeItemKind::None;
+	FVector Location = FVector::ZeroVector;
+	bool bAvailable = false;
+};
+
+struct FMazeItemDefinition
+{
+	static constexpr float FocusRange = 250.f;
+	static constexpr float MinimumAimDot = 0.88f;
+	static constexpr float EyePoseTolerance = 130.f;
+	static constexpr int32 InventoryCapacity = 4;
+	static FVector StartOffset()
+	{
+		return FVector(-95.f, -20.f, -78.f);
+	}
 };
 
 template <> struct TMassFragmentTraits<FMazeItemsFragment> final

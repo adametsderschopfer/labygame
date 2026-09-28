@@ -109,7 +109,7 @@ struct FMazeGenerationSystem
 		Data->Start = FVector((StartCell % Data->Layout.Size + 0.5f) * Maze.Cell,
 		                      (StartCell / Data->Layout.Size + 0.5f) * Maze.Cell,
 		                      100.f);
-		const FVector Outward[] = {FVector(0, -1, 0), FVector(1, 0, 0), FVector(0, 1, 0)};
+		const FVector ExitDirection[] = {FVector(0, -1, 0), FVector(1, 0, 0), FVector(0, 1, 0)};
 
 		for (int32 Slot = 0; Slot < 4; ++Slot)
 			Data->PlayerStarts.Add(Data->Start + FVector(Slot % 2 ? 110 : -110, Slot / 2 ? 110 : -110, 0));
@@ -119,8 +119,8 @@ struct FMazeGenerationSystem
 			const int32 C = Data->Layout.Exits[I];
 			Data->ExitPositions.Add(
 			    FVector((C % Data->Layout.Size + 0.5f) * Maze.Cell, (C / Data->Layout.Size + 0.5f) * Maze.Cell, 300.f) +
-			    Outward[I] * (Maze.Cell / 2 + 50));
-			Data->ExitRotations.Add((-Outward[I]).Rotation());
+			    ExitDirection[I] * (Maze.Cell / 2 + 50));
+			Data->ExitRotations.Add((-ExitDirection[I]).Rotation());
 		}
 
 		Maze.Data = Data;

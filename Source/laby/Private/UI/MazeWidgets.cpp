@@ -1,17 +1,22 @@
 #include "UI/MazeWidgets.h"
 #include "UI/MazeText.h"
 #include "UI/MazeInterfacePreferences.h"
+#include "UI/MazeInterfaceStyle.h"
+#include "UI/MazeItemPresentation.h"
 #include "Blueprint/WidgetTree.h"
 #include "Player/MazeCharacter.h"
 #include "Player/MazePlayerController.h"
 #include "ECS/MazeVitalsSystem.h"
 #include "Components/Button.h"
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Components/CheckBox.h"
 #include "Components/ComboBoxString.h"
 #include "Components/InputKeySelector.h"
 #include "Components/ProgressBar.h"
 #include "Components/Slider.h"
 #include "Components/TextBlock.h"
+#include "ECS/MazeItems.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/ConfigCacheIni.h"
 
@@ -199,6 +204,21 @@ void UMazeHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	if (auto* Inventory = Cast<UCanvasPanel>(GetWidgetFromName(TEXT("InventorySlots"))))
+		if (!GetWidgetFromName(TEXT("WardSlotItem1")))
+		{
+			auto* Label = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("WardSlotItem1"));
+
+			Label->SetFont(MazeInterfaceStyle::Font(14, 0));
+			Label->SetJustification(ETextJustify::Center);
+			Label->SetVisibility(ESlateVisibility::HitTestInvisible);
+			Label->SetText(NSLOCTEXT("Maze.Items", "ShortHeadlamp", "ФОН"));
+			auto* CanvasSlot = Inventory->AddChildToCanvas(Label);
+
+			CanvasSlot->SetPosition(FVector2D(4.f, 16.f));
+			CanvasSlot->SetSize(FVector2D(46.f, 24.f));
+		}
+
 	for (const auto& Entry : MazeText::WidgetLabels())
 		Text(this, *Entry.Key.ToString(), Entry.Value);
 
@@ -248,6 +268,19 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 
 	Visible(this, TEXT("VitalsPanel"), Player != nullptr);
 
+	const FMazeItemsSnapshot Inventory = Player ? Player->GetItems() : FMazeItemsSnapshot();
+	const FMazeItemInstance* Lamp = Inventory.Items.FindByPredicate(
+	    [](const FMazeItemInstance& Item)
+	    {
+		    return Item.Kind == EMazeItemKind::Headlamp && Item.Slot == EMazeEquipmentSlot::Head;
+	    });
+
+	Visible(this, TEXT("WardSlotItem1"), Lamp != nullptr);
+
+	if (auto* Label = Cast<UTextBlock>(GetWidgetFromName(TEXT("WardSlotItem1"))))
+		Label->SetColorAndOpacity(FSlateColor(Lamp && Lamp->bEnabled ? MazeInterfaceStyle::Palette().Accent
+		                                                             : MazeInterfaceStyle::Palette().Ink));
+
 	bool bDead = false;
 	int32 ReachedExit = 0;
 
@@ -291,5 +324,7 @@ int32 UMazeHUDWidget::NativePaint(const FPaintArgs& Args,
                                   const FWidgetStyle& Style,
                                   bool bParentEnabled) const
 {
-	return Super::NativePaint(Args, Geometry, CullingRect, Elements, Layer, Style, bParentEnabled);
+	Layer = Super::NativePaint(Args, Geometry, CullingRect, Elements, Layer, Style, bParentEnabled);
+
+	return MazeItemPresentation::PaintFocus(*this, Geometry, Elements, Layer);
 }

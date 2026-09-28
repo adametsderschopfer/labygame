@@ -74,7 +74,12 @@ TConstArrayView<FMazeKeyBinding> MazeKeyBindings::Definitions()
 	    {TEXT("Sprint"), TEXT("Sprint"), 0.f, EKeys::LeftShift, NSLOCTEXT("Maze.Keys", "Sprint", "Бег")},
 	    {TEXT("Jump"), TEXT("Jump"), 0.f, EKeys::SpaceBar, NSLOCTEXT("Maze.Keys", "Jump", "Прыжок")},
 	    {TEXT("Crouch"), TEXT("Crouch"), 0.f, EKeys::LeftControl, NSLOCTEXT("Maze.Keys", "Crouch", "Присесть")},
-	    {TEXT("Headlamp"), TEXT("Headlamp"), 0.f, EKeys::L, NSLOCTEXT("Maze.Keys", "Headlamp", "Фонарик")},
+	    {TEXT("Headlamp"),
+	     TEXT("Headlamp"),
+	     0.f,
+	     EKeys::RightMouseButton,
+	     NSLOCTEXT("Maze.Keys", "Headlamp", "Фонарик")},
+	    {TEXT("Interact"), TEXT("Interact"), 0.f, EKeys::E, NSLOCTEXT("Maze.Keys", "Interact", "Подобрать")},
 	    {TEXT("Signal"), TEXT("Signal"), 0.f, EKeys::X, NSLOCTEXT("Maze.Keys", "Signal", "Свисток")},
 	    {TEXT("Map"), TEXT("Map"), 0.f, EKeys::M, NSLOCTEXT("Maze.Keys", "Map", "Карта")},
 	    {TEXT("NewMaze"), TEXT("NewMaze"), 0.f, EKeys::R, NSLOCTEXT("Maze.Keys", "NewMaze", "Новый лабиринт")}};
@@ -151,6 +156,23 @@ void MazeKeyBindings::Reset()
 void MazeKeyBindings::EnsureDefaults()
 {
 	bool bChanged = false;
+
+	bool bHeadlampMigrated = false;
+
+	GConfig->GetBool(TEXT("MazeKeyBindings"), TEXT("HeadlampRightMouseMigrated"), bHeadlampMigrated, GInputIni);
+
+	if (!bHeadlampMigrated)
+	{
+		for (const auto& Binding : Definitions())
+			if (Binding.Id == TEXT("Headlamp") && Keys(Binding).Contains(EKeys::L))
+			{
+				Replace(Binding, EKeys::RightMouseButton);
+				bChanged = true;
+			}
+
+		GConfig->SetBool(TEXT("MazeKeyBindings"), TEXT("HeadlampRightMouseMigrated"), true, GInputIni);
+		GConfig->Flush(false, GInputIni);
+	}
 
 	for (const auto& Binding : Definitions())
 		if (Keys(Binding).IsEmpty())

@@ -42,13 +42,22 @@ public:
 	FVector StartLocation() const;
 	TSharedPtr<const FMazeGeneratedData, ESPMode::ThreadSafe> GetGeneratedData() const;
 	float GetCellSize() const;
+	bool IsPickupComponent(const UPrimitiveComponent* Component) const;
+	bool GetPickupOutline(TArray<FVector>& OutPoints) const;
+	FMassEntityHandle GetMazeEntity() const
+	{
+		return MazeEntity;
+	}
 
 private:
 	UFUNCTION()
 	void OnRep_Seed();
 	UFUNCTION()
 	void OnRep_DoorTargets();
+	UFUNCTION()
+	void OnRep_HeadlampAvailable();
 	void Build();
+	void RefreshWorldItem();
 	void PrepareMaterials();
 	void PrepareDoorAssets();
 	void RebuildDoorInstances();
@@ -75,6 +84,15 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UStaticMeshComponent> Ceiling;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> HeadlampBody;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> HeadlampLens;
+
+	UPROPERTY(ReplicatedUsing = OnRep_HeadlampAvailable)
+	bool bReplicatedHeadlampAvailable = true;
 
 	UPROPERTY()
 	TObjectPtr<UInstancedStaticMeshComponent> DoorFrames;

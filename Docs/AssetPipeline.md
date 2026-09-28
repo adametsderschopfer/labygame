@@ -176,6 +176,12 @@ system and does not bypass this document:
 
 ## Choosing a prefab-like representation
 
+The starter headlamp pickup uses the engine's built-in cylinder mesh and the
+Maze location's existing metal/ivory materials. Its two small components are
+resident under `AMazeWorld`; no external source asset, new `/Game` package or
+manifest path is introduced. Their lifetime follows the world adapter, while
+the item's identity and availability belong to its Mass entity.
+
 Unreal has several prefab-like tools. Choose by runtime responsibility rather
 than making every composition a Blueprint.
 

@@ -3,14 +3,6 @@
 void FMazeItemSystem::InitializeLoadout(FMazeItemsFragment& Items)
 {
 	Items.Value = FMazeItemsSnapshot();
-
-	FMazeItemInstance Lamp;
-
-	Lamp.Id = Items.Value.NextInstanceId++;
-	Lamp.Kind = EMazeItemKind::Headlamp;
-	Lamp.Slot = EMazeEquipmentSlot::Head;
-	Lamp.bEnabled = false;
-	Items.Value.Items.Add(Lamp);
 }
 
 bool FMazeItemSystem::HasHeadlamp(const FMazeItemsFragment& Items)
@@ -55,4 +47,37 @@ bool FMazeItemSystem::ToggleHeadlamp(FMazeItemsFragment& Items, bool bCanAct)
 	}
 
 	return false;
+}
+
+bool FMazeItemSystem::CanFocus(const FMazeWorldItemFragment& WorldItem,
+                               const FVector& EyeLocation,
+                               const FVector& AimDirection)
+{
+	const FVector ToItem = WorldItem.Location - EyeLocation;
+
+	return WorldItem.bAvailable && ToItem.SizeSquared() <= FMath::Square(FMazeItemDefinition::FocusRange) &&
+	       FVector::DotProduct(ToItem.GetSafeNormal(), AimDirection.GetSafeNormal()) >=
+	           FMazeItemDefinition::MinimumAimDot;
+}
+
+bool FMazeItemSystem::Pickup(FMazeWorldItemFragment& WorldItem,
+                             FMazeItemsFragment& Items,
+                             const FVector& EyeLocation,
+                             const FVector& AimDirection,
+                             bool bCanAct)
+{
+	if (!bCanAct || !CanFocus(WorldItem, EyeLocation, AimDirection) || WorldItem.Kind != EMazeItemKind::Headlamp ||
+	    HasHeadlamp(Items) || Items.Value.Items.Num() >= FMazeItemDefinition::InventoryCapacity)
+		return false;
+
+	FMazeItemInstance Lamp;
+
+	Lamp.Id = Items.Value.NextInstanceId++;
+	Lamp.Kind = WorldItem.Kind;
+	Lamp.Slot = EMazeEquipmentSlot::Head;
+	Lamp.bEnabled = false;
+	Items.Value.Items.Add(Lamp);
+	WorldItem.bAvailable = false;
+
+	return true;
 }
