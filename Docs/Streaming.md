@@ -54,7 +54,8 @@ are unchanged. Base distribution attempts three rooms per spatial sector
 with a target side of 12 cells: the 80-cell map targets up to 147 base rooms plus
 the entrance. Crowded slots are skipped after trying the smallest footprint.
 Corridor margins separate all sectors and rooms within each sector;
-45% of base random rooms have two doorways on adjacent walls, the rest have one.
+The two-door target is 98% of all placed base rooms, with one-cell rooms always
+limited to one doorway. Through-room doorways lie on adjacent walls.
 The entrance retains its single doorway. The added doorframes use the existing wall
 mesh and resident collision shell; no additional Actors, components, assets or
 worker jobs are allocated per room. Counts are higher but the footprint, sightline
@@ -70,12 +71,13 @@ simulation state or near/far rule is introduced. Existing creation/eviction
 budgets, readiness gating and resident physics remain unchanged. Runtime visual
 and performance checks require a user-run session; no FPS improvement is claimed.
 
-An additional pass chooses up to 75 compact one-cell rooms on the default map:
-two-door rooms on corridor bends or one-door rooms on dead-end branches adjacent
-to bends. It preserves existing cell connections and excludes scenic corridors.
-The additions use existing room/door geometry, at most 150 additional doorframes,
-without new assets or view actors. Smaller footprints and adjacent door directions
-do not extend the prior sightline bound; preload radii, budgets, readiness and
+An additional pass chooses up to 75 compact one-cell rooms on the default map
+from corridor dead ends, including those not adjacent to bends. All one-cell
+rooms have one doorway. It preserves existing cell connections and excludes
+scenic corridors.
+The additions use existing room/door geometry, at most 75 additional doorframes,
+without new assets or view actors. Smaller footprints and single entrances do
+not extend the prior sightline bound; preload radii, budgets, readiness and
 resident physics stay unchanged. Runtime cost is not measured. Map highlighting
 only changes the tint of already drawn, explored floor polygons on both maps.
 

@@ -90,7 +90,9 @@ void FMazeLayout::Generate(int32 Seed, int32 InSize)
 		// Adjacent walls make the room a bend, avoiding aligned door-to-door sightlines.
 		const int32 SecondDirection = (FirstDirection + (Random.RandRange(0, 1) ? 1 : 3)) % 4;
 
-		for (int32 DoorIndex = 0; DoorIndex < (I < ThroughCount ? 2 : 1); ++DoorIndex)
+		const bool bThroughRoom = Room.Width() * Room.Height() > 1 && I < ThroughCount;
+
+		for (int32 DoorIndex = 0; DoorIndex < (bThroughRoom ? 2 : 1); ++DoorIndex)
 		{
 			const int32 Direction = DoorIndex == 0 ? FirstDirection : SecondDirection;
 			FIntPoint Door = (Room.Min + Room.Max - FIntPoint(1, 1)) / 2;
@@ -115,7 +117,7 @@ void FMazeLayout::Generate(int32 Seed, int32 InSize)
 		}
 	}
 
-	AddRoomsAtBends(Random, ScenicFloor);
+	AddRoomsAtDeadEnds(Random, ScenicFloor);
 	GenerateRoomTypes(Seed);
 	// Temporarily disabled; retain the generator for restoration.
 	// GenerateNarrowPassages(Seed, ScenicFloor);

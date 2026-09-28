@@ -10,7 +10,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FMazeLayoutTest,
 bool FMazeLayoutTest::RunTest(const FString& Parameters)
 {
 	bool FoundTinyRoom = false, FoundLargestRoom = false;
-	bool FoundBendSideRoom = false, FoundBendThroughRoom = false;
+	bool FoundDeadEndRoom = false;
 	bool FoundNarrowRoomDoor = false;
 	bool FoundShallowRoom = false, FoundPoolRoom = false;
 
@@ -23,27 +23,24 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 		TestEqual(TEXT("Default maze has 6400 cells"), Maze.Walls.Num(), 6400);
 
 		const int32 BaseSectors = FMath::DivideAndRoundUp(Maze.Size, FMazeRoomDefinition::SectorSide);
-		const int32 BendSectors = FMath::DivideAndRoundUp(Maze.Size, FMazeRoomDefinition::BendSectorSide);
+		const int32 DeadEndSectors = FMath::DivideAndRoundUp(Maze.Size, FMazeRoomDefinition::DeadEndSectorSide);
 		const int32 MaxBaseRooms = 1 + BaseSectors * BaseSectors * FMazeRoomDefinition::RoomsPerSector;
-		const int32 MaxBendRooms = BendSectors * BendSectors * FMazeRoomDefinition::RoomsPerSector;
+		const int32 MaxDeadEndRooms = DeadEndSectors * DeadEndSectors * FMazeRoomDefinition::RoomsPerSector;
 
 		TestTrue(TEXT("Default maze retains sector coverage and respects room quotas"),
-		         Maze.Rooms.Num() >= 1 + BaseSectors * BaseSectors && Maze.Rooms.Num() <= MaxBaseRooms + MaxBendRooms);
+		         Maze.Rooms.Num() >= 1 + BaseSectors * BaseSectors &&
+		             Maze.Rooms.Num() <= MaxBaseRooms + MaxDeadEndRooms);
 		TestEqual(TEXT("Every room has one deterministic type"), Maze.RoomTypes.Num(), Maze.Rooms.Num());
 		TestTrue(TEXT("Entrance room remains empty"), Maze.RoomType(0) == EMazeRoomType::Empty);
 
-		// Base slots may be skipped when crowded; entries beyond their maximum are always bend rooms.
+		// Base slots may be skipped when crowded; entries beyond their maximum are always dead-end rooms.
 		for (int32 I = MaxBaseRooms; I < Maze.Rooms.Num(); ++I)
 		{
 			const FIntRect& Room = Maze.Rooms[I];
 			const uint8 Open = ~Maze.Walls[Room.Min.Y * Maze.Size + Room.Min.X] & 15;
-			const bool bSideRoom = Open != 0 && (Open & (Open - 1)) == 0;
-			const bool bThroughRoom = Open == 3 || Open == 6 || Open == 9 || Open == 12;
 
-			TestTrue(TEXT("Additional rooms have one entrance or two adjacent doors"),
-			         Room.Width() == 1 && Room.Height() == 1 && (bSideRoom || bThroughRoom));
-			FoundBendSideRoom |= bSideRoom;
-			FoundBendThroughRoom |= bThroughRoom;
+			TestTrue(TEXT("Additional rooms occupy a dead end"),
+			         Room.Width() == 1 && Room.Height() == 1 && Open != 0 && (Open & (Open - 1)) == 0);
 		}
 
 		for (int32 I = 1; I < Maze.Rooms.Num(); ++I)
@@ -55,6 +52,15 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 			             Room.Height() >= FMazeRoomDefinition::MinLength &&
 			             Room.Height() <= FMazeRoomDefinition::MaxLength);
 			FoundTinyRoom |= Room.Width() == 1 && Room.Height() == 1;
+
+			if (Room.Width() == 1 && Room.Height() == 1)
+			{
+				const uint8 Open = ~Maze.Walls[Room.Min.Y * Maze.Size + Room.Min.X] & 15;
+
+				TestTrue(TEXT("One-cell rooms have exactly one doorway"), Open != 0 && (Open & (Open - 1)) == 0);
+				FoundDeadEndRoom |= Open != 0 && (Open & (Open - 1)) == 0;
+			}
+
 			FoundLargestRoom |=
 			    Room.Width() == FMazeRoomDefinition::MaxWidth && Room.Height() == FMazeRoomDefinition::MaxLength;
 			FoundShallowRoom |= Maze.RoomType(I) == EMazeRoomType::ShallowFlooded;
@@ -230,8 +236,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 
 	TestTrue(TEXT("Seed corpus includes compact one-cell rooms"), FoundTinyRoom);
 	TestTrue(TEXT("Seed corpus retains the previous largest rooms"), FoundLargestRoom);
-	TestTrue(TEXT("Seed corpus includes side rooms near bends"), FoundBendSideRoom);
-	TestTrue(TEXT("Seed corpus includes through-rooms on bends"), FoundBendThroughRoom);
+	TestTrue(TEXT("Seed corpus includes rooms at dead ends"), FoundDeadEndRoom);
 	TestTrue(TEXT("Seed corpus includes room doors opening inside narrow passages"), FoundNarrowRoomDoor);
 	TestTrue(TEXT("Seed corpus includes shallow flooded rooms"), FoundShallowRoom);
 	TestTrue(TEXT("Seed corpus includes bridged pool rooms"), FoundPoolRoom);

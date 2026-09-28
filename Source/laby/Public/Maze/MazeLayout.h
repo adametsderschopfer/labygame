@@ -101,7 +101,7 @@ private:
 	bool IsEntranceCell(int32 X, int32 Y) const;
 	bool OverlapsEntrance(const FIntRect& Room) const;
 	void ReserveRooms(FRandomStream& Random);
-	void AddRoomsAtBends(FRandomStream& Random, const TArray<int32>& ScenicFloor);
+	void AddRoomsAtDeadEnds(FRandomStream& Random, const TArray<int32>& ScenicFloor);
 	void GenerateRoomTypes(int32 Seed);
 	void GenerateNarrowPassages(int32 Seed, const TArray<int32>& ScenicFloor);
 	void CarveEntrance();

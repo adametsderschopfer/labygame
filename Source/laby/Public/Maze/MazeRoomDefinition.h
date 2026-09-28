@@ -26,9 +26,8 @@ struct FMazeRoomDefinition
 	// Multiple separated rooms per sector; keep sectors large enough for 4x7 rooms.
 	static constexpr int32 SectorSide = 12;
 	static constexpr int32 RoomsPerSector = 3;
-	// Additional compact rooms selected from actual bends and nearby dead-end branches.
-	static constexpr int32 BendSectorSide = 16;
-	static constexpr float BendThroughFraction = 0.98f;
+	// Additional compact rooms selected from corridor dead ends.
+	static constexpr int32 DeadEndSectorSide = 16;
 	static constexpr int32 PlacementAttemptsPerRoom = 20;
 	static constexpr float ThroughFraction = 0.98f;
 	static constexpr float DoorWidth = 120.f;
