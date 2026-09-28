@@ -65,6 +65,7 @@ EOS internet rooms require configured project credentials.
 Build and packaging succeeded. Game, Play and automated tests were not launched.
 "@ | Set-Content -LiteralPath (Join-Path $archiveRoot 'BUILD-INFO.txt') -Encoding UTF8
 
+    Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $zip = [System.IO.Compression.ZipFile]::Open($gameZip, [System.IO.Compression.ZipArchiveMode]::Create)
     try {
