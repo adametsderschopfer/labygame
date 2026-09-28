@@ -155,10 +155,11 @@ light diffuser must fit wholly inside the clear bay span, so walls cannot cut it
 There is one fixture per bay instead of nine, with matte porous acoustic infill
 and thin gray rails. This is a material layout, not individual ceiling geometry.
 
-Spatial hashes of tile ID and seed assign 18% of fixtures off, 12% intermittently
-dimming and the rest steady. Off fixtures retain a pale diffuser. Each flickering
-fixture has an independent phase, a smooth 1.5-second dip every roughly 9.6–15.6
-seconds, and a 25–65% dip depth. Material GameTime respects world pause. Phase
+Spatial hashes of tile ID and seed assign 18% of fixtures off, 15% intermittently
+blinking and the rest steady. Off fixtures retain a pale diffuser. Each flickering
+fixture has an independent phase and a burst of one to three brief full-emission
+dropouts every roughly 4.8–7.8 seconds. Its diffuser darkens during each dropout.
+Material GameTime respects world pause. Phase
 is local cosmetic time; fixture selection follows seed. No gameplay state or
 additional direct-light components are introduced.
 

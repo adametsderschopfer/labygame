@@ -13,7 +13,7 @@ struct FMazeVitals
 	static constexpr float RecoveryPerSecond = 15.f;
 	static constexpr float RecoveryDelay = 1.5f;
 	static constexpr float ResumeThreshold = 25.f;
-	static constexpr float JumpCost = 7.5f;
+	static constexpr float JumpCost = 3.75f;
 
 	UPROPERTY()
 	float Health = HealthMaximum;

@@ -237,8 +237,8 @@ struct FMazePlayerControlSystem
 
 		Command.bCrouch = Input.bCrouchHeld;
 		const bool bLowStance = Command.bCrouch || Pose.bCrouched;
-		const bool bSprint =
-		    !bWading && !bLowStance && Pose.bInputEnabled && Input.bSprintHeld && FMazeVitalsSystem::CanSprint(Vitals);
+		const bool bSprint = Pose.bOnGround && !bWading && !bLowStance && Pose.bInputEnabled && Input.bSprintHeld &&
+		                     FMazeVitalsSystem::CanSprint(Vitals);
 		Command.Speed = bWading
 		                    ? (bLowStance ? FMazeWaterDefinition::CrouchedWadeSpeed : FMazeWaterDefinition::WadeSpeed)
 		                : bLowStance ? FMazePlayerControlDefinition::CrouchSpeed

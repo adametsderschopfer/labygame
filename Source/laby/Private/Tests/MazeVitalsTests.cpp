@@ -1,3 +1,4 @@
+#include "ECS/MazeGameplaySystems.h"
 #include "ECS/MazeVitalsSystem.h"
 #include "Misc/AutomationTest.h"
 
@@ -42,15 +43,15 @@ bool FMazeVitalsTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("New life health"), FreshLife.Health, FMazeVitals::HealthMaximum);
 	TestEqual(TEXT("New life stamina"), FreshLife.Stamina, FMazeVitals::StaminaMaximum);
 	TestTrue(TEXT("Jump spends stamina"), FMazeVitalsSystem::SpendJumpStamina(FreshLife));
-	TestEqual(TEXT("Jump costs 7.5"), FreshLife.Stamina, 92.5f);
+	TestEqual(TEXT("Jump costs 3.75"), FreshLife.Stamina, 96.25f);
 	FMazeVitalsSystem::Update(FreshLife, 3.f, false, false);
-	TestEqual(TEXT("No recovery in air"), FreshLife.Stamina, 92.5f);
+	TestEqual(TEXT("No recovery in air"), FreshLife.Stamina, 96.25f);
 	FMazeVitalsSystem::Update(FreshLife, 0.5f, false, true);
 	TestEqual(TEXT("Walking or standing on ground recovers"), FreshLife.Stamina, 100.f);
-	FreshLife.Stamina = 7.f;
+	FreshLife.Stamina = 3.f;
 	TestFalse(TEXT("Insufficient stamina blocks jump"), FMazeVitalsSystem::CanJump(FreshLife));
 	TestFalse(TEXT("Failed jump does not spend"), FMazeVitalsSystem::SpendJumpStamina(FreshLife));
-	TestEqual(TEXT("Failed jump preserves stamina"), FreshLife.Stamina, 7.f);
+	TestEqual(TEXT("Failed jump preserves stamina"), FreshLife.Stamina, 3.f);
 	FreshLife.Stamina = FMazeVitals::JumpCost;
 	TestTrue(TEXT("Exact cost permits jump"), FMazeVitalsSystem::SpendJumpStamina(FreshLife));
 	TestEqual(TEXT("Exact cost leaves zero"), FreshLife.Stamina, 0.f);
@@ -58,6 +59,46 @@ bool FMazeVitalsTest::RunTest(const FString& Parameters)
 	FMazeVitalsSystem::Damage(FreshLife, 100.f);
 	FreshLife.Stamina = 100.f;
 	TestFalse(TEXT("Dead player cannot jump"), FMazeVitalsSystem::CanJump(FreshLife));
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FMazeAirborneSprintTest,
+                                 "Laby.Character.AirborneSprint",
+                                 EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FMazeAirborneSprintTest::RunTest(const FString& Parameters)
+{
+	FMazePlayerInputFragment Input;
+
+	Input.bSprintHeld = true;
+
+	FMazePlayerPoseFragment Pose;
+
+	Pose.bOnGround = true;
+	Pose.Velocity = FVector(100.f, 0.f, 0.f);
+	Pose.Acceleration = FVector(100.f, 0.f, 0.f);
+
+	FMazeVitals Vitals;
+	FMazeLocomotionFragment Locomotion;
+
+	const auto Ground = FMazePlayerControlSystem::Resolve(Input, Pose, Vitals, Locomotion, false);
+
+	TestEqual(TEXT("Held Shift sprints on ground"), Ground.Speed, FMazePlayerControlDefinition::SprintSpeed);
+	TestTrue(TEXT("Ground sprint drains stamina"), Locomotion.bRunning);
+
+	Pose.bOnGround = false;
+
+	const auto Air = FMazePlayerControlSystem::Resolve(Input, Pose, Vitals, Locomotion, false);
+
+	TestEqual(TEXT("Held Shift uses walk speed in air"), Air.Speed, FMazePlayerControlDefinition::WalkSpeed);
+	TestFalse(TEXT("Airborne movement does not drain sprint stamina"), Locomotion.bRunning);
+	TestTrue(TEXT("Shift remains held for landing"), Input.bSprintHeld);
+
+	Pose.bOnGround = true;
+
+	const auto Landed = FMazePlayerControlSystem::Resolve(Input, Pose, Vitals, Locomotion, false);
+
+	TestEqual(TEXT("Held Shift resumes sprint on landing"), Landed.Speed, FMazePlayerControlDefinition::SprintSpeed);
 
 	return true;
 }
