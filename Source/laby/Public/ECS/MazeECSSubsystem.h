@@ -75,8 +75,9 @@ public:
 	FMazeGenerationFragment ReadMaze(FMassEntityHandle Entity) const;
 	TArray<FMazeDoorView> ReadDoors(FMassEntityHandle Maze) const;
 	bool ToggleDoor(FMassEntityHandle Player, int32 DoorIndex, const FVector& Eye, const FVector& Aim);
-	TArray<uint8> ReadDoorTargets(FMassEntityHandle Maze) const;
-	void ReceiveDoorTargets(FMassEntityHandle Maze, TConstArrayView<uint8> Targets);
+	bool AdvanceDoor(FMassEntityHandle Maze, int32 DoorIndex, float DeltaSeconds, float MaxSafeAmount);
+	TArray<uint8> ReadDoorStates(FMassEntityHandle Maze) const;
+	void ReceiveDoorStates(FMassEntityHandle Maze, uint32 Revision, TConstArrayView<uint8> States);
 	TSharedPtr<const FMazeInterior> BuildMazeLampLocations(FMassEntityHandle Entity) const;
 	TSharedPtr<const FMazeSurface> BuildMazeCollision(FMassEntityHandle Entity) const;
 	TSharedPtr<FMazeChunkJob> RequestMazeChunk(FMassEntityHandle Entity, FIntPoint Chunk, int32 ChunkCells) const;
@@ -108,7 +109,6 @@ private:
 	TUniquePtr<FMassEntityQuery> GenerationQuery;
 	TUniquePtr<FMassEntityQuery> InputQuery;
 	TUniquePtr<FMassEntityQuery> SignalQuery;
-	TUniquePtr<FMassEntityQuery> DoorQuery;
 	FMassArchetypeHandle PlayerArchetype;
 	FMassArchetypeHandle MazeArchetype;
 	FMassArchetypeHandle DoorArchetype;

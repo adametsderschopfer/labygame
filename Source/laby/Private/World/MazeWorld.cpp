@@ -245,17 +245,17 @@ void AMazeWorld::RefreshWorldItem()
 		HeadlampLens->SetCollisionEnabled(Collision);
 }
 
-void AMazeWorld::OnRep_DoorTargets()
+void AMazeWorld::OnRep_DoorStates()
 {
 	if (ECSSubsystem)
-		ECSSubsystem->ReceiveDoorTargets(MazeEntity, ReplicatedDoorTargets);
+		ECSSubsystem->ReceiveDoorStates(MazeEntity, ReplicatedDoorStates.MazeRevision, ReplicatedDoorStates.States);
 }
 
 void AMazeWorld::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMazeWorld, Seed);
-	DOREPLIFETIME(AMazeWorld, ReplicatedDoorTargets);
+	DOREPLIFETIME(AMazeWorld, ReplicatedDoorStates);
 	DOREPLIFETIME(AMazeWorld, bReplicatedHeadlampAvailable);
 }
 
@@ -355,8 +355,8 @@ void AMazeWorld::Build()
 
 	RebuildDoorInstances();
 
-	if (!HasAuthority() && !ReplicatedDoorTargets.IsEmpty())
-		ECSSubsystem->ReceiveDoorTargets(MazeEntity, ReplicatedDoorTargets);
+	if (!HasAuthority() && !ReplicatedDoorStates.States.IsEmpty())
+		ECSSubsystem->ReceiveDoorStates(MazeEntity, ReplicatedDoorStates.MazeRevision, ReplicatedDoorStates.States);
 
 	Location->ReportBlockingStage(EMazePreparationStage::Geometry);
 

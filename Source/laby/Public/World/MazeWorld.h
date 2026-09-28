@@ -13,6 +13,18 @@ class AMazeChunkView;
 struct FMazeChunkJob;
 struct FMazeDoorView;
 
+USTRUCT()
+struct FMazeDoorNetworkSnapshot
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	uint32 MazeRevision = 0;
+
+	UPROPERTY()
+	TArray<uint8> States;
+};
+
 UCLASS()
 class LABY_API AMazeWorld : public AActor
 {
@@ -54,7 +66,7 @@ private:
 	UFUNCTION()
 	void OnRep_Seed();
 	UFUNCTION()
-	void OnRep_DoorTargets();
+	void OnRep_DoorStates();
 	UFUNCTION()
 	void OnRep_HeadlampAvailable();
 	void Build();
@@ -62,7 +74,7 @@ private:
 	void PrepareMaterials();
 	void PrepareDoorAssets();
 	void RebuildDoorInstances();
-	void UpdateDoors();
+	void UpdateDoors(float DeltaSeconds);
 	void ClearChunks();
 	void UpdateChunks();
 
@@ -106,8 +118,8 @@ private:
 	UPROPERTY()
 	TObjectPtr<UInstancedStaticMeshComponent> DoorCollision;
 
-	UPROPERTY(ReplicatedUsing = OnRep_DoorTargets)
-	TArray<uint8> ReplicatedDoorTargets;
+	UPROPERTY(ReplicatedUsing = OnRep_DoorStates)
+	FMazeDoorNetworkSnapshot ReplicatedDoorStates;
 
 	UPROPERTY(Transient)
 	FMassEntityHandle MazeEntity;

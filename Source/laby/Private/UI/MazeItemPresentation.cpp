@@ -183,7 +183,10 @@ int32 MazeItemPresentation::PaintFocus(const UUserWidget& Owner,
 	const auto KeyFont = MazeInterfaceStyle::Font(17, 0);
 	const auto Measure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
 	const float KeyWidth = FMath::Max(32.f, Measure->Measure(KeyText, KeyFont).X + 16.f);
-	const FVector2D LabelSize(193.f + KeyWidth, 57.f);
+	const FText ItemName = NSLOCTEXT("Maze.Items", "Headlamp", "Налобный фонарик");
+	const auto ItemFont = MazeInterfaceStyle::Font(17, 0);
+	const float TextWidth = FMath::CeilToFloat(Measure->Measure(ItemName, ItemFont).X) + 4.f;
+	const FVector2D LabelSize(12.f + TextWidth + 12.f + KeyWidth + 12.f, 57.f);
 	const FVector2D Label(FMath::Clamp(Maximum.X + 45.f, 12.f, Screen.X - LabelSize.X - 12.f),
 	                      FMath::Clamp(Minimum.Y - 78.f, 12.f, Screen.Y - LabelSize.Y - 12.f));
 
@@ -212,13 +215,6 @@ int32 MazeItemPresentation::PaintFocus(const UUserWidget& Owner,
 	                       Palette.Ink.CopyWithNewOpacity(.85f),
 	                       Palette.Accent.CopyWithNewOpacity(.35f));
 
-	const FVector2D ArrowDirection = (Leader[1] - Start).GetSafeNormal();
-	const FVector2D ArrowNormal(-ArrowDirection.Y, ArrowDirection.X);
-	const TArray<FVector2D> Arrow = {
-	    Start + ArrowDirection * 10.f + ArrowNormal * 5.f, Start, Start + ArrowDirection * 10.f - ArrowNormal * 5.f};
-
-	FSlateDrawElement::MakeLines(
-	    Elements, ++Layer, Geometry.ToPaintGeometry(), Arrow, ESlateDrawEffect::None, Palette.Ink, true, 2.f);
 	FSlateDrawElement::MakeBox(Elements,
 	                           ++Layer,
 	                           Geometry.ToPaintGeometry(LabelSize, FSlateLayoutTransform(Label)),
@@ -236,13 +232,13 @@ int32 MazeItemPresentation::PaintFocus(const UUserWidget& Owner,
 	FSlateDrawElement::MakeText(
 	    Elements,
 	    ++Layer,
-	    Geometry.ToPaintGeometry(FVector2D(172.f, 28.f), FSlateLayoutTransform(Label + FVector2D(12.f, 17.f))),
-	    NSLOCTEXT("Maze.Items", "Headlamp", "Налобный фонарик"),
-	    MazeInterfaceStyle::Font(17, 0),
+	    Geometry.ToPaintGeometry(FVector2D(TextWidth, 28.f), FSlateLayoutTransform(Label + FVector2D(12.f, 17.f))),
+	    ItemName,
+	    ItemFont,
 	    ESlateDrawEffect::None,
 	    Palette.Ink);
 
-	const FVector2D KeyPosition = Label + FVector2D(183.f, 11.f);
+	const FVector2D KeyPosition = Label + FVector2D(12.f + TextWidth + 12.f, 11.f);
 
 	FSlateDrawElement::MakeBox(Elements,
 	                           ++Layer,

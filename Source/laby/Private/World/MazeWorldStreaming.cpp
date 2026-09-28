@@ -41,7 +41,7 @@ void AMazeWorld::Tick(float DeltaSeconds)
 		return;
 
 	RefreshWorldItem();
-	UpdateDoors();
+	UpdateDoors(DeltaSeconds);
 
 	auto* Location = GetWorld()->GetSubsystem<UMazeLocationSubsystem>();
 

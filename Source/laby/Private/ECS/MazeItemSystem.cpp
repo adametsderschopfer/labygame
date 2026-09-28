@@ -36,8 +36,12 @@ bool FMazeItemSystem::ToggleHeadlamp(FMazeItemsFragment& Items, bool bCanAct)
 	if (!bCanAct)
 		return false;
 
-	for (auto& Item : Items.Value.Items)
+	const int32 Slot = Items.Value.SelectedSlot;
+
+	if (Items.Value.Items.IsValidIndex(Slot))
 	{
+		auto& Item = Items.Value.Items[Slot];
+
 		if (Item.Id != INDEX_NONE && Item.Kind == EMazeItemKind::Headlamp && Item.Slot == EMazeEquipmentSlot::Head)
 		{
 			Item.bEnabled = !Item.bEnabled;

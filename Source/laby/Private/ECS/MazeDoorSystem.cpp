@@ -38,14 +38,28 @@ void FMazeDoorSystem::Toggle(FMazeDoorFragment& Door)
 	Door.bWantsOpen = !Door.bWantsOpen;
 }
 
-void FMazeDoorSystem::Update(FMazeDoorFragment& Door, float DeltaSeconds)
+float FMazeDoorSystem::NextOpenAmount(const FMazeDoorView& Door, float DeltaSeconds)
 {
 	if (!FMath::IsFinite(DeltaSeconds) || DeltaSeconds <= 0.f)
-		return;
+		return Door.OpenAmount;
 
 	const float Target = Door.bWantsOpen ? 1.f : 0.f;
 	const float Duration =
 	    Door.bWantsOpen ? FMazeDoorDefinition::OpenDurationSeconds : FMazeDoorDefinition::CloseDurationSeconds;
 
-	Door.OpenAmount = FMath::FInterpConstantTo(Door.OpenAmount, Target, DeltaSeconds, 1.f / Duration);
+	return FMath::FInterpConstantTo(Door.OpenAmount, Target, DeltaSeconds, 1.f / Duration);
+}
+
+void FMazeDoorSystem::Advance(FMazeDoorFragment& Door, float DeltaSeconds, float MaxSafeAmount)
+{
+	if (!FMath::IsFinite(MaxSafeAmount))
+		return;
+
+	const FMazeDoorView View{Door.Index, Door.Center, Door.SlideAxis, Door.Normal, Door.OpenAmount, Door.bWantsOpen};
+	const float Desired = NextOpenAmount(View, DeltaSeconds);
+
+	if (Desired > Door.OpenAmount)
+		Door.OpenAmount = FMath::Clamp(MaxSafeAmount, Door.OpenAmount, Desired);
+	else
+		Door.OpenAmount = FMath::Clamp(MaxSafeAmount, Desired, Door.OpenAmount);
 }

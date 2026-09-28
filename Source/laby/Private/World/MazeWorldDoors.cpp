@@ -3,6 +3,8 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "ECS/MazeDoorSystem.h"
 #include "ECS/MazeECSSubsystem.h"
+#include "Engine/World.h"
+#include "Engine/OverlapResult.h"
 #include "Materials/MaterialInterface.h"
 #include "Math/RotationMatrix.h"
 #include "Maze/MazeRoomDefinition.h"
@@ -111,18 +113,65 @@ void AMazeWorld::PrepareDoorAssets()
 		DoorHandles->SetMaterial(0, VisualMaterials[2]);
 }
 
-void AMazeWorld::UpdateDoors()
+void AMazeWorld::UpdateDoors(float DeltaSeconds)
 {
 	if (!ECSSubsystem)
 		return;
 
-	if (HasAuthority())
-	{
-		TArray<uint8> Targets = ECSSubsystem->ReadDoorTargets(MazeEntity);
+	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
+	const float Width = FMazeRoomDefinition::OpeningWidth(Maze.Cell - Maze.WallThickness);
+	const float Height = FMazeRoomDefinition::OpeningHeight(Maze.WallHeight);
 
-		if (Targets != ReplicatedDoorTargets)
+	if (HasAuthority() && !GetWorld()->IsPaused())
+	{
+		const TArray<FMazeDoorView> CurrentDoors = ECSSubsystem->ReadDoors(MazeEntity);
+		const FCollisionObjectQueryParams Pawns(ECC_Pawn);
+		FCollisionQueryParams Query(SCENE_QUERY_STAT(MazeDoorPawnOverlap), false);
+
+		Query.AddIgnoredActor(this);
+
+		for (const FMazeDoorView& Door : CurrentDoors)
 		{
-			ReplicatedDoorTargets = MoveTemp(Targets);
+			const float Desired = FMazeDoorSystem::NextOpenAmount(Door, DeltaSeconds);
+
+			if (FMath::IsNearlyEqual(Door.OpenAmount, Desired))
+				continue;
+
+			const float CurrentAngle = FMazeDoorDefinition::SwingDegrees * FMath::SmoothStep(0.f, 1.f, Door.OpenAmount);
+			const float DesiredAngle = FMazeDoorDefinition::SwingDegrees * FMath::SmoothStep(0.f, 1.f, Desired);
+			const int32 Steps = FMath::Max(1, FMath::CeilToInt(FMath::Abs(DesiredAngle - CurrentAngle) / 5.f));
+			float MaxSafeAmount = Door.OpenAmount;
+
+			for (int32 Step = 1; Step <= Steps; ++Step)
+			{
+				FMazeDoorView Candidate = Door;
+
+				Candidate.OpenAmount = FMath::Lerp(Door.OpenAmount, Desired, float(Step) / Steps);
+
+				const FTransform Leaf = LeafTransform(Candidate, GetActorLocation(), Width, Height, Maze.WallThickness);
+				const FVector HalfExtent = Leaf.GetScale3D().GetAbs() * 50.f;
+				TArray<FOverlapResult> Overlaps;
+
+				if (GetWorld()->OverlapMultiByObjectType(Overlaps,
+				                                         Leaf.GetLocation() + GetActorLocation(),
+				                                         Leaf.GetRotation(),
+				                                         Pawns,
+				                                         FCollisionShape::MakeBox(HalfExtent),
+				                                         Query))
+					break;
+
+				MaxSafeAmount = Candidate.OpenAmount;
+			}
+
+			ECSSubsystem->AdvanceDoor(MazeEntity, Door.Index, DeltaSeconds, MaxSafeAmount);
+		}
+
+		TArray<uint8> States = ECSSubsystem->ReadDoorStates(MazeEntity);
+
+		if (ReplicatedDoorStates.MazeRevision != Maze.Revision || States != ReplicatedDoorStates.States)
+		{
+			ReplicatedDoorStates.MazeRevision = Maze.Revision;
+			ReplicatedDoorStates.States = MoveTemp(States);
 			ForceNetUpdate();
 		}
 	}
@@ -136,9 +185,6 @@ void AMazeWorld::UpdateDoors()
 		return;
 	}
 
-	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
-	const float Width = FMazeRoomDefinition::OpeningWidth(Maze.Cell - Maze.WallThickness);
-	const float Height = FMazeRoomDefinition::OpeningHeight(Maze.WallHeight);
 	const bool bVisual = GetNetMode() != NM_DedicatedServer;
 
 	for (int32 Index = 0; Index < Doors.Num(); ++Index)

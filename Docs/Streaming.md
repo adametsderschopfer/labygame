@@ -133,6 +133,10 @@ measured FPS improvement is claimed.
 Only rendering is distance-streamed. **Collision for the entire maze remains
 resident**, including the floor-hole mask and exterior landing. This deliberately
 keeps remote players, unobserved physics and future non-player objects safe.
+Door leaf collision is also resident. The server checks each proposed swing pose
+against Pawn collision before advancing the ECS door state; visual chunk eviction
+cannot reset or bypass that check. Dry room floor accents are cosmetic chunk
+geometry over the resident floor and add no collision.
 The collision wall component creates no render proxy. This is not a complete
 bounded-memory solution for arbitrarily large worlds; collision/topology growth
 must be budgeted separately before increasing map size substantially.

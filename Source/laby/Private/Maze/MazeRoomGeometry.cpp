@@ -38,12 +38,26 @@ FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
 	{
 		const EMazeRoomType Type = Layout.RoomType(RoomIndex);
 
-		if (Type == EMazeRoomType::Empty)
-			continue;
-
 		const FIntRect& Room = Layout.Rooms[RoomIndex];
 		const float MinX = Room.Min.X * Cell, MaxX = Room.Max.X * Cell;
 		const float MinY = Room.Min.Y * Cell, MaxY = Room.Max.Y * Cell;
+
+		if (Type == EMazeRoomType::Empty)
+		{
+			// Give dry rooms a visible floor treatment, including one-cell dead-end rooms.
+			// The overlay is visual only; the ordinary resident floor remains authoritative for collision.
+			AddBox(MinX + HalfWall,
+			       MaxX - HalfWall,
+			       MinY + HalfWall,
+			       MaxY - HalfWall,
+			       0.f,
+			       0.5f,
+			       EMazeRoomSurface::Ceramic,
+			       false);
+
+			continue;
+		}
+
 		const float FloorHeight = FMazeRoomDefinition::FloorHeight(Type);
 		const float CeilingHeight = FMazeRoomDefinition::CeilingHeight(Type, DefaultWallHeight);
 		const EMazeRoomSurface FloorSurface =

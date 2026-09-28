@@ -21,5 +21,6 @@ struct FMazeDoorSystem
 	static bool CanFocus(const FMazeDoorView& Door, const FVector& Eye, const FVector& Aim, float OpeningWidth);
 	static bool CanInteract(const FMazeDoorFragment& Door, const FVector& Eye, const FVector& Aim, float OpeningWidth);
 	static void Toggle(FMazeDoorFragment& Door);
-	static void Update(FMazeDoorFragment& Door, float DeltaSeconds);
+	static float NextOpenAmount(const FMazeDoorView& Door, float DeltaSeconds);
+	static void Advance(FMazeDoorFragment& Door, float DeltaSeconds, float MaxSafeAmount);
 };
