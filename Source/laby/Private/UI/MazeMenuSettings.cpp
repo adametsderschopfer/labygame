@@ -14,6 +14,7 @@
 #include "Components/TextBlock.h"
 #include "Components/WidgetSwitcher.h"
 #include "GameFramework/GameUserSettings.h"
+#include "HAL/PlatformProperties.h"
 #include "Sound/SoundWave.h"
 
 namespace
@@ -149,29 +150,33 @@ void UMazeMenuWidget::RefreshInterfaceSounds(float Volume)
 		    if (auto* Button = Cast<UButton>(Widget))
 		    {
 			    FButtonStyle Style = Button->GetStyle();
-			    bool bChanged = false;
-			    const auto UpdateSound = [&](FSlateSound& SlateSound)
+			    bool bRejectedSound = false;
+			    const auto UpdateSound = [Volume, &bRejectedSound](FSlateSound& SlateSound)
 			    {
 				    USoundWave* Wave = Cast<USoundWave>(SlateSound.GetResourceObject());
 
 				    if (!Wave)
 					    return;
 
-				    if (!Wave->HasAnyFlags(RF_Transient))
+				    if (FPlatformProperties::RequiresCookedData() && Wave->HasAnyFlags(RF_Transient))
 				    {
-					    Wave = DuplicateObject<USoundWave>(Wave, Button);
-					    Wave->SetFlags(RF_Transient);
-					    SlateSound.SetResourceObject(Wave);
+					    UE_LOG(LogTemp,
+					           Warning,
+					           TEXT("Ignoring transient UI sound %s in a cooked build."),
+					           *Wave->GetPathName());
+					    SlateSound.SetResourceObject(nullptr);
+					    bRejectedSound = true;
+
+					    return;
 				    }
 
 				    Wave->Volume = FMath::Clamp(Volume, 0.f, 1.f);
-				    bChanged = true;
 			    };
 
 			    UpdateSound(Style.HoveredSlateSound);
 			    UpdateSound(Style.PressedSlateSound);
 
-			    if (bChanged)
+			    if (bRejectedSound)
 				    Button->SetStyle(Style);
 		    }
 	    });

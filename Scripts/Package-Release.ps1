@@ -35,6 +35,11 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the working tree.' }
     if ($changes.Count) { throw 'Commit project changes before packaging so the release identifier matches its source.' }
     if (Test-Path -LiteralPath $releaseRoot) { throw "Release directory already exists; existing releases are never overwritten: $releaseRoot" }
+    # Duplicated SoundWaves have no cooked audio payload and can crash Shipping during menu startup.
+    $unsafeSoundCopies = @(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'Source/laby') -Recurse -File |
+        Where-Object { $_.Extension -in '.cpp', '.h' } |
+        Select-String -Pattern 'DuplicateObject\s*<\s*USoundWave\s*>' -List)
+    if ($unsafeSoundCopies.Count) { throw 'Runtime code duplicates a SoundWave; use its cooked asset instead.' }
     $uat = Join-Path $EngineRoot 'Engine/Build/BatchFiles/RunUAT.bat'
     if (!(Test-Path -LiteralPath $uat)) { throw "RunUAT not found: $uat" }
     $project = Join-Path $projectRoot 'laby.uproject'
