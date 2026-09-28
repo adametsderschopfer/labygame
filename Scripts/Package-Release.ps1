@@ -78,8 +78,9 @@ Build and packaging succeeded. Game, Play and automated tests were not launched.
     } finally { $zip.Dispose() }
     git archive --format=zip --prefix=laby/ "--output=$sourceZip" $revision
     if ($LASTEXITCODE -ne 0) { throw 'Source archive failed.' }
-    @($gameZip, $sourceZip) | Get-FileHash -Algorithm SHA256 | ForEach-Object {
-        "$($_.Hash)  $([System.IO.Path]::GetFileName($_.Path))"
+    @($gameZip, $sourceZip) | ForEach-Object {
+        $hash = Get-FileHash -LiteralPath $_ -Algorithm SHA256
+        "$($hash.Hash)  $([System.IO.Path]::GetFileName($hash.Path))"
     } | Set-Content -LiteralPath (Join-Path $releaseRoot 'SHA256SUMS.txt')
     Set-Content -LiteralPath (Join-Path $projectRoot 'Saved/Builds/latest-shipping-path.txt') $releaseRoot
     Get-Item -LiteralPath $gameZip, $sourceZip | Select-Object FullName, Length
