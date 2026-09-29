@@ -8,7 +8,7 @@ chunk generation through `FMazeChunkSystem`. `AMazeWorld` consumes these results
 to create engine resources. See [Streaming.md](Streaming.md) for lifecycle,
 memory ownership, thread scheduling and current resident-collision policy.
 
-After rooms and route shaping, a feature-specific seeded stream marks a soft
+Narrow-passage generation is currently disabled. The retained generator can mark a soft
 target of 5% of eligible straight corridor cells as full-height narrow passages.
 Segments are 2–3 cells long, keep three cells of spacing, and exclude room cells,
 the entrance, the exit and scenic runs. A straight corridor cell may retain a
@@ -20,13 +20,14 @@ protected from holes. The immutable axis mask drives resident collision, chunk
 visuals and the physically narrow floor ribbon on both explored maps; it adds no
 movement restriction, trigger actor or per-wall entity.
 
-Default 80 x 80 maps target 18 rooms (including the 3 x 3 spawn room) and at most
-64 single-cell holes. Random rooms range from 3 x 3 to 7 x 7 cells, stay inside
-the boundary and keep a corridor gap between their rectangles. They remove only
-internal walls and preserve the existing maze connections. Placement attempts
-are bounded; fewer rooms or holes are accepted when the constraints require it.
+Default 80 x 80 maps target up to 147 base rooms and 75 additional dead-end rooms,
+plus at most 64 single-cell holes. Rooms range from 1 x 1 to 4 x 7 cells and
+keep a corridor gap between their rectangles. A separate two-cell, single-width
+dead end at the west edge holds the spawn and opens directly into the maze without
+a door. Placement attempts are bounded; fewer rooms or holes are accepted when
+the constraints require it.
 
-A 5 x 5 area around the spawn cell and all boundary cells have solid floor.
+The spawn dead end, its approach halo and all boundary cells have solid floor.
 Holes never touch, including diagonally. Every tentative hole is removed from
 the walking graph, then a flood fill starts at the spawn cell. The hole is kept
 only if all remaining floor cells are reachable. This invariant is checked after

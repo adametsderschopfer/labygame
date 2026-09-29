@@ -24,14 +24,22 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 
 		const int32 BaseSectors = FMath::DivideAndRoundUp(Maze.Size, FMazeRoomDefinition::SectorSide);
 		const int32 DeadEndSectors = FMath::DivideAndRoundUp(Maze.Size, FMazeRoomDefinition::DeadEndSectorSide);
-		const int32 MaxBaseRooms = 1 + BaseSectors * BaseSectors * FMazeRoomDefinition::RoomsPerSector;
+		const int32 MaxBaseRooms = BaseSectors * BaseSectors * FMazeRoomDefinition::RoomsPerSector;
 		const int32 MaxDeadEndRooms = DeadEndSectors * DeadEndSectors * FMazeRoomDefinition::RoomsPerSector;
 
 		TestTrue(TEXT("Default maze retains sector coverage and respects room quotas"),
-		         Maze.Rooms.Num() >= 1 + BaseSectors * BaseSectors &&
-		             Maze.Rooms.Num() <= MaxBaseRooms + MaxDeadEndRooms);
+		         Maze.Rooms.Num() >= BaseSectors * BaseSectors && Maze.Rooms.Num() <= MaxBaseRooms + MaxDeadEndRooms);
 		TestEqual(TEXT("Every room has one deterministic type"), Maze.RoomTypes.Num(), Maze.Rooms.Num());
-		TestTrue(TEXT("Entrance room remains empty"), Maze.RoomType(0) == EMazeRoomType::Empty);
+		TestEqual(TEXT("Spawn is a corridor dead end"), uint8(~Maze.Walls[Maze.Start()] & 15), uint8(2));
+		TestTrue(TEXT("Spawn floor is intact"), Maze.HasFloor(Maze.Start()));
+
+		for (int32 X = 1; X < FMazeLayout::EntranceLengthCells; ++X)
+		{
+			const int32 Cell = Maze.Start() + X;
+
+			TestEqual(TEXT("Entrance stays a straight corridor"), uint8(~Maze.Walls[Cell] & 15), uint8(10));
+			TestTrue(TEXT("Entrance floor is intact"), Maze.HasFloor(Cell));
+		}
 
 		// Base slots may be skipped when crowded; entries beyond their maximum are always dead-end rooms.
 		for (int32 I = MaxBaseRooms; I < Maze.Rooms.Num(); ++I)
@@ -49,7 +57,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 			             DoorCount == 1);
 		}
 
-		for (int32 I = 1; I < Maze.Rooms.Num(); ++I)
+		for (int32 I = 0; I < Maze.Rooms.Num(); ++I)
 		{
 			const FIntRect& Room = Maze.Rooms[I];
 
@@ -104,7 +112,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 				                      (SectorY + 1) * Maze.Size / BaseSectors);
 				int32 RoomCount = 0;
 
-				for (int32 I = 1; I < Maze.Rooms.Num(); ++I)
+				for (int32 I = 0; I < Maze.Rooms.Num(); ++I)
 				{
 					const FIntRect& Room = Maze.Rooms[I];
 

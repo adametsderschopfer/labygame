@@ -98,10 +98,7 @@ bool FMazeFloorConnectivityTest::RunTest(const FString& Parameters)
 							TestFalse(TEXT("No south interior room wall"), (Walls & 4) != 0);
 					}
 
-				if (Room == Layout.Rooms[0])
-					TestEqual(TEXT("Entrance room keeps one doorway"), DoorCount, 1);
-				else
-					TestTrue(TEXT("Random room has one or two doorways"), DoorCount == 1 || DoorCount == 2);
+				TestTrue(TEXT("Random room has one or two doorways"), DoorCount == 1 || DoorCount == 2);
 
 				if (DoorCount == 2)
 				{
@@ -120,7 +117,7 @@ bool FMazeFloorConnectivityTest::RunTest(const FString& Parameters)
 
 			if (Size >= 40)
 			{
-				TestTrue(TEXT("Large maps have random rooms beyond the spawn room"), Layout.Rooms.Num() > 1);
+				TestTrue(TEXT("Large maps contain rooms beyond the spawn corridor"), Layout.Rooms.Num() > 0);
 				TestTrue(TEXT("Large maps retain through-rooms"), ThroughRooms > 0);
 				TestTrue(TEXT("Large maps contain holes"), Layout.NumHoles() > 0);
 			}

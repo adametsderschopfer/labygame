@@ -15,8 +15,7 @@ struct FMazeRoomDoorway
 struct FMazeLayout
 {
 	static constexpr int32 DefaultSize = 80;
-	static constexpr int32 EntranceRoomSize = 3;
-	static constexpr int32 EntrancePassageLength = 2;
+	static constexpr int32 EntranceLengthCells = 2;
 	int32 Size = DefaultSize;
 	TArray<uint8> Walls;
 	TArray<int32> Exits;
@@ -84,7 +83,7 @@ struct FMazeLayout
 
 	int32 Start() const
 	{
-		return (Size - 1 - EntranceRoomSize / 2) * Size + EntranceRoomSize / 2;
+		return (Size - 2) * Size;
 	}
 
 	void Generate(int32 Seed, int32 InSize = DefaultSize);

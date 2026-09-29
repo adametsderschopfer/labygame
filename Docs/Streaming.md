@@ -47,16 +47,16 @@ Both explored maps derive the narrow floor ribbon and doorway branch from the
 same masks. The passages do not change movement speed, jumping or stamina and do
 not depend on whether a visual chunk is resident.
 
-Rooms with doorways range from 1 by 1 cells to the existing maximum of 4 by 7
-(the entrance remains 3 by 3). Small, medium and large ranges have weights of
-50%, 35% and 15%; this is not a per-map count guarantee. Floor and ceiling heights
+Rooms with doorways range from 1 by 1 cells to the existing maximum of 4 by 7.
+The entrance is a two-cell corridor dead end without a door. Small, medium and
+large ranges have weights of 50%, 35% and 15%; this is not a per-map count guarantee. Floor and ceiling heights
 are unchanged. Base distribution attempts three rooms per spatial sector
-with a target side of 12 cells: the 80-cell map targets up to 147 base rooms plus
-the entrance. Crowded slots are skipped after trying the smallest footprint.
+with a target side of 12 cells: the 80-cell map targets up to 147 base rooms.
+Crowded slots are skipped after trying the smallest footprint.
 Corridor margins separate all sectors and rooms within each sector;
 The two-door target is 98% of all placed base rooms, with one-cell rooms always
 limited to one doorway. Through-room doorways lie on adjacent walls.
-The entrance retains its single doorway. The added doorframes use the existing wall
+The entrance opens directly into the maze. The added doorframes use the existing wall
 mesh and resident collision shell; no additional Actors, components, assets or
 worker jobs are allocated per room. Counts are higher but the footprint, sightline
 bound and chunk budgets are unchanged; memory/frame cost has not been measured.

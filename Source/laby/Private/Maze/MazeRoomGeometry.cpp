@@ -34,7 +34,7 @@ FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
 			Result.Boxes.Add({BoxTransform(MinX, MaxX, MinY, MaxY, Bottom, Top), Surface, bCollision});
 	};
 
-	for (int32 RoomIndex = 1; RoomIndex < Layout.Rooms.Num(); ++RoomIndex)
+	for (int32 RoomIndex = 0; RoomIndex < Layout.Rooms.Num(); ++RoomIndex)
 	{
 		const EMazeRoomType Type = Layout.RoomType(RoomIndex);
 

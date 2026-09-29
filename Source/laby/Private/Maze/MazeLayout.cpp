@@ -5,10 +5,7 @@
 
 bool FMazeLayout::IsEntranceCell(int32 X, int32 Y) const
 {
-	const bool bRoom = X >= 0 && X < EntranceRoomSize && Y >= Size - EntranceRoomSize && Y < Size;
-	const bool bPassage = X >= EntranceRoomSize && X < EntranceRoomSize + EntrancePassageLength && Y == Start() / Size;
-
-	return bRoom || bPassage;
+	return X >= 0 && X < EntranceLengthCells && Y == Start() / Size;
 }
 
 bool FMazeLayout::OverlapsEntrance(const FIntRect& Room) const
@@ -24,12 +21,10 @@ bool FMazeLayout::OverlapsEntrance(const FIntRect& Room) const
 
 void FMazeLayout::CarveEntrance()
 {
-	// These cells were excluded from the random maze so the room has exactly one door.
-	CarveRoom(FIntRect(0, Size - EntranceRoomSize, EntranceRoomSize, Size));
-
 	const int32 Y = Start() / Size;
 
-	for (int32 X = EntranceRoomSize - 1; X < EntranceRoomSize + EntrancePassageLength; ++X)
+	// Open the short, single-width dead end directly into the generated corridors.
+	for (int32 X = 0; X < EntranceLengthCells; ++X)
 	{
 		const int32 C = Y * Size + X;
 
@@ -61,7 +56,7 @@ void FMazeLayout::Generate(int32 Seed, int32 InSize)
 	for (int32 C = 0; C < Walls.Num(); ++C)
 		Reserved[C] = Reserved[C] || IsEntranceCell(C % Size, C / Size);
 
-	const int32 PassageEnd = (Start() / Size) * Size + EntranceRoomSize + EntrancePassageLength;
+	const int32 PassageEnd = Start() + EntranceLengthCells;
 	const TArray<int32> ScenicFloor = MazeRoutes::Build(*this, Reserved, PassageEnd, Random);
 	const int32 DX[] = {0, 1, 0, -1}, DY[] = {-1, 0, 1, 0};
 
@@ -72,7 +67,7 @@ void FMazeLayout::Generate(int32 Seed, int32 InSize)
 
 	TArray<int32> RoomOrder;
 
-	for (int32 I = 1; I < Rooms.Num(); ++I)
+	for (int32 I = 0; I < Rooms.Num(); ++I)
 		RoomOrder.Add(I);
 
 	for (int32 I = RoomOrder.Num() - 1; I > 0; --I)
@@ -129,7 +124,7 @@ void FMazeLayout::GenerateRoomTypes(int32 Seed)
 {
 	RoomTypes.Init(EMazeRoomType::Empty, Rooms.Num());
 
-	if (Rooms.Num() <= 1)
+	if (Rooms.IsEmpty())
 		return;
 
 	FRandomStream Random(static_cast<int32>(uint32(Seed) ^ 0xA341316Cu));
@@ -138,7 +133,7 @@ void FMazeLayout::GenerateRoomTypes(int32 Seed)
 	const TArray<FMazeRoomDoorway> Doorways = RoomDoorways();
 	bool bHasPool = false;
 
-	for (int32 RoomIndex = 1; RoomIndex < Rooms.Num(); ++RoomIndex)
+	for (int32 RoomIndex = 0; RoomIndex < Rooms.Num(); ++RoomIndex)
 	{
 		const FIntRect& Room = Rooms[RoomIndex];
 		int32 DoorCount = 0;
@@ -352,7 +347,6 @@ void FMazeLayout::GenerateNarrowPassages(int32 Seed, const TArray<int32>& Scenic
 void FMazeLayout::ReserveRooms(FRandomStream& Random)
 {
 	Rooms.Reset();
-	Rooms.Add(FIntRect(0, Size - EntranceRoomSize, EntranceRoomSize, Size));
 
 	const int32 SectorCount = FMath::DivideAndRoundUp(Size, FMazeRoomDefinition::SectorSide);
 	int32 SizeWeight = 0;
