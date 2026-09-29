@@ -8,10 +8,12 @@
 #include "SocketSubsystem.h"
 #include "IPAddress.h"
 #include "Engine/NetDriver.h"
+#include "UI/MazeInterfacePreferences.h"
 
 void UMazeOnlineGameInstance::Init()
 {
 	Super::Init();
+	FMazeLanguagePreference::ApplySaved();
 	PreLoadMapHandle = FCoreUObjectDelegates::PreLoadMapWithContext.AddUObject(this, &ThisClass::BeginLoadingScreen);
 	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &ThisClass::EndLoadingScreen);
 	NetworkHandle = GEngine->OnNetworkFailure().AddUObject(this, &ThisClass::OnNetworkFailure);

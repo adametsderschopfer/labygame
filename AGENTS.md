@@ -92,6 +92,11 @@
 - Prefer reproducible Unreal Python/editor scripts for generated or bulk-imported asset families. Scripts must be safe to rerun or clearly document destructive replacement behavior. Never hand-edit `.uasset` files.
 - Before completing an asset change, inspect references, manifest/cook coverage, dedicated-server behavior where relevant, instancing compatibility, cleanup on regeneration/teardown and the source/runtime asset pair. Run `Scripts/Validate-Locations.ps1` after manifest changes; Play, rendering captures and gameplay tests remain opt-in.
 
+# Localization
+
+- Treat Russian (`ru`), English (`en`) and Spanish (`es`) as supported game languages. Whenever a change adds or changes player-visible text, update the translations for all three in `Content/Localization/Game`, including menus, settings, HUD, map labels, room names, loading text and network messages. Do not leave new text in a fallback language.
+- Keep `NSLOCTEXT` namespace/key identities and format placeholders consistent across translations. Gather, import and compile the Unreal localization target with `Scripts/Update-Localization.ps1`, and keep all three cultures staged in `Config/DefaultGame.ini`. Update `Docs/Localization.md` if the workflow changes.
+
 # Changelog
 
 - Keep `CHANGELOG.txt` player-facing: record only implemented additions, changes and fixes that remain in the resulting game. Describe their visible effect in plain language.

@@ -20,6 +20,19 @@
 namespace
 {
 	constexpr float FrameLimits[] = {60.f, 90.f, 120.f, 144.f, 0.f};
+	constexpr const TCHAR* Languages[] = {TEXT("ru"), TEXT("en"), TEXT("es")};
+
+	int32 CurrentLanguageIndex()
+	{
+		const FString Culture = FMazeLanguagePreference::Current();
+
+		for (int32 I = 0; I < UE_ARRAY_COUNT(Languages); ++I)
+			if (Culture.Equals(Languages[I], ESearchCase::IgnoreCase) ||
+			    Culture.StartsWith(FString(Languages[I]) + TEXT("-"), ESearchCase::IgnoreCase))
+				return I;
+
+		return 1;
+	}
 
 	template <typename T> T* Find(UUserWidget* Widget, const TCHAR* Name)
 	{
@@ -30,6 +43,44 @@ namespace
 	{
 		if (auto* Combo = Find<UComboBoxString>(Widget, Name))
 			Combo->SetSelectedIndex(Index);
+	}
+
+	void SetOptions(UUserWidget* Widget, const TCHAR* Name, const TArray<FText>& Options)
+	{
+		if (auto* Combo = Find<UComboBoxString>(Widget, Name))
+		{
+			Combo->ClearOptions();
+
+			for (const FText& Option : Options)
+				Combo->AddOption(Option.ToString());
+		}
+	}
+
+	void RefreshLocalizedOptions(UUserWidget* Widget)
+	{
+		const TArray<FText> Quality = {NSLOCTEXT("Maze.Ward", "Low", "Низкое"),
+		                               NSLOCTEXT("Maze.Ward", "Medium", "Среднее"),
+		                               NSLOCTEXT("Maze.Ward", "High", "Высокое"),
+		                               NSLOCTEXT("Maze.Ward", "Epic", "Эпическое"),
+		                               NSLOCTEXT("Maze.Ward", "Custom", "Пользовательское")};
+		TArray<FText> Shadows = Quality;
+
+		Shadows[4] = NSLOCTEXT("Maze.Ward", "Cinematic", "Кинематографическое");
+		SetOptions(Widget, TEXT("QualityCombo"), Quality);
+		SetOptions(Widget, TEXT("ShadowsCombo"), Shadows);
+		SetOptions(Widget,
+		           TEXT("FrameLimitCombo"),
+		           {FText::AsCultureInvariant(TEXT("60 FPS")),
+		            FText::AsCultureInvariant(TEXT("90 FPS")),
+		            FText::AsCultureInvariant(TEXT("120 FPS")),
+		            FText::AsCultureInvariant(TEXT("144 FPS")),
+		            NSLOCTEXT("Maze.Ward", "Unlimited", "Без ограничения"),
+		            NSLOCTEXT("Maze.Ward", "Current", "Текущее значение")});
+		SetOptions(Widget,
+		           TEXT("LanguageCombo"),
+		           {FText::AsCultureInvariant(TEXT("Русский")),
+		            FText::AsCultureInvariant(TEXT("English")),
+		            FText::AsCultureInvariant(TEXT("Español"))});
 	}
 
 	int32 Index(UUserWidget* Widget, const TCHAR* Name, int32 Default)
@@ -87,10 +138,13 @@ void UMazeMenuWidget::ReadSettingsIntoControls()
 	TGuardValue<bool> Reading(bReadingSettings, true);
 	const auto Preferences = FMazeInterfacePreferences::Read();
 
+	RefreshLocalizedOptions(this);
+
 	SetCheck(this, TEXT("InvertYCheck"), Preferences.bInvertMouseY);
 	SetCheck(this, TEXT("CompassCheck"), Preferences.bShowCompass);
 	SetCheck(this, TEXT("CrosshairCheck"), Preferences.bShowCrosshair);
 	SetCheck(this, TEXT("CameraMotionCheck"), Preferences.bCameraMotion);
+	SetIndex(this, TEXT("LanguageCombo"), CurrentLanguageIndex());
 	SetSlider(this, TEXT("SensitivitySlider"), GetDefault<UMazePreferences>()->GetSensitivity());
 	ChangeSensitivity(GetDefault<UMazePreferences>()->GetSensitivity());
 
@@ -290,6 +344,9 @@ void UMazeMenuWidget::BindSettingsEvents()
 	if (auto* Combo = Find<UComboBoxString>(this, TEXT("QualityCombo")))
 		Combo->OnSelectionChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeQuality);
 
+	if (auto* Combo = Find<UComboBoxString>(this, TEXT("LanguageCombo")))
+		Combo->OnSelectionChanged.AddUniqueDynamic(this, &UMazeMenuWidget::ChangeVideoOption);
+
 	for (const auto& Binding : MazeKeyBindings::Definitions())
 		if (auto* Selector = Cast<UInputKeySelector>(GetWidgetFromName(Binding.WidgetName())))
 		{
@@ -356,8 +413,31 @@ void UMazeMenuWidget::ChangeCheckSetting(bool bChecked)
 
 void UMazeMenuWidget::ChangeVideoOption(FString Selected, ESelectInfo::Type SelectionType)
 {
-	if (!bReadingSettings)
-		SaveVideoSettings();
+	if (bReadingSettings)
+		return;
+
+	const int32 Language = Index(this, TEXT("LanguageCombo"), CurrentLanguageIndex());
+
+	if (Language >= 0 && Language < UE_ARRAY_COUNT(Languages) && Language != CurrentLanguageIndex())
+	{
+		if (FMazeLanguagePreference::Set(Languages[Language], true))
+		{
+			ReadSettingsIntoControls();
+
+			if (auto* Pages = Find<UWidgetSwitcher>(this, TEXT("SettingsPages")))
+				SelectSettingsSection(Pages->GetActiveWidgetIndex());
+		}
+		else
+		{
+			TGuardValue<bool> Reading(bReadingSettings, true);
+
+			SetIndex(this, TEXT("LanguageCombo"), CurrentLanguageIndex());
+		}
+
+		return;
+	}
+
+	SaveVideoSettings();
 }
 
 void UMazeMenuWidget::ChangeQuality(FString Selected, ESelectInfo::Type SelectionType)
@@ -419,6 +499,12 @@ void UMazeMenuWidget::ApplySettings()
 	Preferences.bShowCrosshair = Checked(this, TEXT("CrosshairCheck"), Preferences.bShowCrosshair);
 	Preferences.bCameraMotion = Checked(this, TEXT("CameraMotionCheck"), Preferences.bCameraMotion);
 	Preferences.Save();
+
+	const int32 Language = Index(this, TEXT("LanguageCombo"), CurrentLanguageIndex());
+
+	if (Language >= 0 && Language < UE_ARRAY_COUNT(Languages) && Language != CurrentLanguageIndex())
+		FMazeLanguagePreference::Set(Languages[Language], true);
+
 	GetMutableDefault<UMazePreferences>()->SetSensitivity(SliderValue(this, TEXT("SensitivitySlider"), 1.f));
 	UpdateAudioSettings();
 	SaveVideoSettings();
@@ -440,6 +526,7 @@ void UMazeMenuWidget::ResetSettings()
 		SetCheck(this, TEXT("CompassCheck"), true);
 		SetCheck(this, TEXT("CrosshairCheck"), true);
 		SetCheck(this, TEXT("CameraMotionCheck"), true);
+		SetIndex(this, TEXT("LanguageCombo"), 1);
 		SetSlider(this, TEXT("SensitivitySlider"), 1.f);
 		SetSlider(this, TEXT("RenderScaleSlider"), 100.f);
 		SetSlider(this, TEXT("MenuMusicSlider"), 1.f);
@@ -451,6 +538,11 @@ void UMazeMenuWidget::ResetSettings()
 	ClearBindingInput();
 	ReadKeyBindings();
 	ApplySettings();
+	ReadSettingsIntoControls();
+
+	if (auto* Pages = Find<UWidgetSwitcher>(this, TEXT("SettingsPages")))
+		SelectSettingsSection(Pages->GetActiveWidgetIndex());
+
 	Status(this, FText::GetEmpty());
 }
 

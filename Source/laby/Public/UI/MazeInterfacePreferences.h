@@ -26,3 +26,11 @@ struct LABY_API FMazeMenuAudioPreferences
 	static FMazeMenuAudioPreferences Read();
 	void Save() const;
 };
+
+// Device-local language choice; the editor needs explicit game-localization preview.
+struct LABY_API FMazeLanguagePreference
+{
+	static FString Current();
+	static bool Set(const FString& Culture, bool bSave);
+	static void ApplySaved();
+};

@@ -35,7 +35,7 @@ foreach ($step in $steps) {
 }
 Push-Location $projectRoot
 try {
-    & $editor (Join-Path $projectRoot 'laby.uproject') '-run=GatherText' "-config=$($configs -join ';')" '-unattended' '-nop4' '-NullRHI' '-nosound' '-NoLiveCoding' '-DDC=InstalledNoZenLocalFallback' '-ini:Engine:[OnlineSubsystem]:DefaultPlatformService=NULL' '-ini:Engine:[OnlineSubsystemEOS]:bEnabled=false'
+    & $editor (Join-Path $projectRoot 'laby.uproject') '-run=GatherText' "-config=$($configs -join ';')" '-unattended' '-nop4' '-NullRHI' '-nosound' '-NoLiveCoding' '-DisablePlugins=ModelContextProtocol' '-DDC=InstalledNoZenLocalFallback' '-ini:Engine:[OnlineSubsystem]:DefaultPlatformService=NULL' '-ini:Engine:[OnlineSubsystemEOS]:bEnabled=false'
     if ($LASTEXITCODE -ne 0) { throw "Localization $Action failed with exit code $LASTEXITCODE" }
 } finally { Pop-Location }
 # Unreal may emit UTF-16 JSON. Keep text catalogs readable in version control.

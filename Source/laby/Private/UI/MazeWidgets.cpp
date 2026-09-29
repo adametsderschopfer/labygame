@@ -50,6 +50,7 @@ namespace
 void UMazeMenuWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+	FMazeLanguagePreference::ApplySaved();
 	SetIsFocusable(true);
 
 	for (const auto& Entry : MazeText::WidgetLabels())

@@ -660,6 +660,14 @@ namespace MazeWardUI
 		Check(Tree, Page[2], TEXT("CrosshairCheck"), 92);
 		Caption(Tree, Page[2], TEXT("WardCameraLabel"), NSLOCTEXT("Maze.Ward", "Camera", "Покачивание камеры"), 184);
 		Check(Tree, Page[2], TEXT("CameraMotionCheck"), 184);
+		Caption(Tree, Page[2], TEXT("WardLanguageLabel"), NSLOCTEXT("Maze.Settings", "Language", "Язык"), 276);
+		Combo(Tree,
+		      Page[2],
+		      TEXT("LanguageCombo"),
+		      276,
+		      {FText::AsCultureInvariant(TEXT("Русский")),
+		       FText::AsCultureInvariant(TEXT("English")),
+		       FText::AsCultureInvariant(TEXT("Español"))});
 		Caption(Tree, Page[3], TEXT("WardMusicLabel"), NSLOCTEXT("Maze.Ward", "Music", "Музыка меню"), 0);
 		Slider(Tree, Page[3], TEXT("MenuMusicSlider"), TEXT("MenuMusicText"), 0, 0, 1, 1);
 		Caption(Tree, Page[3], TEXT("WardSoundsLabel"), NSLOCTEXT("Maze.Ward", "Sounds", "Звуки интерфейса"), 92);

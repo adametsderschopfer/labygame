@@ -36,11 +36,11 @@ WidgetTree, а не переделанные прежние ассеты. Отк
   Названия расположены над соответствующими полосками.
   Четыре пустых слота 54×54 без цифр и плашек клавиш по центру снизу,
   квадратная мини-карта 320×320 справа снизу, без внутренней рамки и уголков.
-  Вокруг мини-карты расположены N сверху, E справа, S снизу, W слева и указатель
+  Вокруг мини-карты расположены локализованные буквенные обозначения сторон света и указатель
   направления. Подпись с клавишей открытия над мини-картой не рисуется.
   Поле карты занимает весь квадрат без внутренних отступов; компас рисуется
   поверх карты у краёв, не отнимая место у рисунка.
-  Не заменять этот компас единственной N в заголовке. Компас работает на обеих картах.
+  На большой карте стороны света подписаны полными словами. Компас работает на обеих картах.
 - Большая карта занимает весь экран: акцентная кнопка «Закрыть ×» справа
   сверху, без заголовка «Карта»; компактная легенда в два столбца слева снизу.
   Кнопка 176×48: текст и крестик собраны в центрированную HorizontalBox-группу
@@ -107,7 +107,7 @@ Slate/MoviePlayer: Widget Blueprint не должен зависеть от ти
   SettingsPages (индексы 0–3), SettingsSectionTitle; индикаторы имеют суффикс Indicator.
 - QualityCombo, ShadowsCombo, FrameLimitCombo, RenderScaleSlider/Text, VSyncCheck.
 - SensitivitySlider/Text, InvertYCheck, Binding_<Id>, KeyBindingStatus.
-- CompassCheck, CrosshairCheck, CameraMotionCheck.
+- CompassCheck, CrosshairCheck, CameraMotionCheck, LanguageCombo.
 - MenuMusicSlider/Text, InterfaceSoundsSlider/Text.
 - HUDContent, VitalsPanel, HealthBar, StaminaBar, Crosshair, DeathPanel, ExitPanel.
 - MinimapBounds, FullMapBounds, FullMapControls, CloseMapButton в WBP_WardMap.

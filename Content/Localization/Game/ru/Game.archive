@@ -13,7 +13,7 @@
 								"Text": "Без ограничения"
 							},
 							"Translation": {
-								"Text": "Unlimited"
+								"Text": "Без ограничения"
 							},
 							"Key": "Unlimited"
 						},
@@ -22,7 +22,7 @@
 								"Text": "Вертикальная синхронизация"
 							},
 							"Translation": {
-								"Text": "Vertical sync"
+								"Text": "Вертикальная синхронизация"
 							},
 							"Key": "VSync"
 						},
@@ -31,7 +31,7 @@
 								"Text": "Высокое"
 							},
 							"Translation": {
-								"Text": "High"
+								"Text": "Высокое"
 							},
 							"Key": "High"
 						},
@@ -40,7 +40,7 @@
 								"Text": "ИСХОДНЫЕ"
 							},
 							"Translation": {
-								"Text": "RESET"
+								"Text": "ИСХОДНЫЕ"
 							},
 							"Key": "Reset"
 						},
@@ -49,7 +49,7 @@
 								"Text": "Инверсия мыши по вертикали"
 							},
 							"Translation": {
-								"Text": "Invert mouse Y"
+								"Text": "Инверсия мыши по вертикали"
 							},
 							"Key": "InvertY"
 						},
@@ -58,7 +58,7 @@
 								"Text": "Качество графики"
 							},
 							"Translation": {
-								"Text": "Graphics quality"
+								"Text": "Качество графики"
 							},
 							"Key": "Quality"
 						},
@@ -67,7 +67,7 @@
 								"Text": "Качество теней"
 							},
 							"Translation": {
-								"Text": "Shadow quality"
+								"Text": "Качество теней"
 							},
 							"Key": "Shadows"
 						},
@@ -76,7 +76,7 @@
 								"Text": "Кинематографическое"
 							},
 							"Translation": {
-								"Text": "Cinematic"
+								"Text": "Кинематографическое"
 							},
 							"Key": "Cinematic"
 						},
@@ -85,7 +85,7 @@
 								"Text": "Компас на карте"
 							},
 							"Translation": {
-								"Text": "Map compass"
+								"Text": "Компас на карте"
 							},
 							"Key": "Compass"
 						},
@@ -94,7 +94,7 @@
 								"Text": "Масштаб рендера"
 							},
 							"Translation": {
-								"Text": "Render scale"
+								"Text": "Масштаб рендера"
 							},
 							"Key": "RenderScale"
 						},
@@ -103,7 +103,7 @@
 								"Text": "НАЗАД"
 							},
 							"Translation": {
-								"Text": "BACK"
+								"Text": "НАЗАД"
 							},
 							"Key": "Back"
 						},
@@ -112,7 +112,7 @@
 								"Text": "Низкое"
 							},
 							"Translation": {
-								"Text": "Low"
+								"Text": "Низкое"
 							},
 							"Key": "Low"
 						},
@@ -121,7 +121,7 @@
 								"Text": "Покачивание камеры"
 							},
 							"Translation": {
-								"Text": "Camera motion"
+								"Text": "Покачивание камеры"
 							},
 							"Key": "CameraMotion"
 						},
@@ -130,7 +130,7 @@
 								"Text": "Пользовательское"
 							},
 							"Translation": {
-								"Text": "Custom"
+								"Text": "Пользовательское"
 							},
 							"Key": "Custom"
 						},
@@ -139,7 +139,7 @@
 								"Text": "Среднее"
 							},
 							"Translation": {
-								"Text": "Medium"
+								"Text": "Среднее"
 							},
 							"Key": "Medium"
 						},
@@ -148,7 +148,7 @@
 								"Text": "Текущее значение"
 							},
 							"Translation": {
-								"Text": "Current value"
+								"Text": "Текущее значение"
 							},
 							"Key": "Current"
 						},
@@ -157,7 +157,7 @@
 								"Text": "Точка в центре экрана"
 							},
 							"Translation": {
-								"Text": "Center screen dot"
+								"Text": "Точка в центре экрана"
 							},
 							"Key": "Crosshair"
 						},
@@ -166,7 +166,7 @@
 								"Text": "УПРАВЛЕНИЕ ПЕРСОНАЖЕМ"
 							},
 							"Translation": {
-								"Text": "CHARACTER CONTROLS"
+								"Text": "УПРАВЛЕНИЕ ПЕРСОНАЖЕМ"
 							},
 							"Key": "BindingsTitle"
 						},
@@ -175,7 +175,7 @@
 								"Text": "Частота кадров"
 							},
 							"Translation": {
-								"Text": "Frame rate"
+								"Text": "Частота кадров"
 							},
 							"Key": "FrameLimit"
 						},
@@ -184,7 +184,7 @@
 								"Text": "Эпическое"
 							},
 							"Translation": {
-								"Text": "Epic"
+								"Text": "Эпическое"
 							},
 							"Key": "Epic"
 						}
@@ -198,7 +198,7 @@
 								"Text": "E"
 							},
 							"Translation": {
-								"Text": "E"
+								"Text": "В"
 							},
 							"Key": "EastShort"
 						},
@@ -207,7 +207,7 @@
 								"Text": "East"
 							},
 							"Translation": {
-								"Text": "East"
+								"Text": "Восток"
 							},
 							"Key": "East"
 						},
@@ -216,7 +216,7 @@
 								"Text": "N"
 							},
 							"Translation": {
-								"Text": "N"
+								"Text": "С"
 							},
 							"Key": "NorthShort"
 						},
@@ -225,7 +225,7 @@
 								"Text": "North"
 							},
 							"Translation": {
-								"Text": "North"
+								"Text": "Север"
 							},
 							"Key": "North"
 						},
@@ -234,7 +234,7 @@
 								"Text": "S"
 							},
 							"Translation": {
-								"Text": "S"
+								"Text": "Ю"
 							},
 							"Key": "SouthShort"
 						},
@@ -243,7 +243,7 @@
 								"Text": "South"
 							},
 							"Translation": {
-								"Text": "South"
+								"Text": "Юг"
 							},
 							"Key": "South"
 						},
@@ -252,7 +252,7 @@
 								"Text": "W"
 							},
 							"Translation": {
-								"Text": "W"
+								"Text": "З"
 							},
 							"Key": "WestShort"
 						},
@@ -261,7 +261,7 @@
 								"Text": "West"
 							},
 							"Translation": {
-								"Text": "West"
+								"Text": "Запад"
 							},
 							"Key": "West"
 						}
@@ -275,7 +275,7 @@
 								"Text": "ЗАКРЫТЬ"
 							},
 							"Translation": {
-								"Text": "CLOSE"
+								"Text": "ЗАКРЫТЬ"
 							},
 							"Key": "Close"
 						},
@@ -284,7 +284,7 @@
 								"Text": "ОТКРЫТЬ"
 							},
 							"Translation": {
-								"Text": "OPEN"
+								"Text": "ОТКРЫТЬ"
 							},
 							"Key": "Open"
 						}
@@ -298,7 +298,7 @@
 								"Text": "ВИДЕО"
 							},
 							"Translation": {
-								"Text": "VIDEO"
+								"Text": "ВИДЕО"
 							},
 							"Key": "Video"
 						},
@@ -307,7 +307,7 @@
 								"Text": "ВЫХОД"
 							},
 							"Translation": {
-								"Text": "QUIT"
+								"Text": "ВЫХОД"
 							},
 							"Key": "Quit"
 						},
@@ -316,7 +316,7 @@
 								"Text": "ГЛАВНОЕ МЕНЮ"
 							},
 							"Translation": {
-								"Text": "MAIN MENU"
+								"Text": "ГЛАВНОЕ МЕНЮ"
 							},
 							"Key": "Main"
 						},
@@ -325,7 +325,7 @@
 								"Text": "ИГРА"
 							},
 							"Translation": {
-								"Text": "GAME"
+								"Text": "ИГРА"
 							},
 							"Key": "Game"
 						},
@@ -334,7 +334,7 @@
 								"Text": "НАСТРОЙКИ"
 							},
 							"Translation": {
-								"Text": "SETTINGS"
+								"Text": "НАСТРОЙКИ"
 							},
 							"Key": "Settings"
 						},
@@ -343,7 +343,7 @@
 								"Text": "ПАУЗА"
 							},
 							"Translation": {
-								"Text": "PAUSED"
+								"Text": "ПАУЗА"
 							},
 							"Key": "Pause"
 						},
@@ -352,7 +352,7 @@
 								"Text": "УПРАВЛЕНИЕ"
 							},
 							"Translation": {
-								"Text": "CONTROLS"
+								"Text": "УПРАВЛЕНИЕ"
 							},
 							"Key": "Controls"
 						}
@@ -375,7 +375,7 @@
 								"Text": "ВОССТАНОВЛЕНИЕ"
 							},
 							"Translation": {
-								"Text": "RECOVERING"
+								"Text": "ВОССТАНОВЛЕНИЕ"
 							},
 							"Key": "StaminaRecovering"
 						}
@@ -389,7 +389,7 @@
 								"Text": "ФОН"
 							},
 							"Translation": {
-								"Text": "LAMP"
+								"Text": "ФОН"
 							},
 							"Key": "ShortHeadlamp"
 						},
@@ -398,7 +398,7 @@
 								"Text": "Фонарик"
 							},
 							"Translation": {
-								"Text": "Headlamp"
+								"Text": "Фонарик"
 							},
 							"Key": "Headlamp"
 						}
@@ -412,7 +412,7 @@
 								"Text": "Бег"
 							},
 							"Translation": {
-								"Text": "Sprint"
+								"Text": "Бег"
 							},
 							"Key": "Sprint"
 						},
@@ -421,7 +421,7 @@
 								"Text": "Влево"
 							},
 							"Translation": {
-								"Text": "Left"
+								"Text": "Влево"
 							},
 							"Key": "Left"
 						},
@@ -430,7 +430,7 @@
 								"Text": "Вперёд"
 							},
 							"Translation": {
-								"Text": "Forward"
+								"Text": "Вперёд"
 							},
 							"Key": "Forward"
 						},
@@ -439,7 +439,7 @@
 								"Text": "Вправо"
 							},
 							"Translation": {
-								"Text": "Right"
+								"Text": "Вправо"
 							},
 							"Key": "Right"
 						},
@@ -448,7 +448,7 @@
 								"Text": "Выбросить"
 							},
 							"Translation": {
-								"Text": "Drop"
+								"Text": "Выбросить"
 							},
 							"Key": "DropItem"
 						},
@@ -457,7 +457,7 @@
 								"Text": "Карта"
 							},
 							"Translation": {
-								"Text": "Map"
+								"Text": "Карта"
 							},
 							"Key": "Map"
 						},
@@ -466,7 +466,7 @@
 								"Text": "Клавиша уже назначена: {0}."
 							},
 							"Translation": {
-								"Text": "Key already assigned: {0}."
+								"Text": "Клавиша уже назначена: {0}."
 							},
 							"Key": "Conflict"
 						},
@@ -475,7 +475,7 @@
 								"Text": "Нажмите клавишу"
 							},
 							"Translation": {
-								"Text": "Press a key"
+								"Text": "Нажмите клавишу"
 							},
 							"Key": "PressKey"
 						},
@@ -484,7 +484,7 @@
 								"Text": "Назад"
 							},
 							"Translation": {
-								"Text": "Back"
+								"Text": "Назад"
 							},
 							"Key": "Backward"
 						},
@@ -493,7 +493,7 @@
 								"Text": "Не назначено"
 							},
 							"Translation": {
-								"Text": "Unbound"
+								"Text": "Не назначено"
 							},
 							"Key": "Unbound"
 						},
@@ -502,7 +502,7 @@
 								"Text": "Новый лабиринт"
 							},
 							"Translation": {
-								"Text": "New maze"
+								"Text": "Новый лабиринт"
 							},
 							"Key": "NewMaze"
 						},
@@ -511,7 +511,7 @@
 								"Text": "Подобрать"
 							},
 							"Translation": {
-								"Text": "Pick up"
+								"Text": "Подобрать"
 							},
 							"Key": "Interact"
 						},
@@ -520,7 +520,7 @@
 								"Text": "Присесть"
 							},
 							"Translation": {
-								"Text": "Crouch"
+								"Text": "Присесть"
 							},
 							"Key": "Crouch"
 						},
@@ -529,7 +529,7 @@
 								"Text": "Прыжок"
 							},
 							"Translation": {
-								"Text": "Jump"
+								"Text": "Прыжок"
 							},
 							"Key": "Jump"
 						},
@@ -538,7 +538,7 @@
 								"Text": "Свисток"
 							},
 							"Translation": {
-								"Text": "Whistle"
+								"Text": "Свисток"
 							},
 							"Key": "Signal"
 						},
@@ -547,7 +547,7 @@
 								"Text": "Фонарик"
 							},
 							"Translation": {
-								"Text": "Headlamp"
+								"Text": "Фонарик"
 							},
 							"Key": "Headlamp"
 						},
@@ -556,7 +556,7 @@
 								"Text": "Эта клавиша недоступна. Выберите другую."
 							},
 							"Translation": {
-								"Text": "This key is unavailable. Choose another."
+								"Text": "Эта клавиша недоступна. Выберите другую."
 							},
 							"Key": "Reserved"
 						}
@@ -570,7 +570,7 @@
 								"Text": "Завершение загрузки…"
 							},
 							"Translation": {
-								"Text": "Finishing loading…"
+								"Text": "Завершение загрузки…"
 							},
 							"Key": "FinalizingStage"
 						},
@@ -579,7 +579,7 @@
 								"Text": "Загрузка ресурсов…"
 							},
 							"Translation": {
-								"Text": "Loading assets…"
+								"Text": "Загрузка ресурсов…"
 							},
 							"Key": "AssetsStage"
 						},
@@ -588,7 +588,7 @@
 								"Text": "Загрузка уровня…"
 							},
 							"Translation": {
-								"Text": "Loading level…"
+								"Text": "Загрузка уровня…"
 							},
 							"Key": "MapStage"
 						},
@@ -597,7 +597,7 @@
 								"Text": "Не удалось подготовить локацию. Проверьте файлы игры и повторите запуск."
 							},
 							"Translation": {
-								"Text": "Could not prepare the location. Check the game files and restart."
+								"Text": "Не удалось подготовить локацию. Проверьте файлы игры и повторите запуск."
 							},
 							"Key": "PreparationFailed"
 						},
@@ -606,7 +606,7 @@
 								"Text": "Подготовка графики…"
 							},
 							"Translation": {
-								"Text": "Preparing graphics…"
+								"Text": "Подготовка графики…"
 							},
 							"Key": "ShadersStage"
 						},
@@ -615,7 +615,7 @@
 								"Text": "Подготовка окружения…"
 							},
 							"Translation": {
-								"Text": "Preparing environment…"
+								"Text": "Подготовка окружения…"
 							},
 							"Key": "GeometryStage"
 						},
@@ -624,7 +624,7 @@
 								"Text": "Подготовка пространства…"
 							},
 							"Translation": {
-								"Text": "Preparing space…"
+								"Text": "Подготовка пространства…"
 							},
 							"Key": "CollisionStage"
 						},
@@ -633,7 +633,7 @@
 								"Text": "Создание лабиринта…"
 							},
 							"Translation": {
-								"Text": "Generating maze…"
+								"Text": "Создание лабиринта…"
 							},
 							"Key": "TopologyStage"
 						}
@@ -647,7 +647,7 @@
 								"Text": "Connecting to local server..."
 							},
 							"Translation": {
-								"Text": "Connecting to local server..."
+								"Text": "Подключение к локальному серверу..."
 							},
 							"Key": "Connecting"
 						},
@@ -656,7 +656,7 @@
 								"Text": "Enter an IPv4 address, such as 127.0.0.1:7777."
 							},
 							"Translation": {
-								"Text": "Enter an IPv4 address, such as 127.0.0.1:7777."
+								"Text": "Введите адрес IPv4, например 127.0.0.1:7777."
 							},
 							"Key": "InvalidAddress"
 						},
@@ -665,7 +665,7 @@
 								"Text": "Starting local server..."
 							},
 							"Translation": {
-								"Text": "Starting local server..."
+								"Text": "Запуск локального сервера..."
 							},
 							"Key": "Starting"
 						}
@@ -679,7 +679,7 @@
 								"Text": "Connecting..."
 							},
 							"Translation": {
-								"Text": "Connecting..."
+								"Text": "Подключение..."
 							},
 							"Key": "Connecting"
 						},
@@ -688,7 +688,7 @@
 								"Text": "Connection lost or the host closed the room."
 							},
 							"Translation": {
-								"Text": "Connection lost or the host closed the room."
+								"Text": "Соединение потеряно или ведущий закрыл комнату."
 							},
 							"Key": "ConnectionLost"
 						},
@@ -697,7 +697,7 @@
 								"Text": "Could not connect."
 							},
 							"Translation": {
-								"Text": "Could not connect."
+								"Text": "Не удалось подключиться."
 							},
 							"Key": "ConnectFailed"
 						},
@@ -706,7 +706,7 @@
 								"Text": "Could not create the room."
 							},
 							"Translation": {
-								"Text": "Could not create the room."
+								"Text": "Не удалось создать комнату."
 							},
 							"Key": "CreateFailed"
 						},
@@ -715,7 +715,7 @@
 								"Text": "Could not join: the room is unavailable or full."
 							},
 							"Translation": {
-								"Text": "Could not join: the room is unavailable or full."
+								"Text": "Не удалось войти: комната недоступна или заполнена."
 							},
 							"Key": "JoinFailed"
 						},
@@ -724,7 +724,7 @@
 								"Text": "Could not load the multiplayer map."
 							},
 							"Translation": {
-								"Text": "Could not load the multiplayer map."
+								"Text": "Не удалось загрузить сетевую карту."
 							},
 							"Key": "TravelFailed"
 						},
@@ -733,7 +733,7 @@
 								"Text": "Could not start Epic Games sign-in."
 							},
 							"Translation": {
-								"Text": "Could not start Epic Games sign-in."
+								"Text": "Не удалось начать вход в Epic Games."
 							},
 							"Key": "SignInStartFailed"
 						},
@@ -742,7 +742,7 @@
 								"Text": "Could not start the room search."
 							},
 							"Translation": {
-								"Text": "Could not start the room search."
+								"Text": "Не удалось начать поиск комнаты."
 							},
 							"Key": "SearchStartFailed"
 						},
@@ -751,7 +751,7 @@
 								"Text": "Creating room..."
 							},
 							"Translation": {
-								"Text": "Creating room..."
+								"Text": "Создание комнаты..."
 							},
 							"Key": "CreatingRoom"
 						},
@@ -760,7 +760,7 @@
 								"Text": "Enter a 10-character room code."
 							},
 							"Translation": {
-								"Text": "Enter a 10-character room code."
+								"Text": "Введите код комнаты из 10 символов."
 							},
 							"Key": "CodeLength"
 						},
@@ -769,7 +769,7 @@
 								"Text": "Finding room..."
 							},
 							"Translation": {
-								"Text": "Finding room..."
+								"Text": "Поиск комнаты..."
 							},
 							"Key": "FindingRoom"
 						},
@@ -778,7 +778,7 @@
 								"Text": "Leave your current room first."
 							},
 							"Translation": {
-								"Text": "Leave your current room first."
+								"Text": "Сначала покиньте текущую комнату."
 							},
 							"Key": "LeaveCurrentRoom"
 						},
@@ -787,7 +787,7 @@
 								"Text": "Online play is not configured yet."
 							},
 							"Translation": {
-								"Text": "Online play is not configured yet."
+								"Text": "Сетевая игра пока не настроена."
 							},
 							"Key": "EosNotConfigured"
 						},
@@ -796,7 +796,7 @@
 								"Text": "Online services are unavailable."
 							},
 							"Translation": {
-								"Text": "Online services are unavailable."
+								"Text": "Сетевые службы недоступны."
 							},
 							"Key": "EosUnavailable"
 						},
@@ -805,7 +805,7 @@
 								"Text": "Room codes contain only 0-9 and A-F."
 							},
 							"Translation": {
-								"Text": "Room codes contain only 0-9 and A-F."
+								"Text": "Код комнаты может содержать только 0–9 и A–F."
 							},
 							"Key": "CodeCharacters"
 						},
@@ -814,7 +814,7 @@
 								"Text": "Room creation failed."
 							},
 							"Translation": {
-								"Text": "Room creation failed."
+								"Text": "Не удалось создать комнату."
 							},
 							"Key": "CreateError"
 						},
@@ -823,7 +823,7 @@
 								"Text": "Room search failed."
 							},
 							"Translation": {
-								"Text": "Room search failed."
+								"Text": "Не удалось найти комнату."
 							},
 							"Key": "SearchError"
 						},
@@ -832,7 +832,7 @@
 								"Text": "Sign-in was cancelled or is unavailable. Please try again."
 							},
 							"Translation": {
-								"Text": "Sign-in was cancelled or is unavailable. Please try again."
+								"Text": "Вход отменён или недоступен. Повторите попытку."
 							},
 							"Key": "SignInFailed"
 						},
@@ -841,7 +841,7 @@
 								"Text": "Signing in to Epic Games..."
 							},
 							"Translation": {
-								"Text": "Signing in to Epic Games..."
+								"Text": "Вход в Epic Games..."
 							},
 							"Key": "SigningIn"
 						},
@@ -850,7 +850,7 @@
 								"Text": "The room is full or has already started."
 							},
 							"Translation": {
-								"Text": "The room is full or has already started."
+								"Text": "Комната заполнена или игра уже началась."
 							},
 							"Key": "RoomClosed"
 						},
@@ -859,7 +859,7 @@
 								"Text": "The room was not found, is full, or has already started."
 							},
 							"Translation": {
-								"Text": "The room was not found, is full, or has already started."
+								"Text": "Комната не найдена, заполнена или игра уже началась."
 							},
 							"Key": "RoomNotFound"
 						}
@@ -873,7 +873,7 @@
 								"Text": "АР"
 							},
 							"Translation": {
-								"Text": "AR"
+								"Text": "АР"
 							},
 							"Key": "RecordsShort"
 						},
@@ -882,7 +882,7 @@
 								"Text": "Архив историй"
 							},
 							"Translation": {
-								"Text": "Records archive"
+								"Text": "Архив историй"
 							},
 							"Key": "Records"
 						},
@@ -891,7 +891,7 @@
 								"Text": "БЛ"
 							},
 							"Translation": {
-								"Text": "LN"
+								"Text": "БЛ"
 							},
 							"Key": "LaundryShort"
 						},
@@ -900,7 +900,7 @@
 								"Text": "БС"
 							},
 							"Translation": {
-								"Text": "PL"
+								"Text": "БС"
 							},
 							"Key": "PoolShort"
 						},
@@ -909,7 +909,7 @@
 								"Text": "Бассейн"
 							},
 							"Translation": {
-								"Text": "Pool"
+								"Text": "Бассейн"
 							},
 							"Key": "Pool"
 						},
@@ -918,7 +918,7 @@
 								"Text": "Бельевая"
 							},
 							"Translation": {
-								"Text": "Linen room"
+								"Text": "Бельевая"
 							},
 							"Key": "Laundry"
 						},
@@ -927,7 +927,7 @@
 								"Text": "ВД"
 							},
 							"Translation": {
-								"Text": "HY"
+								"Text": "ВД"
 							},
 							"Key": "HydrotherapyShort"
 						},
@@ -936,7 +936,7 @@
 								"Text": "Водолечебница"
 							},
 							"Translation": {
-								"Text": "Hydrotherapy"
+								"Text": "Водолечебница"
 							},
 							"Key": "Hydrotherapy"
 						},
@@ -945,7 +945,7 @@
 								"Text": "ГН"
 							},
 							"Translation": {
-								"Text": "GN"
+								"Text": "ГН"
 							},
 							"Key": "GeneratorShort"
 						},
@@ -954,7 +954,7 @@
 								"Text": "Генераторная"
 							},
 							"Translation": {
-								"Text": "Generator room"
+								"Text": "Генераторная"
 							},
 							"Key": "Generator"
 						},
@@ -963,7 +963,7 @@
 								"Text": "ИЗ"
 							},
 							"Translation": {
-								"Text": "IS"
+								"Text": "ИЗ"
 							},
 							"Key": "IsolationShort"
 						},
@@ -972,7 +972,7 @@
 								"Text": "Изолятор"
 							},
 							"Translation": {
-								"Text": "Isolation room"
+								"Text": "Изолятор"
 							},
 							"Key": "Isolation"
 						},
@@ -981,7 +981,7 @@
 								"Text": "Комната отдыха"
 							},
 							"Translation": {
-								"Text": "Break room"
+								"Text": "Комната отдыха"
 							},
 							"Key": "Recreation"
 						},
@@ -990,7 +990,7 @@
 								"Text": "МЧ"
 							},
 							"Translation": {
-								"Text": "WR"
+								"Text": "МЧ"
 							},
 							"Key": "WashroomShort"
 						},
@@ -999,7 +999,7 @@
 								"Text": "ОТ"
 							},
 							"Translation": {
-								"Text": "BR"
+								"Text": "ОТ"
 							},
 							"Key": "RecreationShort"
 						},
@@ -1008,7 +1008,7 @@
 								"Text": "ПР"
 							},
 							"Translation": {
-								"Text": "TR"
+								"Text": "ПР"
 							},
 							"Key": "TreatmentShort"
 						},
@@ -1017,7 +1017,7 @@
 								"Text": "ПС"
 							},
 							"Translation": {
-								"Text": "ST"
+								"Text": "ПС"
 							},
 							"Key": "StaffShort"
 						},
@@ -1026,7 +1026,7 @@
 								"Text": "Палата {0}"
 							},
 							"Translation": {
-								"Text": "Ward {0}"
+								"Text": "Палата {0}"
 							},
 							"Key": "Ward"
 						},
@@ -1035,7 +1035,7 @@
 								"Text": "Помывочная"
 							},
 							"Translation": {
-								"Text": "Washroom"
+								"Text": "Помывочная"
 							},
 							"Key": "Washroom"
 						},
@@ -1044,7 +1044,7 @@
 								"Text": "Пост персонала"
 							},
 							"Translation": {
-								"Text": "Staff station"
+								"Text": "Пост персонала"
 							},
 							"Key": "Staff"
 						},
@@ -1053,7 +1053,7 @@
 								"Text": "Процедурная"
 							},
 							"Translation": {
-								"Text": "Treatment room"
+								"Text": "Процедурная"
 							},
 							"Key": "Treatment"
 						},
@@ -1062,7 +1062,7 @@
 								"Text": "СК"
 							},
 							"Translation": {
-								"Text": "SR"
+								"Text": "СК"
 							},
 							"Key": "StorageShort"
 						},
@@ -1071,7 +1071,7 @@
 								"Text": "СМ"
 							},
 							"Translation": {
-								"Text": "EX"
+								"Text": "СМ"
 							},
 							"Key": "ExaminationShort"
 						},
@@ -1080,7 +1080,7 @@
 								"Text": "СТ"
 							},
 							"Translation": {
-								"Text": "DR"
+								"Text": "СТ"
 							},
 							"Key": "DiningShort"
 						},
@@ -1089,7 +1089,7 @@
 								"Text": "Склад"
 							},
 							"Translation": {
-								"Text": "Storage"
+								"Text": "Склад"
 							},
 							"Key": "Storage"
 						},
@@ -1098,7 +1098,7 @@
 								"Text": "Смотровая"
 							},
 							"Translation": {
-								"Text": "Examination room"
+								"Text": "Смотровая"
 							},
 							"Key": "Examination"
 						},
@@ -1107,7 +1107,7 @@
 								"Text": "Столовая"
 							},
 							"Translation": {
-								"Text": "Dining room"
+								"Text": "Столовая"
 							},
 							"Key": "Dining"
 						}
@@ -1148,7 +1148,7 @@
 								"Text": "ЗВУК"
 							},
 							"Translation": {
-								"Text": "AUDIO"
+								"Text": "ЗВУК"
 							},
 							"Key": "Audio"
 						},
@@ -1157,7 +1157,7 @@
 								"Text": "Звуки интерфейса"
 							},
 							"Translation": {
-								"Text": "Interface sounds"
+								"Text": "Звуки интерфейса"
 							},
 							"Key": "InterfaceSounds"
 						},
@@ -1166,7 +1166,7 @@
 								"Text": "Музыка меню"
 							},
 							"Translation": {
-								"Text": "Menu music"
+								"Text": "Музыка меню"
 							},
 							"Key": "MenuMusic"
 						},
@@ -1175,7 +1175,7 @@
 								"Text": "Язык"
 							},
 							"Translation": {
-								"Text": "Language"
+								"Text": "Язык"
 							},
 							"Key": "Language"
 						}
@@ -1198,7 +1198,7 @@
 								"Text": "Без ограничения"
 							},
 							"Translation": {
-								"Text": "Unlimited"
+								"Text": "Без ограничения"
 							},
 							"Key": "Unlimited"
 						},
@@ -1207,7 +1207,7 @@
 								"Text": "Версия {0}"
 							},
 							"Translation": {
-								"Text": "Version {0}"
+								"Text": "Версия {0}"
 							},
 							"Key": "Version"
 						},
@@ -1216,7 +1216,7 @@
 								"Text": "Вертикальная синхронизация"
 							},
 							"Translation": {
-								"Text": "Vertical sync"
+								"Text": "Вертикальная синхронизация"
 							},
 							"Key": "VSync"
 						},
@@ -1225,7 +1225,7 @@
 								"Text": "Видео"
 							},
 							"Translation": {
-								"Text": "Video"
+								"Text": "Видео"
 							},
 							"Key": "Video"
 						},
@@ -1234,7 +1234,7 @@
 								"Text": "Восстановление"
 							},
 							"Translation": {
-								"Text": "Recovering"
+								"Text": "Восстановление"
 							},
 							"Key": "Recovering"
 						},
@@ -1243,7 +1243,7 @@
 								"Text": "Вы"
 							},
 							"Translation": {
-								"Text": "You"
+								"Text": "Вы"
 							},
 							"Key": "You"
 						},
@@ -1252,7 +1252,7 @@
 								"Text": "Выносливость"
 							},
 							"Translation": {
-								"Text": "Stamina"
+								"Text": "Выносливость"
 							},
 							"Key": "Stamina"
 						},
@@ -1261,7 +1261,7 @@
 								"Text": "Высокое"
 							},
 							"Translation": {
-								"Text": "High"
+								"Text": "Высокое"
 							},
 							"Key": "High"
 						},
@@ -1270,7 +1270,7 @@
 								"Text": "Выход"
 							},
 							"Translation": {
-								"Text": "Exit"
+								"Text": "Выход"
 							},
 							"Key": "Exit"
 						},
@@ -1279,7 +1279,7 @@
 								"Text": "Выход"
 							},
 							"Translation": {
-								"Text": "Exit"
+								"Text": "Выход"
 							},
 							"Key": "Quit"
 						},
@@ -1288,7 +1288,7 @@
 								"Text": "Выход найден"
 							},
 							"Translation": {
-								"Text": "Exit found"
+								"Text": "Выход найден"
 							},
 							"Key": "ExitFound"
 						},
@@ -1297,7 +1297,7 @@
 								"Text": "Главное меню"
 							},
 							"Translation": {
-								"Text": "Main menu"
+								"Text": "Главное меню"
 							},
 							"Key": "MainMenu"
 						},
@@ -1306,7 +1306,7 @@
 								"Text": "Закрыть"
 							},
 							"Translation": {
-								"Text": "Close"
+								"Text": "Закрыть"
 							},
 							"Key": "CloseMap"
 						},
@@ -1315,7 +1315,7 @@
 								"Text": "Звук"
 							},
 							"Translation": {
-								"Text": "Audio"
+								"Text": "Звук"
 							},
 							"Key": "Audio"
 						},
@@ -1324,7 +1324,7 @@
 								"Text": "Звуки интерфейса"
 							},
 							"Translation": {
-								"Text": "Interface sounds"
+								"Text": "Звуки интерфейса"
 							},
 							"Key": "Sounds"
 						},
@@ -1333,7 +1333,7 @@
 								"Text": "Игра"
 							},
 							"Translation": {
-								"Text": "Game"
+								"Text": "Игра"
 							},
 							"Key": "Game"
 						},
@@ -1342,7 +1342,7 @@
 								"Text": "Инверсия мыши по вертикали"
 							},
 							"Translation": {
-								"Text": "Invert mouse Y"
+								"Text": "Инверсия мыши по вертикали"
 							},
 							"Key": "Invert"
 						},
@@ -1351,7 +1351,7 @@
 								"Text": "Исследовано"
 							},
 							"Translation": {
-								"Text": "Explored"
+								"Text": "Исследовано"
 							},
 							"Key": "Explored"
 						},
@@ -1360,7 +1360,7 @@
 								"Text": "Качество графики"
 							},
 							"Translation": {
-								"Text": "Graphics quality"
+								"Text": "Качество графики"
 							},
 							"Key": "Quality"
 						},
@@ -1369,7 +1369,7 @@
 								"Text": "Качество теней"
 							},
 							"Translation": {
-								"Text": "Shadow quality"
+								"Text": "Качество теней"
 							},
 							"Key": "Shadows"
 						},
@@ -1378,7 +1378,7 @@
 								"Text": "Кинематографическое"
 							},
 							"Translation": {
-								"Text": "Cinematic"
+								"Text": "Кинематографическое"
 							},
 							"Key": "Cinematic"
 						},
@@ -1387,7 +1387,7 @@
 								"Text": "Комната"
 							},
 							"Translation": {
-								"Text": "Room"
+								"Text": "Комната"
 							},
 							"Key": "Room"
 						},
@@ -1396,7 +1396,7 @@
 								"Text": "Компас на карте"
 							},
 							"Translation": {
-								"Text": "Map compass"
+								"Text": "Компас на карте"
 							},
 							"Key": "Compass"
 						},
@@ -1405,7 +1405,7 @@
 								"Text": "Масштаб рендера"
 							},
 							"Translation": {
-								"Text": "Render scale"
+								"Text": "Масштаб рендера"
 							},
 							"Key": "Render"
 						},
@@ -1414,7 +1414,7 @@
 								"Text": "Музыка меню"
 							},
 							"Translation": {
-								"Text": "Menu music"
+								"Text": "Музыка меню"
 							},
 							"Key": "Music"
 						},
@@ -1423,7 +1423,7 @@
 								"Text": "Назад"
 							},
 							"Translation": {
-								"Text": "Back"
+								"Text": "Назад"
 							},
 							"Key": "Back"
 						},
@@ -1432,7 +1432,7 @@
 								"Text": "Настройки"
 							},
 							"Translation": {
-								"Text": "Settings"
+								"Text": "Настройки"
 							},
 							"Key": "Settings"
 						},
@@ -1441,7 +1441,7 @@
 								"Text": "Начало"
 							},
 							"Translation": {
-								"Text": "Start"
+								"Text": "Начало"
 							},
 							"Key": "Start"
 						},
@@ -1450,7 +1450,7 @@
 								"Text": "Неизвестно"
 							},
 							"Translation": {
-								"Text": "Unknown"
+								"Text": "Неизвестно"
 							},
 							"Key": "Unknown"
 						},
@@ -1459,7 +1459,7 @@
 								"Text": "Низкое"
 							},
 							"Translation": {
-								"Text": "Low"
+								"Text": "Низкое"
 							},
 							"Key": "Low"
 						},
@@ -1468,7 +1468,7 @@
 								"Text": "Новая игра"
 							},
 							"Translation": {
-								"Text": "New game"
+								"Text": "Новая игра"
 							},
 							"Key": "NewGame"
 						},
@@ -1477,7 +1477,7 @@
 								"Text": "Покачивание камеры"
 							},
 							"Translation": {
-								"Text": "Camera motion"
+								"Text": "Покачивание камеры"
 							},
 							"Key": "Camera"
 						},
@@ -1486,7 +1486,7 @@
 								"Text": "Пользовательское"
 							},
 							"Translation": {
-								"Text": "Custom"
+								"Text": "Пользовательское"
 							},
 							"Key": "Custom"
 						},
@@ -1495,7 +1495,7 @@
 								"Text": "Провал"
 							},
 							"Translation": {
-								"Text": "Pit"
+								"Text": "Провал"
 							},
 							"Key": "Gap"
 						},
@@ -1504,7 +1504,7 @@
 								"Text": "Продолжить"
 							},
 							"Translation": {
-								"Text": "Continue"
+								"Text": "Продолжить"
 							},
 							"Key": "Continue"
 						},
@@ -1513,7 +1513,7 @@
 								"Text": "Сбросить настройки"
 							},
 							"Translation": {
-								"Text": "Reset settings"
+								"Text": "Сбросить настройки"
 							},
 							"Key": "Reset"
 						},
@@ -1522,7 +1522,7 @@
 								"Text": "Связь потеряна"
 							},
 							"Translation": {
-								"Text": "Connection lost"
+								"Text": "Связь потеряна"
 							},
 							"Key": "Death"
 						},
@@ -1531,7 +1531,7 @@
 								"Text": "Среднее"
 							},
 							"Translation": {
-								"Text": "Medium"
+								"Text": "Среднее"
 							},
 							"Key": "Medium"
 						},
@@ -1540,7 +1540,7 @@
 								"Text": "Текущее значение"
 							},
 							"Translation": {
-								"Text": "Current value"
+								"Text": "Текущее значение"
 							},
 							"Key": "Current"
 						},
@@ -1549,7 +1549,7 @@
 								"Text": "Точка в центре экрана"
 							},
 							"Translation": {
-								"Text": "Center screen dot"
+								"Text": "Точка в центре экрана"
 							},
 							"Key": "Crosshair"
 						},
@@ -1558,7 +1558,7 @@
 								"Text": "Управление"
 							},
 							"Translation": {
-								"Text": "Controls"
+								"Text": "Управление"
 							},
 							"Key": "Controls"
 						},
@@ -1567,7 +1567,7 @@
 								"Text": "Частота кадров"
 							},
 							"Translation": {
-								"Text": "Frame rate"
+								"Text": "Частота кадров"
 							},
 							"Key": "FPS"
 						},
@@ -1576,7 +1576,7 @@
 								"Text": "Чувствительность мыши"
 							},
 							"Translation": {
-								"Text": "Mouse sensitivity"
+								"Text": "Чувствительность мыши"
 							},
 							"Key": "Sensitivity"
 						},
@@ -1585,7 +1585,7 @@
 								"Text": "Эпическое"
 							},
 							"Translation": {
-								"Text": "Epic"
+								"Text": "Эпическое"
 							},
 							"Key": "Epic"
 						}
@@ -1635,7 +1635,7 @@
 								"Text": "ВИДЕО / УПРАВЛЕНИЕ / ИГРА"
 							},
 							"Translation": {
-								"Text": "VIDEO / CONTROLS / GAME"
+								"Text": "ВИДЕО / УПРАВЛЕНИЕ / ИГРА"
 							},
 							"Key": "SettingsSubtitle"
 						},
@@ -1644,7 +1644,7 @@
 								"Text": "ВЫНОСЛИВОСТЬ"
 							},
 							"Translation": {
-								"Text": "STAMINA"
+								"Text": "ВЫНОСЛИВОСТЬ"
 							},
 							"Key": "StaminaText"
 						},
@@ -1653,7 +1653,7 @@
 								"Text": "ВЫХОД"
 							},
 							"Translation": {
-								"Text": "QUIT"
+								"Text": "ВЫХОД"
 							},
 							"Key": "QuitButtonLabel"
 						},
@@ -1662,7 +1662,7 @@
 								"Text": "ВЫХОД НАЙДЕН"
 							},
 							"Translation": {
-								"Text": "EXIT FOUND"
+								"Text": "ВЫХОД НАЙДЕН"
 							},
 							"Key": "ExitText"
 						},
@@ -1671,7 +1671,7 @@
 								"Text": "ЗДОРОВЬЕ"
 							},
 							"Translation": {
-								"Text": "HEALTH"
+								"Text": "ЗДОРОВЬЕ"
 							},
 							"Key": "HealthText"
 						},
@@ -1680,7 +1680,7 @@
 								"Text": "ИСХОДНЫЕ"
 							},
 							"Translation": {
-								"Text": "RESET"
+								"Text": "ИСХОДНЫЕ"
 							},
 							"Key": "ResetButtonLabel"
 						},
@@ -1689,7 +1689,7 @@
 								"Text": "ЛАБИРИНТ / ИССЛЕДОВАНИЕ"
 							},
 							"Translation": {
-								"Text": "MAZE / EXPLORATION"
+								"Text": "ЛАБИРИНТ / ИССЛЕДОВАНИЕ"
 							},
 							"Key": "MainSubtitle"
 						},
@@ -1698,7 +1698,7 @@
 								"Text": "НАЗАД"
 							},
 							"Translation": {
-								"Text": "BACK"
+								"Text": "НАЗАД"
 							},
 							"Key": "BackButtonLabel"
 						},
@@ -1707,7 +1707,7 @@
 								"Text": "НАСТРОЙКИ"
 							},
 							"Translation": {
-								"Text": "SETTINGS"
+								"Text": "НАСТРОЙКИ"
 							},
 							"Key": "SettingsButtonLabel"
 						},
@@ -1716,7 +1716,7 @@
 								"Text": "НАЧАТЬ ИГРУ"
 							},
 							"Translation": {
-								"Text": "START GAME"
+								"Text": "НАЧАТЬ ИГРУ"
 							},
 							"Key": "NewGameButtonLabel"
 						},
@@ -1725,7 +1725,7 @@
 								"Text": "ПАУЗА"
 							},
 							"Translation": {
-								"Text": "PAUSED"
+								"Text": "ПАУЗА"
 							},
 							"Key": "PauseSubtitle"
 						},
@@ -1734,7 +1734,7 @@
 								"Text": "ПРОДОЛЖИТЬ"
 							},
 							"Translation": {
-								"Text": "RESUME"
+								"Text": "ПРОДОЛЖИТЬ"
 							},
 							"Key": "ResumeButtonLabel"
 						},
@@ -1743,7 +1743,7 @@
 								"Text": "СВЯЗЬ ПОТЕРЯНА"
 							},
 							"Translation": {
-								"Text": "CONNECTION LOST"
+								"Text": "СВЯЗЬ ПОТЕРЯНА"
 							},
 							"Key": "DeathText"
 						},
@@ -1752,7 +1752,7 @@
 								"Text": "Чувствительность мыши"
 							},
 							"Translation": {
-								"Text": "Mouse sensitivity"
+								"Text": "Чувствительность мыши"
 							},
 							"Key": "SensitivityLabel"
 						}
@@ -1766,7 +1766,7 @@
 								"Text": "EXIT"
 							},
 							"Translation": {
-								"Text": "EXIT"
+								"Text": "ВЫХОД"
 							},
 							"Key": "Exit"
 						}

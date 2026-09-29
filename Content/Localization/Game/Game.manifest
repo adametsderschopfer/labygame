@@ -6,6 +6,433 @@
 			"Namespace": "Maze",
 			"Subnamespaces": [
 				{
+					"Namespace": "Arc",
+					"Children": [
+						{
+							"Source": {
+								"Text": "Без ограничения"
+							},
+							"Keys": [
+								{
+									"Key": "Unlimited",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(444)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Вертикальная синхронизация"
+							},
+							"Keys": [
+								{
+									"Key": "VSync",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(457)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Высокое"
+							},
+							"Keys": [
+								{
+									"Key": "High",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(423)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ИСХОДНЫЕ"
+							},
+							"Keys": [
+								{
+									"Key": "Reset",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(563)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Инверсия мыши по вертикали"
+							},
+							"Keys": [
+								{
+									"Key": "InvertY",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(471)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Качество графики"
+							},
+							"Keys": [
+								{
+									"Key": "Quality",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(427)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Качество теней"
+							},
+							"Keys": [
+								{
+									"Key": "Shadows",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(429)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Кинематографическое"
+							},
+							"Keys": [
+								{
+									"Key": "Cinematic",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(433)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Компас на карте"
+							},
+							"Keys": [
+								{
+									"Key": "Compass",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(524)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Масштаб рендера"
+							},
+							"Keys": [
+								{
+									"Key": "RenderScale",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(446)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "НАЗАД"
+							},
+							"Keys": [
+								{
+									"Key": "Back",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(564)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Низкое"
+							},
+							"Keys": [
+								{
+									"Key": "Low",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(421)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Покачивание камеры"
+							},
+							"Keys": [
+								{
+									"Key": "CameraMotion",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(529)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Пользовательское"
+							},
+							"Keys": [
+								{
+									"Key": "Custom",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(425)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Среднее"
+							},
+							"Keys": [
+								{
+									"Key": "Medium",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(422)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Текущее значение"
+							},
+							"Keys": [
+								{
+									"Key": "Current",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(445)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Точка в центре экрана"
+							},
+							"Keys": [
+								{
+									"Key": "Crosshair",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(526)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "УПРАВЛЕНИЕ ПЕРСОНАЖЕМ"
+							},
+							"Keys": [
+								{
+									"Key": "BindingsTitle",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(476)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Частота кадров"
+							},
+							"Keys": [
+								{
+									"Key": "FrameLimit",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(435)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Эпическое"
+							},
+							"Keys": [
+								{
+									"Key": "Epic",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(424)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Compass",
+					"Children": [
+						{
+							"Source": {
+								"Text": "E"
+							},
+							"Keys": [
+								{
+									"Key": "EastShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(789)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "East"
+							},
+							"Keys": [
+								{
+									"Key": "East",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(793)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "N"
+							},
+							"Keys": [
+								{
+									"Key": "NorthShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(788)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "North"
+							},
+							"Keys": [
+								{
+									"Key": "North",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(792)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "S"
+							},
+							"Keys": [
+								{
+									"Key": "SouthShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(790)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "South"
+							},
+							"Keys": [
+								{
+									"Key": "South",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(794)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "W"
+							},
+							"Keys": [
+								{
+									"Key": "WestShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(791)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "West"
+							},
+							"Keys": [
+								{
+									"Key": "West",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(795)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Doors",
+					"Children": [
+						{
+							"Source": {
+								"Text": "ЗАКРЫТЬ"
+							},
+							"Keys": [
+								{
+									"Key": "Close",
+									"Path": "Source/laby/Private/UI/MazeItemPresentation.cpp(320)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ОТКРЫТЬ"
+							},
+							"Keys": [
+								{
+									"Key": "Open",
+									"Path": "Source/laby/Private/UI/MazeItemPresentation.cpp(320)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Glass",
+					"Children": [
+						{
+							"Source": {
+								"Text": "ВИДЕО"
+							},
+							"Keys": [
+								{
+									"Key": "Video",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(388)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ВЫХОД"
+							},
+							"Keys": [
+								{
+									"Key": "Quit",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(59)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ГЛАВНОЕ МЕНЮ"
+							},
+							"Keys": [
+								{
+									"Key": "Main",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(699)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ИГРА"
+							},
+							"Keys": [
+								{
+									"Key": "Game",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(390)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "НАСТРОЙКИ"
+							},
+							"Keys": [
+								{
+									"Key": "Settings",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(643)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ПАУЗА"
+							},
+							"Keys": [
+								{
+									"Key": "Pause",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(654)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "УПРАВЛЕНИЕ"
+							},
+							"Keys": [
+								{
+									"Key": "Controls",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(389)"
+								}
+							]
+						}
+					]
+				},
+				{
 					"Namespace": "HUD",
 					"Children": [
 						{
@@ -15,51 +442,330 @@
 							"Keys": [
 								{
 									"Key": "Version",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(177)"
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(255)"
 								}
 							]
 						},
 						{
 							"Source": {
-								"Text": "HEALTH  {Value} / 100"
-							},
-							"Keys": [
-								{
-									"Key": "Health",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(209)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "SESSION {Seed} | {Size} x {Size} | START A"
-							},
-							"Keys": [
-								{
-									"Key": "Session",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(239)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "STAMINA  {Value} / 100"
-							},
-							"Keys": [
-								{
-									"Key": "Stamina",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(215)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "STAMINA / RECOVERING  {Value} / 100"
+								"Text": "ВОССТАНОВЛЕНИЕ"
 							},
 							"Keys": [
 								{
 									"Key": "StaminaRecovering",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(214)"
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(341)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Items",
+					"Children": [
+						{
+							"Source": {
+								"Text": "ФОН"
+							},
+							"Keys": [
+								{
+									"Key": "ShortHeadlamp",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(228)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Фонарик"
+							},
+							"Keys": [
+								{
+									"Key": "Headlamp",
+									"Path": "Source/laby/Private/UI/MazeItemPresentation.cpp(228)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Keys",
+					"Children": [
+						{
+							"Source": {
+								"Text": "Бег"
+							},
+							"Keys": [
+								{
+									"Key": "Sprint",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(74)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Влево"
+							},
+							"Keys": [
+								{
+									"Key": "Left",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(72)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Вперёд"
+							},
+							"Keys": [
+								{
+									"Key": "Forward",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(70)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Вправо"
+							},
+							"Keys": [
+								{
+									"Key": "Right",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(73)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Выбросить"
+							},
+							"Keys": [
+								{
+									"Key": "DropItem",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(83)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Карта"
+							},
+							"Keys": [
+								{
+									"Key": "Map",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(85)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Клавиша уже назначена: {0}."
+							},
+							"Keys": [
+								{
+									"Key": "Conflict",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(133)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Нажмите клавишу"
+							},
+							"Keys": [
+								{
+									"Key": "PressKey",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(498)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Назад"
+							},
+							"Keys": [
+								{
+									"Key": "Backward",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(71)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Не назначено"
+							},
+							"Keys": [
+								{
+									"Key": "Unbound",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(499)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Новый лабиринт"
+							},
+							"Keys": [
+								{
+									"Key": "NewMaze",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(86)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Подобрать"
+							},
+							"Keys": [
+								{
+									"Key": "Interact",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(82)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Присесть"
+							},
+							"Keys": [
+								{
+									"Key": "Crouch",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(76)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Прыжок"
+							},
+							"Keys": [
+								{
+									"Key": "Jump",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(75)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Свисток"
+							},
+							"Keys": [
+								{
+									"Key": "Signal",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(84)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Фонарик"
+							},
+							"Keys": [
+								{
+									"Key": "Headlamp",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(81)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Эта клавиша недоступна. Выберите другую."
+							},
+							"Keys": [
+								{
+									"Key": "Reserved",
+									"Path": "Source/laby/Private/Player/MazeKeyBindings.cpp(120)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Loading",
+					"Children": [
+						{
+							"Source": {
+								"Text": "Завершение загрузки…"
+							},
+							"Keys": [
+								{
+									"Key": "FinalizingStage",
+									"Path": "Source/laby/Private/UI/MazeLoadingWidget.cpp(36)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Загрузка ресурсов…"
+							},
+							"Keys": [
+								{
+									"Key": "AssetsStage",
+									"Path": "Source/laby/Private/UI/MazeLoadingWidget.cpp(26)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Загрузка уровня…"
+							},
+							"Keys": [
+								{
+									"Key": "MapStage",
+									"Path": "Source/laby/Private/UI/MazeLoadingWidget.cpp(17)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Не удалось подготовить локацию. Проверьте файлы игры и повторите запуск."
+							},
+							"Keys": [
+								{
+									"Key": "PreparationFailed",
+									"Path": "Source/laby/Private/UI/MazeLoadingScreen.cpp(135)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Подготовка графики…"
+							},
+							"Keys": [
+								{
+									"Key": "ShadersStage",
+									"Path": "Source/laby/Private/UI/MazeLoadingWidget.cpp(33)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Подготовка окружения…"
+							},
+							"Keys": [
+								{
+									"Key": "GeometryStage",
+									"Path": "Source/laby/Private/UI/MazeLoadingWidget.cpp(30)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Подготовка пространства…"
+							},
+							"Keys": [
+								{
+									"Key": "CollisionStage",
+									"Path": "Source/laby/Private/UI/MazeLoadingWidget.cpp(23)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Создание лабиринта…"
+							},
+							"Keys": [
+								{
+									"Key": "TopologyStage",
+									"Path": "Source/laby/Private/UI/MazeLoadingWidget.cpp(20)"
 								}
 							]
 						}
@@ -70,45 +776,12 @@
 					"Children": [
 						{
 							"Source": {
-								"Text": "Address copied."
-							},
-							"Keys": [
-								{
-									"Key": "AddressCopied",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(390)"
-								}
-							]
-						},
-						{
-							"Source": {
 								"Text": "Connecting to local server..."
 							},
 							"Keys": [
 								{
 									"Key": "Connecting",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(401)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Copy address"
-							},
-							"Keys": [
-								{
-									"Key": "CopyAddress",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(382)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Create local room"
-							},
-							"Keys": [
-								{
-									"Key": "Create",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(457)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(409)"
 								}
 							]
 						},
@@ -119,62 +792,7 @@
 							"Keys": [
 								{
 									"Key": "InvalidAddress",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(389)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Host IPv4:port"
-							},
-							"Keys": [
-								{
-									"Key": "AddressHint",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(434)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "JOIN LOCAL SERVER"
-							},
-							"Keys": [
-								{
-									"Key": "JoinTitle",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(274)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Join local room"
-							},
-							"Keys": [
-								{
-									"Key": "Join",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(463)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "On this PC, connect to 127.0.0.1 using the port above. On another PC, use this PC's LAN IPv4 address."
-							},
-							"Keys": [
-								{
-									"Key": "HostHint",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(377)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Server address: {Code}"
-							},
-							"Keys": [
-								{
-									"Key": "Address",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(369)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(397)"
 								}
 							]
 						},
@@ -185,254 +803,7 @@
 							"Keys": [
 								{
 									"Key": "Starting",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(329)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Use 127.0.0.1:7777 on the same PC, or the host LAN IPv4 address on another PC."
-							},
-							"Keys": [
-								{
-									"Key": "JoinHint",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(419)"
-								}
-							]
-						}
-					]
-				},
-				{
-					"Namespace": "Menu",
-					"Children": [
-						{
-							"Source": {
-								"Text": "Back"
-							},
-							"Keys": [
-								{
-									"Key": "Back",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(334)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Code copied."
-							},
-							"Keys": [
-								{
-									"Key": "CodeCopied",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(391)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Copy code"
-							},
-							"Keys": [
-								{
-									"Key": "CopyCode",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(383)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Create room"
-							},
-							"Keys": [
-								{
-									"Key": "CreateRoom",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(471)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Enter the 10-character code shared by the host."
-							},
-							"Keys": [
-								{
-									"Key": "JoinInstructions",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(422)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "GAME MENU"
-							},
-							"Keys": [
-								{
-									"Key": "GameMenu",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(276)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "JOIN A ROOM"
-							},
-							"Keys": [
-								{
-									"Key": "JoinTitle",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(275)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Join room"
-							},
-							"Keys": [
-								{
-									"Key": "JoinRoom",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(438)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "LABY - MULTIPLAYER"
-							},
-							"Keys": [
-								{
-									"Key": "Title",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(278)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Leave room"
-							},
-							"Keys": [
-								{
-									"Key": "LeaveRoom",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(409)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Players: {Count} / 4\n"
-							},
-							"Keys": [
-								{
-									"Key": "PlayerCount",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(350)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Quit game"
-							},
-							"Keys": [
-								{
-									"Key": "Quit",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(495)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Resume"
-							},
-							"Keys": [
-								{
-									"Key": "Resume",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(403)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Room code"
-							},
-							"Keys": [
-								{
-									"Key": "RoomCodeHint",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(435)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Room code: {Code}"
-							},
-							"Keys": [
-								{
-									"Key": "RoomCode",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(370)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "SETTINGS"
-							},
-							"Keys": [
-								{
-									"Key": "SettingsTitle",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(273)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Settings"
-							},
-							"Keys": [
-								{
-									"Key": "Settings",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(488)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Start game"
-							},
-							"Keys": [
-								{
-									"Key": "StartGame",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(393)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "WAITING ROOM"
-							},
-							"Keys": [
-								{
-									"Key": "Lobby",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(277)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Waiting for the host to start the game..."
-							},
-							"Keys": [
-								{
-									"Key": "Waiting",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(400)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "{Name}  [HOST]"
-							},
-							"Keys": [
-								{
-									"Key": "HostPlayer",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(357)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(337)"
 								}
 							]
 						}
@@ -448,7 +819,7 @@
 							"Keys": [
 								{
 									"Key": "Connecting",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(215)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(221)"
 								}
 							]
 						},
@@ -459,7 +830,7 @@
 							"Keys": [
 								{
 									"Key": "ConnectionLost",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(301)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(307)"
 								}
 							]
 						},
@@ -470,7 +841,7 @@
 							"Keys": [
 								{
 									"Key": "ConnectFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(218)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(224)"
 								}
 							]
 						},
@@ -481,7 +852,7 @@
 							"Keys": [
 								{
 									"Key": "CreateFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(170)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(176)"
 								}
 							]
 						},
@@ -492,7 +863,7 @@
 							"Keys": [
 								{
 									"Key": "JoinFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(233)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(239)"
 								}
 							]
 						},
@@ -503,7 +874,7 @@
 							"Keys": [
 								{
 									"Key": "TravelFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(310)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(317)"
 								}
 							]
 						},
@@ -514,7 +885,7 @@
 							"Keys": [
 								{
 									"Key": "SignInStartFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(104)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(110)"
 								}
 							]
 						},
@@ -525,7 +896,7 @@
 							"Keys": [
 								{
 									"Key": "SearchStartFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(181)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(187)"
 								}
 							]
 						},
@@ -536,7 +907,7 @@
 							"Keys": [
 								{
 									"Key": "CreatingRoom",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(155)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(161)"
 								}
 							]
 						},
@@ -547,7 +918,7 @@
 							"Keys": [
 								{
 									"Key": "CodeLength",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(124)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(130)"
 								}
 							]
 						},
@@ -558,7 +929,7 @@
 							"Keys": [
 								{
 									"Key": "FindingRoom",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(174)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(180)"
 								}
 							]
 						},
@@ -569,7 +940,7 @@
 							"Keys": [
 								{
 									"Key": "LeaveCurrentRoom",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(74)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(80)"
 								}
 							]
 						},
@@ -580,7 +951,7 @@
 							"Keys": [
 								{
 									"Key": "EosNotConfigured",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(57)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(63)"
 								}
 							]
 						},
@@ -591,7 +962,7 @@
 							"Keys": [
 								{
 									"Key": "EosUnavailable",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(67)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(73)"
 								}
 							]
 						},
@@ -602,7 +973,7 @@
 							"Keys": [
 								{
 									"Key": "CodeCharacters",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(132)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(138)"
 								}
 							]
 						},
@@ -613,7 +984,7 @@
 							"Keys": [
 								{
 									"Key": "CreateError",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(189)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(195)"
 								}
 							]
 						},
@@ -624,7 +995,7 @@
 							"Keys": [
 								{
 									"Key": "SearchError",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(202)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(208)"
 								}
 							]
 						},
@@ -635,7 +1006,7 @@
 							"Keys": [
 								{
 									"Key": "SignInFailed",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(148)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(154)"
 								}
 							]
 						},
@@ -646,7 +1017,7 @@
 							"Keys": [
 								{
 									"Key": "SigningIn",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(101)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(107)"
 								}
 							]
 						},
@@ -657,7 +1028,7 @@
 							"Keys": [
 								{
 									"Key": "RoomClosed",
-									"Path": "Source/laby/Private/World/MazeGameMode.cpp(101)"
+									"Path": "Source/laby/Private/World/MazeGameMode.cpp(97)"
 								}
 							]
 						},
@@ -668,7 +1039,309 @@
 							"Keys": [
 								{
 									"Key": "RoomNotFound",
-									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(224)"
+									"Path": "Source/laby/Private/World/MazeOnlineGameInstance.cpp(230)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Rooms",
+					"Children": [
+						{
+							"Source": {
+								"Text": "АР"
+							},
+							"Keys": [
+								{
+									"Key": "RecordsShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(43)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Архив историй"
+							},
+							"Keys": [
+								{
+									"Key": "Records",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(44)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "БЛ"
+							},
+							"Keys": [
+								{
+									"Key": "LaundryShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(51)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "БС"
+							},
+							"Keys": [
+								{
+									"Key": "PoolShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(75)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Бассейн"
+							},
+							"Keys": [
+								{
+									"Key": "Pool",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(75)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Бельевая"
+							},
+							"Keys": [
+								{
+									"Key": "Laundry",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(52)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ВД"
+							},
+							"Keys": [
+								{
+									"Key": "HydrotherapyShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(67)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Водолечебница"
+							},
+							"Keys": [
+								{
+									"Key": "Hydrotherapy",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(68)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ГН"
+							},
+							"Keys": [
+								{
+									"Key": "GeneratorShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(55)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Генераторная"
+							},
+							"Keys": [
+								{
+									"Key": "Generator",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(56)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ИЗ"
+							},
+							"Keys": [
+								{
+									"Key": "IsolationShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(35)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Изолятор"
+							},
+							"Keys": [
+								{
+									"Key": "Isolation",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(36)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Комната отдыха"
+							},
+							"Keys": [
+								{
+									"Key": "Recreation",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(60)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "МЧ"
+							},
+							"Keys": [
+								{
+									"Key": "WashroomShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(71)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ОТ"
+							},
+							"Keys": [
+								{
+									"Key": "RecreationShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(59)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ПР"
+							},
+							"Keys": [
+								{
+									"Key": "TreatmentShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(27)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ПС"
+							},
+							"Keys": [
+								{
+									"Key": "StaffShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(39)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Палата {0}"
+							},
+							"Keys": [
+								{
+									"Key": "Ward",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(21)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Помывочная"
+							},
+							"Keys": [
+								{
+									"Key": "Washroom",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(72)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Пост персонала"
+							},
+							"Keys": [
+								{
+									"Key": "Staff",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(40)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Процедурная"
+							},
+							"Keys": [
+								{
+									"Key": "Treatment",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(28)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "СК"
+							},
+							"Keys": [
+								{
+									"Key": "StorageShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(47)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "СМ"
+							},
+							"Keys": [
+								{
+									"Key": "ExaminationShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(31)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "СТ"
+							},
+							"Keys": [
+								{
+									"Key": "DiningShort",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(63)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Склад"
+							},
+							"Keys": [
+								{
+									"Key": "Storage",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(48)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Смотровая"
+							},
+							"Keys": [
+								{
+									"Key": "Examination",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(32)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Столовая"
+							},
+							"Keys": [
+								{
+									"Key": "Dining",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(64)"
 								}
 							]
 						}
@@ -679,12 +1352,564 @@
 					"Children": [
 						{
 							"Source": {
+								"Text": "{0}%"
+							},
+							"Keys": [
+								{
+									"Key": "ArcPercent",
+									"Path": "Source/laby/Private/UI/MazeMenuSettings.cpp(285)"
+								},
+								{
+									"Key": "AudioPercent",
+									"Path": "Source/laby/Private/UI/MazeMenuSettings.cpp(91)"
+								}
+							]
+						},
+						{
+							"Source": {
 								"Text": "{Value} x"
 							},
 							"Keys": [
 								{
 									"Key": "SensitivityValue",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(294)"
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(33)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ЗВУК"
+							},
+							"Keys": [
+								{
+									"Key": "Audio",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(532)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Звуки интерфейса"
+							},
+							"Keys": [
+								{
+									"Key": "InterfaceSounds",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(549)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Музыка меню"
+							},
+							"Keys": [
+								{
+									"Key": "MenuMusic",
+									"Path": "Source/labyEditor/Private/UI/MazeGlassUIAssets.cpp(535)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Язык"
+							},
+							"Keys": [
+								{
+									"Key": "Language",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(663)"
+								}
+							]
+						}
+					]
+				},
+				{
+					"Namespace": "Ward",
+					"Children": [
+						{
+							"Source": {
+								"Text": "LABY"
+							},
+							"Keys": [
+								{
+									"Key": "Logo",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(344)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Без ограничения"
+							},
+							"Keys": [
+								{
+									"Key": "Unlimited",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(598)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Версия {0}"
+							},
+							"Keys": [
+								{
+									"Key": "Version",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(359)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Вертикальная синхронизация"
+							},
+							"Keys": [
+								{
+									"Key": "VSync",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(603)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Видео"
+							},
+							"Keys": [
+								{
+									"Key": "Video",
+									"Path": "Source/laby/Private/UI/MazeMenuSettings.cpp(240)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Восстановление"
+							},
+							"Keys": [
+								{
+									"Key": "Recovering",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(345)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Вы"
+							},
+							"Keys": [
+								{
+									"Key": "You",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(839)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Выносливость"
+							},
+							"Keys": [
+								{
+									"Key": "Stamina",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(346)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Высокое"
+							},
+							"Keys": [
+								{
+									"Key": "High",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(577)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Выход"
+							},
+							"Keys": [
+								{
+									"Key": "Exit",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(843)"
+								},
+								{
+									"Key": "Quit",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(426)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Выход найден"
+							},
+							"Keys": [
+								{
+									"Key": "ExitFound",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(772)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Главное меню"
+							},
+							"Keys": [
+								{
+									"Key": "MainMenu",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(417)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Закрыть"
+							},
+							"Keys": [
+								{
+									"Key": "CloseMap",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(804)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Звук"
+							},
+							"Keys": [
+								{
+									"Key": "Audio",
+									"Path": "Source/laby/Private/UI/MazeMenuSettings.cpp(243)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Звуки интерфейса"
+							},
+							"Keys": [
+								{
+									"Key": "Sounds",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(673)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Игра"
+							},
+							"Keys": [
+								{
+									"Key": "Game",
+									"Path": "Source/laby/Private/UI/MazeMenuSettings.cpp(242)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Инверсия мыши по вертикали"
+							},
+							"Keys": [
+								{
+									"Key": "Invert",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(612)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Исследовано"
+							},
+							"Keys": [
+								{
+									"Key": "Explored",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(840)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Качество графики"
+							},
+							"Keys": [
+								{
+									"Key": "Quality",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(581)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Качество теней"
+							},
+							"Keys": [
+								{
+									"Key": "Shadows",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(583)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Кинематографическое"
+							},
+							"Keys": [
+								{
+									"Key": "Cinematic",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(587)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Комната"
+							},
+							"Keys": [
+								{
+									"Key": "Room",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(845)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Компас на карте"
+							},
+							"Keys": [
+								{
+									"Key": "Compass",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(653)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Масштаб рендера"
+							},
+							"Keys": [
+								{
+									"Key": "Render",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(600)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Музыка меню"
+							},
+							"Keys": [
+								{
+									"Key": "Music",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(671)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Назад"
+							},
+							"Keys": [
+								{
+									"Key": "Back",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(676)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Настройки"
+							},
+							"Keys": [
+								{
+									"Key": "Settings",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(404)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Начало"
+							},
+							"Keys": [
+								{
+									"Key": "Start",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(842)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Неизвестно"
+							},
+							"Keys": [
+								{
+									"Key": "Unknown",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(841)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Низкое"
+							},
+							"Keys": [
+								{
+									"Key": "Low",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(575)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Новая игра"
+							},
+							"Keys": [
+								{
+									"Key": "NewGame",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(392)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Покачивание камеры"
+							},
+							"Keys": [
+								{
+									"Key": "Camera",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(661)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Пользовательское"
+							},
+							"Keys": [
+								{
+									"Key": "Custom",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(579)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Провал"
+							},
+							"Keys": [
+								{
+									"Key": "Gap",
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(844)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Продолжить"
+							},
+							"Keys": [
+								{
+									"Key": "Continue",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(381)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Сбросить настройки"
+							},
+							"Keys": [
+								{
+									"Key": "Reset",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(680)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Связь потеряна"
+							},
+							"Keys": [
+								{
+									"Key": "Death",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(771)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Среднее"
+							},
+							"Keys": [
+								{
+									"Key": "Medium",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(576)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Текущее значение"
+							},
+							"Keys": [
+								{
+									"Key": "Current",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(599)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Точка в центре экрана"
+							},
+							"Keys": [
+								{
+									"Key": "Crosshair",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(658)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Управление"
+							},
+							"Keys": [
+								{
+									"Key": "Controls",
+									"Path": "Source/laby/Private/UI/MazeMenuSettings.cpp(241)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Частота кадров"
+							},
+							"Keys": [
+								{
+									"Key": "FPS",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(589)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Чувствительность мыши"
+							},
+							"Keys": [
+								{
+									"Key": "Sensitivity",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(608)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Эпическое"
+							},
+							"Keys": [
+								{
+									"Key": "Epic",
+									"Path": "Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(578)"
 								}
 							]
 						}
@@ -695,12 +1920,12 @@
 					"Children": [
 						{
 							"Source": {
-								"Text": "0.10 - 3.00 - Saved automatically"
+								"Text": "0.10 — 3.00"
 							},
 							"Keys": [
 								{
 									"Key": "SettingsHint",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(328)"
+									"Path": "Source/laby/Public/UI/MazeText.h(13)"
 								}
 							]
 						},
@@ -717,7 +1942,7 @@
 						},
 						{
 							"Source": {
-								"Text": "ALPHA 0.0.0.1"
+								"Text": "ALPHA 0.0.0.2"
 							},
 							"Keys": [
 								{
@@ -728,73 +1953,7 @@
 						},
 						{
 							"Source": {
-								"Text": "Back"
-							},
-							"Keys": [
-								{
-									"Key": "BackButtonLabel",
-									"Path": "Source/laby/Public/UI/MazeText.h(15)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Create room"
-							},
-							"Keys": [
-								{
-									"Key": "NewGameButtonLabel",
-									"Path": "Source/laby/Public/UI/MazeText.h(17)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "DEV: M  Toggle map"
-							},
-							"Keys": [
-								{
-									"Key": "DeveloperHint",
-									"Path": "Source/laby/Public/UI/MazeText.h(23)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "EXIT REACHED"
-							},
-							"Keys": [
-								{
-									"Key": "ExitText",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(230)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Game menu"
-							},
-							"Keys": [
-								{
-									"Key": "PauseSubtitle",
-									"Path": "Source/laby/Public/UI/MazeText.h(46)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "HEALTH  100 / 100"
-							},
-							"Keys": [
-								{
-									"Key": "HealthText",
-									"Path": "Source/laby/Public/UI/MazeText.h(21)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "L A B Y"
+								"Text": "LABY"
 							},
 							"Keys": [
 								{
@@ -805,99 +1964,18 @@
 						},
 						{
 							"Source": {
-								"Text": "MAP"
+								"Text": "ВИДЕО / УПРАВЛЕНИЕ / ИГРА"
 							},
 							"Keys": [
 								{
-									"Key": "MapTitle",
-									"Path": "Source/laby/Public/UI/MazeText.h(25)"
+									"Key": "SettingsSubtitle",
+									"Path": "Source/laby/Public/UI/MazeText.h(39)"
 								}
 							]
 						},
 						{
 							"Source": {
-								"Text": "Mouse sensitivity"
-							},
-							"Keys": [
-								{
-									"Key": "SensitivityLabel",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(282)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "One maze. One exit."
-							},
-							"Keys": [
-								{
-									"Key": "MainSubtitle",
-									"Path": "Source/laby/Public/UI/MazeText.h(47)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Press Escape to open the game menu"
-							},
-							"Keys": [
-								{
-									"Key": "DeathHint",
-									"Path": "Source/laby/Public/UI/MazeText.h(29)"
-								},
-								{
-									"Key": "ExitHint",
-									"Path": "Source/laby/Public/UI/MazeText.h(30)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Quit to desktop"
-							},
-							"Keys": [
-								{
-									"Key": "QuitButtonLabel",
-									"Path": "Source/laby/Public/UI/MazeText.h(19)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Reset to defaults"
-							},
-							"Keys": [
-								{
-									"Key": "ResetButtonLabel",
-									"Path": "Source/laby/Private/Player/MazePlayerController.cpp(329)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "Resume"
-							},
-							"Keys": [
-								{
-									"Key": "ResumeButtonLabel",
-									"Path": "Source/laby/Public/UI/MazeText.h(16)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "SESSION 0 - 80 x 80 - START A"
-							},
-							"Keys": [
-								{
-									"Key": "SessionText",
-									"Path": "Source/laby/Public/UI/MazeText.h(24)"
-								}
-							]
-						},
-						{
-							"Source": {
-								"Text": "STAMINA  100 / 100"
+								"Text": "ВЫНОСЛИВОСТЬ"
 							},
 							"Keys": [
 								{
@@ -908,7 +1986,73 @@
 						},
 						{
 							"Source": {
-								"Text": "Settings"
+								"Text": "ВЫХОД"
+							},
+							"Keys": [
+								{
+									"Key": "QuitButtonLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(19)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ВЫХОД НАЙДЕН"
+							},
+							"Keys": [
+								{
+									"Key": "ExitText",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(360)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ЗДОРОВЬЕ"
+							},
+							"Keys": [
+								{
+									"Key": "HealthText",
+									"Path": "Source/laby/Public/UI/MazeText.h(21)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ИСХОДНЫЕ"
+							},
+							"Keys": [
+								{
+									"Key": "ResetButtonLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(14)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "ЛАБИРИНТ / ИССЛЕДОВАНИЕ"
+							},
+							"Keys": [
+								{
+									"Key": "MainSubtitle",
+									"Path": "Source/laby/Public/UI/MazeText.h(41)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "НАЗАД"
+							},
+							"Keys": [
+								{
+									"Key": "BackButtonLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(15)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "НАСТРОЙКИ"
 							},
 							"Keys": [
 								{
@@ -919,34 +2063,56 @@
 						},
 						{
 							"Source": {
-								"Text": "Settings / Controls"
+								"Text": "НАЧАТЬ ИГРУ"
 							},
 							"Keys": [
 								{
-									"Key": "SettingsSubtitle",
-									"Path": "Source/laby/Public/UI/MazeText.h(45)"
+									"Key": "NewGameButtonLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(17)"
 								}
 							]
 						},
 						{
 							"Source": {
-								"Text": "YOU        A        EXIT"
+								"Text": "ПАУЗА"
 							},
 							"Keys": [
 								{
-									"Key": "MapLegend",
-									"Path": "Source/laby/Public/UI/MazeText.h(26)"
+									"Key": "PauseSubtitle",
+									"Path": "Source/laby/Public/UI/MazeText.h(40)"
 								}
 							]
 						},
 						{
 							"Source": {
-								"Text": "YOU DIED"
+								"Text": "ПРОДОЛЖИТЬ"
+							},
+							"Keys": [
+								{
+									"Key": "ResumeButtonLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(16)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "СВЯЗЬ ПОТЕРЯНА"
 							},
 							"Keys": [
 								{
 									"Key": "DeathText",
-									"Path": "Source/laby/Public/UI/MazeText.h(27)"
+									"Path": "Source/laby/Public/UI/MazeText.h(23)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "Чувствительность мыши"
+							},
+							"Keys": [
+								{
+									"Key": "SensitivityLabel",
+									"Path": "Source/laby/Public/UI/MazeText.h(11)"
 								}
 							]
 						}
@@ -957,23 +2123,12 @@
 					"Children": [
 						{
 							"Source": {
-								"Text": "A / START"
-							},
-							"Keys": [
-								{
-									"Key": "Start",
-									"Path": "Source/laby/Private/World/MazeWorld.cpp(166)"
-								}
-							]
-						},
-						{
-							"Source": {
 								"Text": "EXIT"
 							},
 							"Keys": [
 								{
 									"Key": "Exit",
-									"Path": "Source/laby/Private/World/MazeWorld.cpp(179)"
+									"Path": "Source/laby/Private/World/MazeWorld.cpp(385)"
 								}
 							]
 						}

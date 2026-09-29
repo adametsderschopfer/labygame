@@ -780,15 +780,26 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 	// No inner frame or corner brackets; compass orientation remains available.
 	if (View.bCompass)
 	{
-		const double CompassInset = View.bFull ? 32 : 14;
-		const FVector2D Positions[] = {{MapMiddle.X, Content.Top + CompassInset},
+		const double CompassInset = View.bFull ? 64 : 14;
+		const FVector2D Positions[] = {{MapMiddle.X, Content.Top + (View.bFull ? 32 : CompassInset)},
 		                               {Content.Right - CompassInset, MapMiddle.Y},
-		                               {MapMiddle.X, Content.Bottom - CompassInset},
+		                               {MapMiddle.X, Content.Bottom - (View.bFull ? 32 : CompassInset)},
 		                               {Content.Left + CompassInset, MapMiddle.Y}};
-		const TCHAR* Names[] = {TEXT("N"), TEXT("E"), TEXT("S"), TEXT("W")};
+		const FText ShortNames[] = {NSLOCTEXT("Maze.Compass", "NorthShort", "N"),
+		                            NSLOCTEXT("Maze.Compass", "EastShort", "E"),
+		                            NSLOCTEXT("Maze.Compass", "SouthShort", "S"),
+		                            NSLOCTEXT("Maze.Compass", "WestShort", "W")};
+		const FText FullNames[] = {NSLOCTEXT("Maze.Compass", "North", "North"),
+		                           NSLOCTEXT("Maze.Compass", "East", "East"),
+		                           NSLOCTEXT("Maze.Compass", "South", "South"),
+		                           NSLOCTEXT("Maze.Compass", "West", "West")};
 
 		for (int32 I = 0; I < 4; ++I)
-			Text(FText::AsCultureInvariant(Names[I]), Positions[I], 13, I == 0 ? Accent : Ink, true);
+			Text(View.bFull ? FullNames[I] : ShortNames[I],
+			     Positions[I],
+			     View.bFull ? 18 : 13,
+			     I == 0 ? Accent : Ink,
+			     true);
 
 		// Project camera bearing onto the rectangular rim, independent of panning and zooming.
 		const double Reach =
