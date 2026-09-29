@@ -700,11 +700,11 @@ namespace MazeWardUI
 
 		auto* Vitals = Make<UCanvasPanel>(Tree, TEXT("VitalsPanel"));
 
-		Put(Content, Vitals, {38, -108}, {243, 9}, {0, 1}, {0, 1});
+		Put(Content, Vitals, {38, -123}, {243, 9}, {0, 1}, {0, 1});
 
 		auto* Stamina = Make<UCanvasPanel>(Tree, TEXT("StaminaPanel"));
 
-		Put(Content, Stamina, {38, -89}, {243, 9}, {0, 1}, {0, 1});
+		Put(Content, Stamina, {38, -104}, {243, 9}, {0, 1}, {0, 1});
 
 		for (int I = 0; I < 2; ++I)
 		{
