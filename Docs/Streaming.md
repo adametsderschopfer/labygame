@@ -26,6 +26,17 @@ resident collision. Existing payloads remain unchanged until regeneration.
 The retained generator and its original resource policy are documented below;
 chunk budgets and asset dependencies are unchanged.
 
+Corridor doors use the existing resident door leaf collision, Mass door state and
+world-owned ISM representation. Their transverse wall and opening are generated
+from the same immutable edge list in the resident collision surface and visual
+chunk workers. The wall strip's center tile owns the opening at chunk borders.
+The graph connection remains open, so routing and explored-map visibility follow
+the existing room-door rule. Sparse placement adds no asset, Actor, component or
+resource participant and does not lengthen sightlines; it adds a small amount of
+resident collision, visual geometry and replicated door state. The current
+streaming radius and per-frame view budgets remain unchanged. Costs and visual
+quality need a user-run gameplay check.
+
 Full-height narrow passages are generated as 2–3-cell straight segments with a
 soft target of 5% of eligible corridor cells. Their 145 cm opening tapers over
 120 cm at both ends. The immutable layout mask is shared by resident collision,

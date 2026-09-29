@@ -8,6 +8,14 @@ chunk generation through `FMazeChunkSystem`. `AMazeWorld` consumes these results
 to create engine resources. See [Streaming.md](Streaming.md) for lifecycle,
 memory ownership, thread scheduling and current resident-collision policy.
 
+After rooms and holes, a separate seed-derived pass selects occasional door edges
+between two intact straight corridor cells. The graph edge stays open for routing;
+the immutable corridor-door list causes the wall surface to insert a transverse
+wall with a door opening. Candidates avoid the entrance, exit, room doors, holes
+and narrow passages, and selected edges have a minimum spacing. Corridor doors
+have no room identity or map label. The combined room-first door order is stable
+for ECS door indices and replicated state; regeneration rebuilds the list.
+
 Narrow-passage generation is currently disabled. The retained generator can mark a soft
 target of 5% of eligible straight corridor cells as full-height narrow passages.
 Segments are 2–3 cells long, keep three cells of spacing, and exclude room cells,

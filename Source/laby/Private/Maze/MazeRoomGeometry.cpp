@@ -18,7 +18,7 @@ FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
                                            float DefaultWallHeight)
 {
 	FMazeRoomGeometry Result;
-	const TArray<FMazeRoomDoorway> Doorways = Layout.RoomDoorways();
+	const TArray<FMazeDoorway> Doorways = Layout.RoomDoorways();
 	const float HalfWall = WallThickness * 0.5f;
 	constexpr float SlabThickness = 50.f;
 	const auto AddBox = [&Result](float MinX,
@@ -87,12 +87,12 @@ FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
 		AddWallRing(DefaultWallHeight, CeilingHeight, EMazeRoomSurface::Ceramic);
 
 		const auto RoomDoors = Doorways.FilterByPredicate(
-		    [RoomIndex](const FMazeRoomDoorway& Door)
+		    [RoomIndex](const FMazeDoorway& Door)
 		    {
 			    return Door.RoomIndex == RoomIndex;
 		    });
 		const float OpeningWidth = FMazeRoomDefinition::OpeningWidth(Cell - WallThickness);
-		const auto Portal = [Cell](const FMazeRoomDoorway& Door)
+		const auto Portal = [Cell](const FMazeDoorway& Door)
 		{
 			return FVector2D((Door.Cell.X + 0.5f) * Cell, (Door.Cell.Y + 0.5f) * Cell) +
 			       Outward[Door.Direction] * (Cell * 0.5f);
@@ -103,7 +103,7 @@ FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
 			const int32 StepCount =
 			    FMath::RoundToInt(FMazeRoomDefinition::ShallowDepth / FMazeRoomDefinition::StairRise);
 
-			for (const FMazeRoomDoorway& Door : RoomDoors)
+			for (const FMazeDoorway& Door : RoomDoors)
 			{
 				const FVector2D Boundary = Portal(Door);
 				const FVector2D Inward = -Outward[Door.Direction];
@@ -138,7 +138,7 @@ FMazeRoomGeometry FMazeRoomGeometry::Build(const FMazeLayout& Layout,
 				              FVector2D(FMath::Max(A.X, B.X) + HalfBridge, FMath::Max(A.Y, B.Y) + HalfBridge));
 			};
 
-			for (const FMazeRoomDoorway& Door : RoomDoors)
+			for (const FMazeDoorway& Door : RoomDoors)
 			{
 				const FVector2D Inside = Portal(Door) - Outward[Door.Direction] * HalfWall;
 				const FVector2D Elbow =

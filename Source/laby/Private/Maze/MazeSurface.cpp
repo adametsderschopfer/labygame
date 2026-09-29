@@ -378,7 +378,7 @@ void FMazeSurface::Build(
 	// visual chunks and their halos. The strip's center tile owns the opening.
 	TMap<int32, bool> DoorTiles;
 
-	for (const FMazeRoomDoorway& Door : Layout.RoomDoorways())
+	for (const FMazeDoorway& Door : Layout.Doorways())
 	{
 		const bool bHorizontal = Door.Direction == 0 || Door.Direction == 2;
 		const int32 X = Door.Cell.X * 2 + (Door.Direction == 1 ? 2 : 0);

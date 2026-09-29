@@ -1,4 +1,5 @@
 #include "Maze/MazeLayout.h"
+#include "Maze/MazeCorridorDoorDefinition.h"
 #include "Maze/MazeNarrowPassageDefinition.h"
 #include "Maze/MazeRoomDefinition.h"
 #include "Misc/AutomationTest.h"
@@ -50,7 +51,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 
 			int32 DoorCount = 0;
 
-			for (const FMazeRoomDoorway& Doorway : Maze.RoomDoorways())
+			for (const FMazeDoorway& Doorway : Maze.RoomDoorways())
 				DoorCount += Doorway.RoomIndex == I;
 
 			TestTrue(TEXT("Additional rooms follow a straight dead-end branch"),
@@ -74,7 +75,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 			{
 				int32 DoorCount = 0;
 
-				for (const FMazeRoomDoorway& Doorway : Maze.RoomDoorways())
+				for (const FMazeDoorway& Doorway : Maze.RoomDoorways())
 					DoorCount += Doorway.RoomIndex == I;
 
 				TestTrue(TEXT("Narrow rooms remain dead ends"), DoorCount == 1);
@@ -100,7 +101,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 			{
 				int32 DoorCount = 0;
 
-				for (const FMazeRoomDoorway& Doorway : Maze.RoomDoorways())
+				for (const FMazeDoorway& Doorway : Maze.RoomDoorways())
 					DoorCount += Doorway.RoomIndex == I;
 
 				TestTrue(TEXT("Pool rooms are large enough for water and a bridge"),
@@ -145,6 +146,40 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 		             Maze.RoomTypes == Copy.RoomTypes && Maze.RoomPurposes == Copy.RoomPurposes &&
 		             Maze.WardNumbers == Copy.WardNumbers && Maze.NarrowPassages == Copy.NarrowPassages &&
 		             Maze.Holes == Copy.Holes);
+		TestEqual(
+		    TEXT("Same seed reproduces corridor door count"), Maze.CorridorDoorways.Num(), Copy.CorridorDoorways.Num());
+		TestEqual(TEXT("All door views include corridor transitions"),
+		          Maze.Doorways().Num(),
+		          Maze.RoomDoorways().Num() + Maze.CorridorDoorways.Num());
+
+		for (int32 I = 0; I < Maze.CorridorDoorways.Num(); ++I)
+		{
+			const FMazeDoorway& Door = Maze.CorridorDoorways[I];
+			const int32 Cell = Door.Cell.Y * Maze.Size + Door.Cell.X;
+			const int32 Next = Cell + (Door.Direction == 1 ? 1 : Maze.Size);
+			const FIntPoint NextPoint = Door.Cell + (Door.Direction == 1 ? FIntPoint(1, 0) : FIntPoint(0, 1));
+
+			TestTrue(TEXT("Corridor doors are reproducible"),
+			         Copy.CorridorDoorways.IsValidIndex(I) && Door.Cell == Copy.CorridorDoorways[I].Cell &&
+			             Door.Direction == Copy.CorridorDoorways[I].Direction);
+			TestEqual(TEXT("Corridor doors have no room identity"), Door.RoomIndex, INDEX_NONE);
+			TestTrue(TEXT("Corridor doors connect intact floor"), Maze.HasFloor(Cell) && Maze.HasFloor(Next));
+			TestTrue(TEXT("Corridor doors occupy straight corridor edges"),
+			         (Door.Direction == 1 && Maze.Walls[Cell] == 5 && Maze.Walls[Next] == 5) ||
+			             (Door.Direction == 2 && Maze.Walls[Cell] == 10 && Maze.Walls[Next] == 10));
+			TestFalse(TEXT("Corridor doors do not occupy rooms"),
+			          Maze.Rooms.ContainsByPredicate(
+			              [Door, NextPoint](const FIntRect& Room)
+			              {
+				              return Room.Contains(Door.Cell) || Room.Contains(NextPoint);
+			              }));
+
+			for (int32 J = 0; J < I; ++J)
+				TestTrue(TEXT("Corridor doors remain spaced apart"),
+				         FMath::Abs(Door.Cell.X - Maze.CorridorDoorways[J].Cell.X) +
+				                 FMath::Abs(Door.Cell.Y - Maze.CorridorDoorways[J].Cell.Y) >=
+				             FMazeCorridorDoorDefinition::MinDoorSpacingCells);
+		}
 
 		int32 NarrowCells = 0;
 		const TArray<uint8> RoomDoorSides = Maze.RoomDoorApproachSides();

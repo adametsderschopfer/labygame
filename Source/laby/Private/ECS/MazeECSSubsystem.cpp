@@ -706,14 +706,14 @@ void UMazeECSSubsystem::RebuildDoors(FMassEntityHandle MazeEntity)
 
 	static const FVector Directions[] = {
 	    FVector(0.f, -1.f, 0.f), FVector(1.f, 0.f, 0.f), FVector(0.f, 1.f, 0.f), FVector(-1.f, 0.f, 0.f)};
-	const TArray<FMazeRoomDoorway> Doorways = Maze->Data->Layout.RoomDoorways();
+	const TArray<FMazeDoorway> Doorways = Maze->Data->Layout.Doorways();
 	auto& Manager = MassSubsystem->GetMutableEntityManager();
 
 	DoorEntities.Reserve(DoorEntities.Num() + Doorways.Num());
 
 	for (int32 Index = 0; Index < Doorways.Num(); ++Index)
 	{
-		const FMazeRoomDoorway& Doorway = Doorways[Index];
+		const FMazeDoorway& Doorway = Doorways[Index];
 		const FVector Normal = Directions[Doorway.Direction];
 		const FVector SlideAxis(-Normal.Y, Normal.X, 0.f);
 		const FVector LocalCenter =

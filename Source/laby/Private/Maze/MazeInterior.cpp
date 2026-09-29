@@ -47,7 +47,7 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 
 	// The imported secure-door frame replaces the old procedural U-shaped trim.
 	// Keep doorway corners registered so generic full-height strips stay suppressed.
-	for (const FMazeRoomDoorway& Door : Layout.RoomDoorways())
+	for (const FMazeDoorway& Door : Layout.Doorways())
 	{
 		const FVector Across = DoorDirections[Door.Direction];
 		const FVector Along(-Across.Y, Across.X, 0);
@@ -70,7 +70,7 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 			RegisterDoorCorners(Front, Along);
 		}
 
-		if (bOpensFromNarrowSide)
+		if (Door.RoomIndex != INDEX_NONE && bOpensFromNarrowSide)
 		{
 			const FVector OutsideCenter((Outside.X + 0.5f) * Cell, (Outside.Y + 0.5f) * Cell, 0);
 			const FVector NarrowEntrance = OutsideCenter - Across * NarrowHalfWidth;

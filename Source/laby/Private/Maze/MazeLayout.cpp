@@ -119,6 +119,7 @@ void FMazeLayout::Generate(int32 Seed, int32 InSize)
 	// GenerateNarrowPassages(Seed, ScenicFloor);
 	NarrowPassages.Init(0, Walls.Num());
 	GenerateHoles(Random, ScenicFloor);
+	GenerateCorridorDoorways(Seed);
 }
 
 void FMazeLayout::GenerateRoomPurposes(int32 Seed)
@@ -227,7 +228,7 @@ void FMazeLayout::GenerateRoomTypes(int32 Seed)
 	FRandomStream Random(static_cast<int32>(uint32(Seed) ^ 0xA341316Cu));
 	TArray<int32> PoolCandidates;
 	TArray<int32> ShallowCandidates;
-	const TArray<FMazeRoomDoorway> Doorways = RoomDoorways();
+	const TArray<FMazeDoorway> Doorways = RoomDoorways();
 	bool bHasPool = false;
 
 	for (int32 RoomIndex = 0; RoomIndex < Rooms.Num(); ++RoomIndex)
@@ -235,7 +236,7 @@ void FMazeLayout::GenerateRoomTypes(int32 Seed)
 		const FIntRect& Room = Rooms[RoomIndex];
 		int32 DoorCount = 0;
 
-		for (const FMazeRoomDoorway& Doorway : Doorways)
+		for (const FMazeDoorway& Doorway : Doorways)
 			DoorCount += Doorway.RoomIndex == RoomIndex;
 
 		const bool bShallowEligible = Room.Width() >= FMazeRoomDefinition::MinShallowWidthCells &&
@@ -574,7 +575,7 @@ void FMazeLayout::GenerateHoles(FRandomStream& Random, const TArray<int32>& Scen
 
 	const int32 DX[] = {0, 1, 0, -1}, DY[] = {-1, 0, 1, 0};
 
-	for (const FMazeRoomDoorway& Door : RoomDoorways())
+	for (const FMazeDoorway& Door : RoomDoorways())
 	{
 		const FIntPoint Outside = Door.Cell + FIntPoint(DX[Door.Direction], DY[Door.Direction]);
 
@@ -619,9 +620,9 @@ void FMazeLayout::GenerateHoles(FRandomStream& Random, const TArray<int32>& Scen
 	}
 }
 
-TArray<FMazeRoomDoorway> FMazeLayout::RoomDoorways() const
+TArray<FMazeDoorway> FMazeLayout::RoomDoorways() const
 {
-	TArray<FMazeRoomDoorway> Result;
+	TArray<FMazeDoorway> Result;
 	const auto Add = [&](int32 X, int32 Y, int32 Direction, int32 RoomIndex)
 	{
 		if (!(Walls[Y * Size + X] & (1 << Direction)))
@@ -648,6 +649,15 @@ TArray<FMazeRoomDoorway> FMazeLayout::RoomDoorways() const
 	return Result;
 }
 
+TArray<FMazeDoorway> FMazeLayout::Doorways() const
+{
+	TArray<FMazeDoorway> Result = RoomDoorways();
+
+	Result.Append(CorridorDoorways);
+
+	return Result;
+}
+
 TArray<uint8> FMazeLayout::RoomDoorApproachSides() const
 {
 	TArray<uint8> Result;
@@ -656,7 +666,7 @@ TArray<uint8> FMazeLayout::RoomDoorApproachSides() const
 
 	const int32 DX[] = {0, 1, 0, -1}, DY[] = {-1, 0, 1, 0};
 
-	for (const FMazeRoomDoorway& Door : RoomDoorways())
+	for (const FMazeDoorway& Door : RoomDoorways())
 	{
 		const FIntPoint Outside = Door.Cell + FIntPoint(DX[Door.Direction], DY[Door.Direction]);
 

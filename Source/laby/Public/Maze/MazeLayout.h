@@ -5,10 +5,11 @@
 #include "Maze/MazeRoomIdentity.h"
 #include "Maze/MazeRoomDefinition.h"
 
-struct FMazeRoomDoorway
+struct FMazeDoorway
 {
 	FIntPoint Cell;
 	int32 Direction = 0; // north, east, south, west
+	// INDEX_NONE means a corridor transition, not a room boundary.
 	int32 RoomIndex = INDEX_NONE;
 };
 
@@ -27,6 +28,8 @@ struct FMazeLayout
 	TArray<EMazeRoomPurpose> RoomPurposes;
 	TArray<int32> WardNumbers;
 	TArray<uint8> Holes;
+	// Stable, seed-derived corridor transitions. Room entrances remain derived from Walls.
+	TArray<FMazeDoorway> CorridorDoorways;
 	// 0 = ordinary floor, 1 = narrow east-west passage, 2 = narrow north-south passage.
 	TArray<uint8> NarrowPassages;
 	int32 NumHoles() const
@@ -92,7 +95,9 @@ struct FMazeLayout
 
 	void Generate(int32 Seed, int32 InSize = DefaultSize);
 	// Derived from room bounds and the canonical wall bits; never an independent cache.
-	TArray<FMazeRoomDoorway> RoomDoorways() const;
+	TArray<FMazeDoorway> RoomDoorways() const;
+	// Room doors first, then corridor doors; this order defines replicated door indices.
+	TArray<FMazeDoorway> Doorways() const;
 	// Per-corridor-cell bits pointing back through room doorways; derived, never stored.
 	TArray<uint8> RoomDoorApproachSides() const;
 	EMazeRoomType RoomType(int32 RoomIndex) const
@@ -116,4 +121,5 @@ private:
 	void CarveEntrance();
 	void CarveRoom(const FIntRect& Room);
 	void GenerateHoles(FRandomStream& Random, const TArray<int32>& ScenicFloor);
+	void GenerateCorridorDoorways(int32 Seed);
 };
