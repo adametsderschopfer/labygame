@@ -9,7 +9,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FMazeLayoutTest,
                                  EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FMazeLayoutTest::RunTest(const FString& Parameters)
 {
-	bool FoundTinyRoom = false, FoundLargestRoom = false;
+	bool FoundLargestRoom = false;
 	bool FoundDeadEndRoom = false;
 	bool FoundNarrowRoomDoor = false;
 	bool FoundShallowRoom = false, FoundPoolRoom = false;
@@ -30,6 +30,8 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("Default maze retains sector coverage and respects room quotas"),
 		         Maze.Rooms.Num() >= BaseSectors * BaseSectors && Maze.Rooms.Num() <= MaxBaseRooms + MaxDeadEndRooms);
 		TestEqual(TEXT("Every room has one deterministic type"), Maze.RoomTypes.Num(), Maze.Rooms.Num());
+		TestEqual(TEXT("Every room has one designation"), Maze.RoomPurposes.Num(), Maze.Rooms.Num());
+		TestEqual(TEXT("Every room has one ward-number slot"), Maze.WardNumbers.Num(), Maze.Rooms.Num());
 		TestEqual(TEXT("Spawn is a corridor dead end"), uint8(~Maze.Walls[Maze.Start()] & 15), uint8(2));
 		TestTrue(TEXT("Spawn floor is intact"), Maze.HasFloor(Maze.Start()));
 
@@ -53,6 +55,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 
 			TestTrue(TEXT("Additional rooms follow a straight dead-end branch"),
 			         (Room.Width() == 1 || Room.Height() == 1) &&
+			             FMath::Max(Room.Width(), Room.Height()) >= FMazeRoomDefinition::MinDeadEndRoomLength &&
 			             FMath::Max(Room.Width(), Room.Height()) <= FMazeRoomDefinition::MaxDeadEndRoomLength &&
 			             DoorCount == 1);
 		}
@@ -65,15 +68,28 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 			         Room.Width() >= FMazeRoomDefinition::MinWidth && Room.Width() <= FMazeRoomDefinition::MaxWidth &&
 			             Room.Height() >= FMazeRoomDefinition::MinLength &&
 			             Room.Height() <= FMazeRoomDefinition::MaxLength);
-			FoundTinyRoom |= Room.Width() == 1 && Room.Height() == 1;
+			TestTrue(TEXT("No one-cell rooms are generated"), Room.Width() * Room.Height() >= 2);
 
-			if (Room.Width() == 1 && Room.Height() == 1)
+			if (Room.Width() == 1 || Room.Height() == 1)
 			{
-				const uint8 Open = ~Maze.Walls[Room.Min.Y * Maze.Size + Room.Min.X] & 15;
+				int32 DoorCount = 0;
 
-				TestTrue(TEXT("One-cell rooms have exactly one doorway"), Open != 0 && (Open & (Open - 1)) == 0);
-				FoundDeadEndRoom |= Open != 0 && (Open & (Open - 1)) == 0;
+				for (const FMazeRoomDoorway& Doorway : Maze.RoomDoorways())
+					DoorCount += Doorway.RoomIndex == I;
+
+				TestTrue(TEXT("Narrow rooms remain dead ends"), DoorCount == 1);
+				FoundDeadEndRoom |= DoorCount == 1;
 			}
+
+			if (Maze.RoomType(I) == EMazeRoomType::ShallowFlooded)
+				TestTrue(TEXT("Flooded rooms have a usable footprint"),
+				         Room.Width() >= FMazeRoomDefinition::MinShallowWidthCells &&
+				             Room.Height() >= FMazeRoomDefinition::MinShallowLengthCells);
+
+			if (Maze.RoomPurpose(I) == EMazeRoomPurpose::Ward)
+				TestTrue(TEXT("Wards have a larger footprint"),
+				         Room.Width() >= FMazeRoomDefinition::MinWardWidthCells &&
+				             Room.Height() >= FMazeRoomDefinition::MinWardLengthCells && Maze.WardNumbers[I] > 0);
 
 			FoundLargestRoom |=
 			    Room.Width() == FMazeRoomDefinition::MaxWidth && Room.Height() == FMazeRoomDefinition::MaxLength;
@@ -124,9 +140,10 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 			}
 
 		Copy.Generate(Seed);
-		TestTrue(TEXT("Same seed reproduces topology, room types, narrow passages and holes"),
+		TestTrue(TEXT("Same seed reproduces topology, room designations, narrow passages and holes"),
 		         Maze.Walls == Copy.Walls && Maze.Exits == Copy.Exits && Maze.Rooms == Copy.Rooms &&
-		             Maze.RoomTypes == Copy.RoomTypes && Maze.NarrowPassages == Copy.NarrowPassages &&
+		             Maze.RoomTypes == Copy.RoomTypes && Maze.RoomPurposes == Copy.RoomPurposes &&
+		             Maze.WardNumbers == Copy.WardNumbers && Maze.NarrowPassages == Copy.NarrowPassages &&
 		             Maze.Holes == Copy.Holes);
 
 		int32 NarrowCells = 0;
@@ -248,8 +265,7 @@ bool FMazeLayoutTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("Different seed changes maze"), Maze.Walls != Copy.Walls);
 	}
 
-	TestTrue(TEXT("Seed corpus includes compact one-cell rooms"), FoundTinyRoom);
-	TestTrue(TEXT("Seed corpus retains the previous largest rooms"), FoundLargestRoom);
+	TestTrue(TEXT("Seed corpus retains the configured largest rooms"), FoundLargestRoom);
 	TestTrue(TEXT("Seed corpus includes rooms at dead ends"), FoundDeadEndRoom);
 	TestTrue(TEXT("Seed corpus includes room doors opening inside narrow passages"), FoundNarrowRoomDoor);
 	TestTrue(TEXT("Seed corpus includes shallow flooded rooms"), FoundShallowRoom);

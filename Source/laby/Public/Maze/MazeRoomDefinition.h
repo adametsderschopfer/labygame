@@ -16,18 +16,21 @@ struct FMazeRoomDefinition
 	static constexpr int32 MaxWidth = 3;
 	static constexpr int32 MinLength = 1;
 	static constexpr int32 MaxLength = 5;
+	static constexpr int32 MinBaseWidth = 2;
+	static constexpr int32 MinBaseLength = 2;
 	struct FSizeRange
 	{
 		int32 MinWidth, MaxWidth, MinLength, MaxLength, Weight;
 	};
-	// Compact rooms are common; the largest footprint is limited to 3x5 cells.
+	// Base rooms start at 2x2; the largest footprint remains 3x5 cells.
 	inline static constexpr FSizeRange SizeRanges[] = {
-	    {MinWidth, 2, MinLength, 2, 50}, {2, 3, 3, 4, 35}, {3, MaxWidth, 4, MaxLength, 15}};
+	    {MinBaseWidth, 2, MinBaseLength, 2, 50}, {2, 3, 3, 4, 35}, {3, MaxWidth, 4, MaxLength, 15}};
 	// Multiple separated rooms per sector; keep sectors large enough for 3x5 rooms.
 	static constexpr int32 SectorSide = 12;
 	static constexpr int32 RoomsPerSector = 3;
 	// Additional compact rooms selected from corridor dead ends.
 	static constexpr int32 DeadEndSectorSide = 16;
+	static constexpr int32 MinDeadEndRoomLength = 2;
 	static constexpr int32 MaxDeadEndRoomLength = 3;
 	static constexpr int32 PlacementAttemptsPerRoom = 20;
 	static constexpr float ThroughFraction = 0.98f;
@@ -38,6 +41,10 @@ struct FMazeRoomDefinition
 	static constexpr int32 PoolWeight = 15;
 	static constexpr int32 MinPoolWidthCells = 2;
 	static constexpr int32 MinPoolLengthCells = 2;
+	static constexpr int32 MinShallowWidthCells = 2;
+	static constexpr int32 MinShallowLengthCells = 2;
+	static constexpr int32 MinWardWidthCells = 2;
+	static constexpr int32 MinWardLengthCells = 3;
 	static constexpr float ShallowDepth = 45.f;
 	static constexpr float ShallowWaterDepth = 40.f;
 	static constexpr float ShallowCeilingHeight = 480.f;

@@ -69,7 +69,8 @@ void FMazeLayout::AddRoomsAtDeadEnds(FRandomStream& Random, const TArray<int32>&
 									if (!CanPlaceRoom(Room))
 										break;
 
-									Candidates.Add(Room);
+									if (Length >= FMazeRoomDefinition::MinDeadEndRoomLength)
+										Candidates.Add(Room);
 								}
 
 								break;

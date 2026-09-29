@@ -135,6 +135,8 @@ void FMazeLayout::GenerateRoomPurposes(int32 Seed)
 		const FIntRect& Room = Rooms[Index];
 		const int32 Area = Room.Width() * Room.Height();
 		const EMazeRoomType PhysicalType = RoomType(Index);
+		const bool bWardEligible = Room.Width() >= FMazeRoomDefinition::MinWardWidthCells &&
+		                           Room.Height() >= FMazeRoomDefinition::MinWardLengthCells;
 
 		if (PhysicalType == EMazeRoomType::Pool)
 		{
@@ -166,7 +168,9 @@ void FMazeLayout::GenerateRoomPurposes(int32 Seed)
 		EMazeRoomPurpose Purpose = EMazeRoomPurpose::Ward;
 
 		if (Pick < 52)
-			Purpose = EMazeRoomPurpose::Ward;
+			Purpose = bWardEligible ? EMazeRoomPurpose::Ward
+			          : Pick < 26   ? EMazeRoomPurpose::Examination
+			                        : EMazeRoomPurpose::Treatment;
 		else if (Pick < 65)
 			Purpose = EMazeRoomPurpose::Treatment;
 		else if (Pick < 75)
@@ -234,9 +238,12 @@ void FMazeLayout::GenerateRoomTypes(int32 Seed)
 		for (const FMazeRoomDoorway& Doorway : Doorways)
 			DoorCount += Doorway.RoomIndex == RoomIndex;
 
+		const bool bShallowEligible = Room.Width() >= FMazeRoomDefinition::MinShallowWidthCells &&
+		                              Room.Height() >= FMazeRoomDefinition::MinShallowLengthCells;
 		const bool bPoolEligible = Room.Width() >= FMazeRoomDefinition::MinPoolWidthCells &&
 		                           Room.Height() >= FMazeRoomDefinition::MinPoolLengthCells && DoorCount >= 2;
-		const int32 TotalWeight = FMazeRoomDefinition::EmptyWeight + FMazeRoomDefinition::ShallowFloodedWeight +
+		const int32 TotalWeight = FMazeRoomDefinition::EmptyWeight +
+		                          (bShallowEligible ? FMazeRoomDefinition::ShallowFloodedWeight : 0) +
 		                          (bPoolEligible ? FMazeRoomDefinition::PoolWeight : 0);
 		const int32 Pick = Random.RandRange(1, TotalWeight);
 
@@ -247,7 +254,8 @@ void FMazeLayout::GenerateRoomTypes(int32 Seed)
 		else
 			RoomTypes[RoomIndex] = EMazeRoomType::Pool;
 
-		ShallowCandidates.Add(RoomIndex);
+		if (bShallowEligible)
+			ShallowCandidates.Add(RoomIndex);
 
 		if (bPoolEligible)
 			PoolCandidates.Add(RoomIndex);
@@ -476,7 +484,7 @@ void FMazeLayout::ReserveRooms(FRandomStream& Random)
 				const int32 MaxWidth = FMath::Min(FMazeRoomDefinition::MaxWidth, Bounds.Width());
 				const int32 MaxLength = FMath::Min(FMazeRoomDefinition::MaxLength, Bounds.Height());
 
-				if (MaxWidth < FMazeRoomDefinition::MinWidth || MaxLength < FMazeRoomDefinition::MinLength)
+				if (MaxWidth < FMazeRoomDefinition::MinBaseWidth || MaxLength < FMazeRoomDefinition::MinBaseLength)
 					continue;
 
 				bool bPlaced = false;
@@ -507,10 +515,10 @@ void FMazeLayout::ReserveRooms(FRandomStream& Random)
 
 				// Exhaust the smallest footprint before skipping a crowded or entrance-constrained slot.
 				// Thus unlucky random attempts cannot leave an otherwise usable region empty.
-				for (int32 Y = Bounds.Min.Y; Y + FMazeRoomDefinition::MinLength <= Bounds.Max.Y && !bPlaced; ++Y)
-					for (int32 X = Bounds.Min.X; X + FMazeRoomDefinition::MinWidth <= Bounds.Max.X && !bPlaced; ++X)
-						bPlaced = TryReserve(
-						    FIntRect(X, Y, X + FMazeRoomDefinition::MinWidth, Y + FMazeRoomDefinition::MinLength));
+				for (int32 Y = Bounds.Min.Y; Y + FMazeRoomDefinition::MinBaseLength <= Bounds.Max.Y && !bPlaced; ++Y)
+					for (int32 X = Bounds.Min.X; X + FMazeRoomDefinition::MinBaseWidth <= Bounds.Max.X && !bPlaced; ++X)
+						bPlaced = TryReserve(FIntRect(
+						    X, Y, X + FMazeRoomDefinition::MinBaseWidth, Y + FMazeRoomDefinition::MinBaseLength));
 			}
 }
 
