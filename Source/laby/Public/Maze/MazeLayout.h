@@ -28,6 +28,8 @@ struct FMazeLayout
 	TArray<EMazeRoomPurpose> RoomPurposes;
 	TArray<int32> WardNumbers;
 	TArray<uint8> Holes;
+	// Open low connections; symmetric N/E/S/W bits on both adjacent cells.
+	TArray<uint8> CrawlwaySides;
 	// Stable, seed-derived corridor transitions. Room entrances remain derived from Walls.
 	TArray<FMazeDoorway> CorridorDoorways;
 	// 0 = ordinary floor, 1 = narrow east-west passage, 2 = narrow north-south passage.
@@ -47,6 +49,12 @@ struct FMazeLayout
 		return Holes.IsValidIndex(CellIndex) && Holes[CellIndex] == 0;
 	}
 
+	bool IsCrawlway(int32 CellIndex, int32 Direction) const
+	{
+		return CrawlwaySides.IsValidIndex(CellIndex) && (CrawlwaySides[CellIndex] & (1 << Direction)) != 0;
+	}
+
+	// Check ordinary walkable connectivity; optional crawlways cannot make a floor cell mandatory to reach through crouching.
 	int32 ReachableFloorCount() const
 	{
 		if (!HasFloor(Start()))
@@ -67,7 +75,7 @@ struct FMazeLayout
 
 			for (int32 D = 0; D < 4; ++D)
 			{
-				if (Walls[CellIndex] & (1 << D))
+				if ((Walls[CellIndex] & (1 << D)) || IsCrawlway(CellIndex, D))
 					continue;
 
 				const int32 X = CellIndex % Size + DX[D], Y = CellIndex / Size + DY[D];
@@ -121,5 +129,6 @@ private:
 	void CarveEntrance();
 	void CarveRoom(const FIntRect& Room);
 	void GenerateHoles(FRandomStream& Random, const TArray<int32>& ScenicFloor);
+	void GenerateCrawlways(int32 Seed);
 	void GenerateCorridorDoorways(int32 Seed);
 };

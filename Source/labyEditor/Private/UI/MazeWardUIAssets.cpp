@@ -704,12 +704,12 @@ namespace MazeWardUI
 
 		auto* Stamina = Make<UCanvasPanel>(Tree, TEXT("StaminaPanel"));
 
-		Put(Content, Stamina, {-38, -308}, {256, 9}, {1, 1}, {1, 1});
+		Put(Content, Stamina, {38, -89}, {243, 9}, {0, 1}, {0, 1});
 
 		for (int I = 0; I < 2; ++I)
 		{
 			auto* PanelWidget = I == 0 ? Vitals : Stamina;
-			const double Width = I == 0 ? 243. : 256.;
+			const double Width = 243.;
 			const FString Prefix = I == 0 ? TEXT("WardHealth") : TEXT("WardStamina");
 
 			Shape(Tree,

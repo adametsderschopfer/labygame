@@ -20,14 +20,15 @@ bool FMazeExplorationSystem::Visible(const FMazeLayout& Layout, FVector2D From, 
 		if (X < 0 || Y < 0 || X >= Layout.Size || Y >= Layout.Size)
 			return false;
 
-		const uint8 Walls = Layout.Walls[Y * Layout.Size + X];
+		const int32 Cell = Y * Layout.Size + X;
+		const uint8 Walls = Layout.Walls[Cell];
 
 		if (FMath::Abs(NX - NY) < 1.e-6)
 			return false;
 
 		if (NX < NY)
 		{
-			if (Walls & (SX > 0 ? 2 : 8))
+			if ((Walls & (SX > 0 ? 2 : 8)) || Layout.IsCrawlway(Cell, SX > 0 ? 1 : 3))
 				return false;
 
 			X += SX;
@@ -35,7 +36,7 @@ bool FMazeExplorationSystem::Visible(const FMazeLayout& Layout, FVector2D From, 
 		}
 		else
 		{
-			if (Walls & (SY > 0 ? 4 : 1))
+			if ((Walls & (SY > 0 ? 4 : 1)) || Layout.IsCrawlway(Cell, SY > 0 ? 2 : 0))
 				return false;
 
 			Y += SY;

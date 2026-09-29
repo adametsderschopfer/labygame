@@ -1,4 +1,5 @@
 #include "Maze/MazeInterior.h"
+#include "Maze/MazeCrawlwayDefinition.h"
 #include "Maze/MazeMeshPrimitives.h"
 #include "Maze/MazeNarrowPassageDefinition.h"
 #include "Maze/MazeRoomDefinition.h"
@@ -36,13 +37,14 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 	TSet<FIntPoint> DoorCorners;
 	const FVector DoorDirections[] = {FVector(0, -1, 0), FVector(1, 0, 0), FVector(0, 1, 0), FVector(-1, 0, 0)};
 	const float DoorWidth = FMazeRoomDefinition::OpeningWidth(Cell - Thickness);
+	const float CrawlwayWidth = FMath::Min(FMazeCrawlwayDefinition::ClearWidthCm, (Cell - Thickness) * 0.8f);
 	const float NarrowHalfWidth =
 	    FMath::Min(FMazeNarrowPassageDefinition::ClearWidthCm, Cell - Thickness - 10.f) * 0.5f;
 	const int32 DoorDX[] = {0, 1, 0, -1}, DoorDY[] = {-1, 0, 1, 0};
-	const auto RegisterDoorCorners = [&](FVector Center, FVector Along)
+	const auto RegisterDoorCorners = [&](FVector Center, FVector Along, float Width)
 	{
 		for (const float Side : {-1.f, 1.f})
-			DoorCorners.Add(Key(Center + Along * (Side * DoorWidth / 2)));
+			DoorCorners.Add(Key(Center + Along * (Side * Width / 2)));
 	};
 
 	// The imported secure-door frame replaces the old procedural U-shaped trim.
@@ -67,7 +69,7 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 			const FVector Normal = Across * Face;
 			const FVector Front = Center + Normal * (Thickness / 2);
 
-			RegisterDoorCorners(Front, Along);
+			RegisterDoorCorners(Front, Along, DoorWidth);
 		}
 
 		if (Door.RoomIndex != INDEX_NONE && bOpensFromNarrowSide)
@@ -75,9 +77,28 @@ FMazeInterior FMazeInterior::Build(const FMazeLayout& Layout,
 			const FVector OutsideCenter((Outside.X + 0.5f) * Cell, (Outside.Y + 0.5f) * Cell, 0);
 			const FVector NarrowEntrance = OutsideCenter - Across * NarrowHalfWidth;
 
-			RegisterDoorCorners(NarrowEntrance, Along);
+			RegisterDoorCorners(NarrowEntrance, Along, DoorWidth);
 		}
 	}
+
+	for (int32 Y = 0; Y < Layout.Size; ++Y)
+		for (int32 X = 0; X < Layout.Size; ++X)
+		{
+			const int32 CellIndex = Y * Layout.Size + X;
+
+			for (const int32 Direction : {1, 2})
+			{
+				if (!Layout.IsCrawlway(CellIndex, Direction))
+					continue;
+
+				const FVector Across = DoorDirections[Direction];
+				const FVector Along(-Across.Y, Across.X, 0);
+				const FVector Center = FVector((X + 0.5f) * Cell, (Y + 0.5f) * Cell, 0) + Across * (Cell / 2);
+
+				for (const float Face : {-1.f, 1.f})
+					RegisterDoorCorners(Center + Across * (Face * Thickness / 2), Along, CrawlwayWidth);
+			}
+		}
 
 	TMap<FIntPoint, FVector> Joins;
 

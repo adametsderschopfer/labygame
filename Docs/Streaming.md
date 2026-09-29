@@ -20,6 +20,14 @@ remove an item, reset a cooldown, respawn loot or change AI decisions.
 
 ## Current implementation and budgets
 
+Crouch-only shortcuts are deterministic, one-wall openings in the immutable
+layout, with a soft target of one opening per 150 cells. The same wall surface builds resident collision and visual chunks, so
+evicting a view never changes traversal. Openings add wall faces but no assets,
+Actors, resource participants or manifest paths. They do not extend sightlines:
+exploration treats the low edge as opaque until the player crosses it. Chunk
+radius and resident collision policy remain unchanged. Runtime geometry cost
+has not been measured.
+
 Narrow-passage generation is currently disabled. New generation payloads contain
 an all-zero narrow mask, so no narrowing geometry is built for rendering or
 resident collision. Existing payloads remain unchanged until regeneration.

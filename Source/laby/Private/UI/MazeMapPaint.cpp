@@ -1,4 +1,5 @@
 #include "MazeMapPaint.h"
+#include "Maze/MazeCrawlwayDefinition.h"
 #include "Maze/MazeNarrowPassageDefinition.h"
 #include "Maze/MazeRoomDefinition.h"
 #include "Maze/MazeLayout.h"
@@ -96,7 +97,9 @@ namespace
 			if (!Seen.IsValidIndex(Cells[I]) || !Seen[Cells[I]])
 				continue;
 
-			if (Layout.Walls[Cells[I]] & FacingWalls[I])
+			const uint8 LowSides = Layout.CrawlwaySides.IsValidIndex(Cells[I]) ? Layout.CrawlwaySides[Cells[I]] : 0;
+
+			if ((Layout.Walls[Cells[I]] | LowSides) & FacingWalls[I])
 				return false;
 		}
 
@@ -597,6 +600,39 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 
 		++Layer;
 
+		// Low connections stay visible on explored maps as narrow gaps in the wall.
+		for (int32 Y = MinY; Y <= MaxY; ++Y)
+			for (int32 X = MinX; X <= MaxX; ++X)
+			{
+				const int32 Cell = Y * Layout->Size + X;
+
+				if (!Seen(Cell))
+					continue;
+
+				for (const int32 Direction : {1, 2})
+				{
+					const int32 NextX = X + (Direction == 1 ? 1 : 0);
+					const int32 NextY = Y + (Direction == 2 ? 1 : 0);
+
+					if (NextX >= Layout->Size || NextY >= Layout->Size || !Layout->IsCrawlway(Cell, Direction) ||
+					    !Seen(NextY * Layout->Size + NextX))
+						continue;
+
+					const FVector2D Center =
+					    Offset +
+					    FVector2D(X + (Direction == 1 ? 1.0 : 0.5), Y + (Direction == 2 ? 1.0 : 0.5)) * View.Step;
+					const FVector2D Along = Direction == 1 ? FVector2D(0, 1) : FVector2D(1, 0);
+					const double Half = View.Step * 0.5;
+					const double Gap =
+					    View.Step *
+					    FMath::Min(0.4f, FMazeCrawlwayDefinition::ClearWidthCm / FMath::Max(1.f, View.Cell) * 0.5f);
+					const float Width = FMath::Clamp(View.Step * 0.035f, 0.7f, 1.2f);
+
+					Stroke(Center - Along * Half, Center - Along * Gap, Wall, Width);
+					Stroke(Center + Along * Gap, Center + Along * Half, Wall, Width);
+				}
+			}
+
 		const auto WrapRoomLabel = [&](const FText& Label, int32 FontSize, FVector2D Available, TArray<FText>& Lines)
 		{
 			Lines.Reset();
@@ -630,7 +666,7 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 			return !Lines.IsEmpty() && Lines.Num() * LineHeight <= Available.Y;
 		};
 
-		if (View.bFull && Layout->RoomPurposes.Num() == Layout->Rooms.Num())
+		if (Layout->RoomPurposes.Num() == Layout->Rooms.Num())
 			for (int32 RoomIndex = 0; RoomIndex < Layout->Rooms.Num(); ++RoomIndex)
 			{
 				const FIntRect& Room = Layout->Rooms[RoomIndex];

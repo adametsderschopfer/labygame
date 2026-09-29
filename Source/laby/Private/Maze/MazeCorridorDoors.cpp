@@ -37,6 +37,10 @@ void FMazeLayout::GenerateCorridorDoorways(int32 Seed)
 		if (Holes[Cell] || NarrowPassages[Cell])
 			ExcludeNear(FIntPoint(Cell % Size, Cell / Size), FMazeCorridorDoorDefinition::MinHoleDistanceCells);
 
+	for (int32 Cell = 0; Cell < CrawlwaySides.Num(); ++Cell)
+		if (CrawlwaySides[Cell] != 0)
+			ExcludeNear(FIntPoint(Cell % Size, Cell / Size), FMazeCorridorDoorDefinition::MinRoomDoorDistanceCells);
+
 	TArray<FMazeDoorway> Candidates;
 
 	for (int32 Y = 2; Y < Size - 2; ++Y)

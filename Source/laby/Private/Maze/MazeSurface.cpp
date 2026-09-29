@@ -1,5 +1,6 @@
 #include "Maze/MazeSurface.h"
 #include "Algo/Reverse.h"
+#include "Maze/MazeCrawlwayDefinition.h"
 #include "Maze/MazeNarrowPassageDefinition.h"
 #include "Maze/MazeRoomDefinition.h"
 
@@ -7,11 +8,18 @@ namespace
 {
 	// Fill one wall strip with a U-shaped opening. End faces join the neighboring
 	// occupied junction tiles; no overlapping boxes or hidden internal caps.
-	void Doorway(
-	    FMazeSurface& Mesh, FVector Origin, FVector Along, FVector Across, float Span, float Depth, float Height)
+	void Doorway(FMazeSurface& Mesh,
+	             FVector Origin,
+	             FVector Along,
+	             FVector Across,
+	             float Span,
+	             float Depth,
+	             float Height,
+	             float DesiredWidth,
+	             float DesiredHeight)
 	{
-		const float Width = FMazeRoomDefinition::OpeningWidth(Span);
-		const float OpeningHeight = FMazeRoomDefinition::OpeningHeight(Height);
+		const float Width = FMath::Min(DesiredWidth, Span * 0.8f);
+		const float OpeningHeight = FMath::Min(DesiredHeight, Height * 0.85f);
 		const float Left = (Span - Width) / 2, Right = (Span + Width) / 2;
 		const FVector Up(0, 0, 1);
 		const auto Point = [&](float X, float Y, float Z)
@@ -376,7 +384,7 @@ void FMazeSurface::Build(
 
 	// Door positions are derived from the same immutable topology for collision,
 	// visual chunks and their halos. The strip's center tile owns the opening.
-	TMap<int32, bool> DoorTiles;
+	TMap<int32, bool> DoorTiles, CrawlwayTiles;
 
 	for (const FMazeDoorway& Door : Layout.Doorways())
 	{
@@ -387,6 +395,25 @@ void FMazeSurface::Build(
 		Strip(X, Y, bHorizontal);
 		DoorTiles.Add((Y + (bHorizontal ? 0 : 1)) * N + X + (bHorizontal ? 1 : 0), bHorizontal);
 	}
+
+	for (int32 Y = 0; Y < Layout.Size; ++Y)
+		for (int32 X = 0; X < Layout.Size; ++X)
+		{
+			const int32 CellIndex = Y * Layout.Size + X;
+
+			for (const int32 Direction : {1, 2})
+			{
+				if (!Layout.IsCrawlway(CellIndex, Direction))
+					continue;
+
+				const bool bHorizontal = Direction == 2;
+				const int32 StripX = X * 2 + (bHorizontal ? 0 : 2);
+				const int32 StripY = Y * 2 + (bHorizontal ? 2 : 0);
+
+				Strip(StripX, StripY, bHorizontal);
+				CrawlwayTiles.Add((StripY + (bHorizontal ? 0 : 1)) * N + StripX + (bHorizontal ? 1 : 0), bHorizontal);
+			}
+		}
 
 	auto Occupied = [&](int32 X, int32 Y)
 	{
@@ -420,7 +447,23 @@ void FMazeSurface::Build(
 				        *Horizontal ? FVector(0, 1, 0) : FVector(-1, 0, 0),
 				        *Horizontal ? B - A : D - C,
 				        *Horizontal ? D - C : B - A,
-				        Height);
+				        Height,
+				        FMazeRoomDefinition::DoorWidth,
+				        FMazeRoomDefinition::DoorHeight);
+				continue;
+			}
+
+			if (const bool* Horizontal = CrawlwayTiles.Find(Y * N + X))
+			{
+				Doorway(*this,
+				        *Horizontal ? FVector(A, C, 0) : FVector(B, C, 0),
+				        *Horizontal ? FVector(1, 0, 0) : FVector(0, 1, 0),
+				        *Horizontal ? FVector(0, 1, 0) : FVector(-1, 0, 0),
+				        *Horizontal ? B - A : D - C,
+				        *Horizontal ? D - C : B - A,
+				        Height,
+				        FMazeCrawlwayDefinition::ClearWidthCm,
+				        FMazeCrawlwayDefinition::ClearHeightCm);
 				continue;
 			}
 

@@ -42,6 +42,7 @@ void FMazeLayout::Generate(int32 Seed, int32 InSize)
 	Walls.Init(15, Size * Size); // north, east, south, west
 	Exits.Reset();
 	Holes.Init(0, Walls.Num());
+	CrawlwaySides.Init(0, Walls.Num());
 	ReserveRooms(Random);
 
 	TArray<bool> Reserved;
@@ -115,6 +116,7 @@ void FMazeLayout::Generate(int32 Seed, int32 InSize)
 	AddRoomsAtDeadEnds(Random, ScenicFloor);
 	GenerateRoomTypes(Seed);
 	GenerateRoomPurposes(Seed);
+	GenerateCrawlways(Seed);
 	// Temporarily disabled; retain the generator for restoration.
 	// GenerateNarrowPassages(Seed, ScenicFloor);
 	NarrowPassages.Init(0, Walls.Num());
@@ -568,6 +570,21 @@ void FMazeLayout::GenerateHoles(FRandomStream& Random, const TArray<int32>& Scen
 				}
 		}
 
+	for (int32 Cell = 0; Cell < CrawlwaySides.Num(); ++Cell)
+		if (CrawlwaySides[Cell] != 0)
+		{
+			const int32 CellX = Cell % Size, CellY = Cell / Size;
+
+			for (int32 OffsetY = -1; OffsetY <= 1; ++OffsetY)
+				for (int32 OffsetX = -1; OffsetX <= 1; ++OffsetX)
+				{
+					const int32 X = CellX + OffsetX, Y = CellY + OffsetY;
+
+					if (X >= 0 && Y >= 0 && X < Size && Y < Size)
+						Protected[Y * Size + X] = true;
+				}
+		}
+
 	for (const FIntRect& Room : Rooms)
 		for (int32 Y = Room.Min.Y; Y < Room.Max.Y; ++Y)
 			for (int32 X = Room.Min.X; X < Room.Max.X; ++X)
@@ -625,7 +642,7 @@ TArray<FMazeDoorway> FMazeLayout::RoomDoorways() const
 	TArray<FMazeDoorway> Result;
 	const auto Add = [&](int32 X, int32 Y, int32 Direction, int32 RoomIndex)
 	{
-		if (!(Walls[Y * Size + X] & (1 << Direction)))
+		if (!(Walls[Y * Size + X] & (1 << Direction)) && !IsCrawlway(Y * Size + X, Direction))
 			Result.Add({FIntPoint(X, Y), Direction, RoomIndex});
 	};
 
