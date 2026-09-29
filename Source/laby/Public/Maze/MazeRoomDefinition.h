@@ -13,22 +13,22 @@ enum class EMazeRoomType : uint8
 struct FMazeRoomDefinition
 {
 	static constexpr int32 MinWidth = 1;
-	static constexpr int32 MaxWidth = 4;
+	static constexpr int32 MaxWidth = 3;
 	static constexpr int32 MinLength = 1;
-	static constexpr int32 MaxLength = 7;
+	static constexpr int32 MaxLength = 5;
 	struct FSizeRange
 	{
 		int32 MinWidth, MaxWidth, MinLength, MaxLength, Weight;
 	};
-	// Compact utility rooms are common; the previous largest rooms remain possible.
+	// Compact rooms are common; the largest footprint is limited to 3x5 cells.
 	inline static constexpr FSizeRange SizeRanges[] = {
-	    {MinWidth, 2, MinLength, 2, 50}, {2, 3, 3, 5, 35}, {3, MaxWidth, 5, MaxLength, 15}};
-	// Multiple separated rooms per sector; keep sectors large enough for 4x7 rooms.
+	    {MinWidth, 2, MinLength, 2, 50}, {2, 3, 3, 4, 35}, {3, MaxWidth, 4, MaxLength, 15}};
+	// Multiple separated rooms per sector; keep sectors large enough for 3x5 rooms.
 	static constexpr int32 SectorSide = 12;
 	static constexpr int32 RoomsPerSector = 3;
 	// Additional compact rooms selected from corridor dead ends.
 	static constexpr int32 DeadEndSectorSide = 16;
-	static constexpr int32 MaxDeadEndRoomLength = 4;
+	static constexpr int32 MaxDeadEndRoomLength = 3;
 	static constexpr int32 PlacementAttemptsPerRoom = 20;
 	static constexpr float ThroughFraction = 0.98f;
 	static constexpr float DoorWidth = 120.f;

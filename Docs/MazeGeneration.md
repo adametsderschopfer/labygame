@@ -21,7 +21,7 @@ visuals and the physically narrow floor ribbon on both explored maps; it adds no
 movement restriction, trigger actor or per-wall entity.
 
 Default 80 x 80 maps target up to 147 base rooms and 75 additional dead-end rooms,
-plus at most 64 single-cell holes. Rooms range from 1 x 1 to 4 x 7 cells and
+plus at most 64 single-cell holes. Rooms range from 1 x 1 to 3 x 5 cells and
 keep a corridor gap between their rectangles. A separate two-cell, single-width
 dead end at the west edge holds the spawn and opens directly into the maze without
 a door. Placement attempts are bounded; fewer rooms or holes are accepted when

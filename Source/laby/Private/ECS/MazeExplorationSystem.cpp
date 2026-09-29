@@ -89,6 +89,10 @@ void FMazeExplorationSystem::Update(FMazeExplorationFragment& Exploration,
 	if (Local.Z < FloorHeight || Local.Z > CeilingHeight)
 		return;
 
+	// 2 means the player stood on this cell; 1 means it was only seen nearby.
+	// Room labels can therefore appear on entry without revealing adjacent rooms.
+	Exploration.Seen[CY * Layout.Size + CX] = 2;
+
 	// Reveal nearby floor when entering a cell or moving far enough inside it.
 	// A stationary camera turn never expands exploration; walls still occlude it.
 	if (Exploration.Seen[CY * Layout.Size + CX] && (Position - Exploration.LastPosition).SizeSquared() <
@@ -96,8 +100,6 @@ void FMazeExplorationSystem::Update(FMazeExplorationFragment& Exploration,
 		return;
 
 	Exploration.LastPosition = Position;
-
-	Exploration.Seen[CY * Layout.Size + CX] = 1;
 
 	constexpr int32 Radius = FMazeExplorationDefinition::RevealRadiusCells;
 

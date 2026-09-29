@@ -381,7 +381,7 @@ FReply UMazeExplorationMapWidget::NativeOnMouseWheel(const FGeometry& Geometry, 
 	const FVector2D CursorOffset = Geometry.AbsoluteToLocal(Event.GetScreenSpacePosition()) - MapMiddle;
 	const FVector2D Anchor = Center + CursorOffset / Zoom;
 
-	Zoom = FMath::Clamp(Zoom * FMath::Pow(1.2f, Event.GetWheelDelta()), 4.f, 80.f);
+	Zoom = FMath::Clamp(Zoom * FMath::Pow(1.2f, Event.GetWheelDelta()), MinZoom, 80.f);
 	Center = Anchor - CursorOffset / Zoom;
 	ClampCenter();
 

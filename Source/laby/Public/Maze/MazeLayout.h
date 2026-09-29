@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Math/RandomStream.h"
+#include "Maze/MazeRoomIdentity.h"
 #include "Maze/MazeRoomDefinition.h"
 
 struct FMazeRoomDoorway
@@ -22,6 +23,9 @@ struct FMazeLayout
 	TArray<FIntRect> Rooms;
 	// Canonical room presentation/geometry kind, aligned one-to-one with Rooms.
 	TArray<EMazeRoomType> RoomTypes;
+	// Immutable facility designations and ward numbers, aligned with Rooms.
+	TArray<EMazeRoomPurpose> RoomPurposes;
+	TArray<int32> WardNumbers;
 	TArray<uint8> Holes;
 	// 0 = ordinary floor, 1 = narrow east-west passage, 2 = narrow north-south passage.
 	TArray<uint8> NarrowPassages;
@@ -96,12 +100,18 @@ struct FMazeLayout
 		return RoomTypes.IsValidIndex(RoomIndex) ? RoomTypes[RoomIndex] : EMazeRoomType::Empty;
 	}
 
+	EMazeRoomPurpose RoomPurpose(int32 RoomIndex) const
+	{
+		return RoomPurposes.IsValidIndex(RoomIndex) ? RoomPurposes[RoomIndex] : EMazeRoomPurpose::Ward;
+	}
+
 private:
 	bool IsEntranceCell(int32 X, int32 Y) const;
 	bool OverlapsEntrance(const FIntRect& Room) const;
 	void ReserveRooms(FRandomStream& Random);
 	void AddRoomsAtDeadEnds(FRandomStream& Random, const TArray<int32>& ScenicFloor);
 	void GenerateRoomTypes(int32 Seed);
+	void GenerateRoomPurposes(int32 Seed);
 	void GenerateNarrowPassages(int32 Seed, const TArray<int32>& ScenicFloor);
 	void CarveEntrance();
 	void CarveRoom(const FIntRect& Room);

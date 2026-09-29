@@ -23,6 +23,9 @@ protected:
 	virtual FReply NativeOnMouseWheel(const FGeometry& Geometry, const FPointerEvent& Event) override;
 
 private:
+	static constexpr float DefaultZoom = 24.f;
+	static constexpr float MinZoom = DefaultZoom * 0.75f;
+
 	friend class SMazeMapSurface;
 	UFUNCTION()
 	void CloseMap();
@@ -33,7 +36,7 @@ private:
 	               const FWidgetStyle& Style) const;
 
 	FVector2D Center = FVector2D::ZeroVector;
-	float Zoom = 24.f;
+	float Zoom = DefaultZoom;
 
 	void ClampCenter();
 };

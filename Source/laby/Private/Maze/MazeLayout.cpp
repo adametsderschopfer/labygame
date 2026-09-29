@@ -114,10 +114,103 @@ void FMazeLayout::Generate(int32 Seed, int32 InSize)
 
 	AddRoomsAtDeadEnds(Random, ScenicFloor);
 	GenerateRoomTypes(Seed);
+	GenerateRoomPurposes(Seed);
 	// Temporarily disabled; retain the generator for restoration.
 	// GenerateNarrowPassages(Seed, ScenicFloor);
 	NarrowPassages.Init(0, Walls.Num());
 	GenerateHoles(Random, ScenicFloor);
+}
+
+void FMazeLayout::GenerateRoomPurposes(int32 Seed)
+{
+	RoomPurposes.Init(EMazeRoomPurpose::Ward, Rooms.Num());
+	WardNumbers.Init(0, Rooms.Num());
+
+	FRandomStream Random(static_cast<int32>(uint32(Seed) ^ 0x71D41B27u));
+	TArray<int32> GeneratorCandidates;
+	bool bHasGenerator = false;
+
+	for (int32 Index = 0; Index < Rooms.Num(); ++Index)
+	{
+		const FIntRect& Room = Rooms[Index];
+		const int32 Area = Room.Width() * Room.Height();
+		const EMazeRoomType PhysicalType = RoomType(Index);
+
+		if (PhysicalType == EMazeRoomType::Pool)
+		{
+			RoomPurposes[Index] = EMazeRoomPurpose::Pool;
+			continue;
+		}
+
+		if (PhysicalType == EMazeRoomType::ShallowFlooded)
+		{
+			const int32 WaterPurposePick = Random.RandRange(0, 99);
+
+			if (WaterPurposePick < 15)
+			{
+				RoomPurposes[Index] = EMazeRoomPurpose::Hydrotherapy;
+				continue;
+			}
+
+			if (WaterPurposePick < 30)
+			{
+				RoomPurposes[Index] = EMazeRoomPurpose::Washroom;
+				continue;
+			}
+		}
+
+		if (PhysicalType == EMazeRoomType::Empty && Area >= 4)
+			GeneratorCandidates.Add(Index);
+
+		const int32 Pick = Random.RandRange(0, 99);
+		EMazeRoomPurpose Purpose = EMazeRoomPurpose::Ward;
+
+		if (Pick < 52)
+			Purpose = EMazeRoomPurpose::Ward;
+		else if (Pick < 65)
+			Purpose = EMazeRoomPurpose::Treatment;
+		else if (Pick < 75)
+			Purpose = EMazeRoomPurpose::Examination;
+		else if (Pick < 81)
+			Purpose = EMazeRoomPurpose::Isolation;
+		else if (Pick < 86)
+			Purpose = EMazeRoomPurpose::Staff;
+		else if (Pick < 90)
+			Purpose = EMazeRoomPurpose::Records;
+		else if (Pick < 94)
+			Purpose = EMazeRoomPurpose::Storage;
+		else
+			Purpose = EMazeRoomPurpose::Laundry;
+
+		if (PhysicalType == EMazeRoomType::Empty && Area >= 4 && Pick >= 95 && Pick < 97 && !bHasGenerator)
+		{
+			Purpose = EMazeRoomPurpose::Generator;
+			bHasGenerator = true;
+		}
+		else if (PhysicalType == EMazeRoomType::Empty && Area >= 8 && Pick >= 97)
+			Purpose = Pick == 99 ? EMazeRoomPurpose::Dining : EMazeRoomPurpose::Recreation;
+
+		RoomPurposes[Index] = Purpose;
+	}
+
+	if (!bHasGenerator && !GeneratorCandidates.IsEmpty())
+		RoomPurposes[GeneratorCandidates[Random.RandRange(0, GeneratorCandidates.Num() - 1)]] =
+		    EMazeRoomPurpose::Generator;
+
+	TArray<int32> Wards;
+
+	for (int32 Index = 0; Index < Rooms.Num(); ++Index)
+		if (RoomPurposes[Index] == EMazeRoomPurpose::Ward)
+			Wards.Add(Index);
+
+	Wards.Sort(
+	    [this](int32 A, int32 B)
+	    {
+		    return Rooms[A].Min.Y == Rooms[B].Min.Y ? Rooms[A].Min.X < Rooms[B].Min.X : Rooms[A].Min.Y < Rooms[B].Min.Y;
+	    });
+
+	for (int32 Index = 0; Index < Wards.Num(); ++Index)
+		WardNumbers[Wards[Index]] = Index + 1;
 }
 
 void FMazeLayout::GenerateRoomTypes(int32 Seed)
