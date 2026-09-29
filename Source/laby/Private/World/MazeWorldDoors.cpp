@@ -8,6 +8,8 @@
 #include "Materials/MaterialInterface.h"
 #include "Math/RotationMatrix.h"
 #include "Maze/MazeRoomDefinition.h"
+#include "World/MazeLocationSettings.h"
+#include "World/MazeLocationSubsystem.h"
 
 namespace
 {
@@ -42,8 +44,11 @@ namespace
 		                  FMath::DegreesToRadians(Door.SwingSign * FMazeDoorDefinition::SwingDegrees *
 		                                          FMath::SmoothStep(0.f, 1.f, Door.OpenAmount)));
 		const FVector Axis = Swing.RotateVector(Door.SlideAxis);
+		const float HandlePull =
+		    Door.bWantsOpen ? FMath::Clamp(1.f - FMath::Abs(Door.OpenAmount - .12f) / .12f, 0.f, 1.f) : 0.f;
+		const FQuat LeverTurn(FVector::RightVector, FMath::DegreesToRadians(-22.f * HandlePull));
 
-		return FTransform(FRotationMatrix::MakeFromXZ(Axis, FVector::UpVector).ToQuat(),
+		return FTransform(FRotationMatrix::MakeFromXZ(Axis, FVector::UpVector).ToQuat() * LeverTurn,
 		                  Center - ActorLocation,
 		                  FVector(12.f, WallThickness * .5f + 5.f, 5.f) * .01f);
 	}
@@ -70,7 +75,6 @@ void AMazeWorld::RebuildDoorInstances()
 	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
 	const float Width = FMazeRoomDefinition::OpeningWidth(Maze.Cell - Maze.WallThickness);
 	const float Height = FMazeRoomDefinition::OpeningHeight(Maze.WallHeight);
-	const float Frame = FMazeDoorDefinition::FrameWidthCm;
 	const bool bVisual = GetNetMode() != NM_DedicatedServer;
 
 	for (const FMazeDoorView& Door : Doors)
@@ -81,15 +85,9 @@ void AMazeWorld::RebuildDoorInstances()
 
 		if (bVisual)
 		{
-			for (const float Side : {-1.f, 1.f})
-				DoorFrames->AddInstance(FTransform(Rotation,
-				                                   Base + Door.SlideAxis * (Side * (Width - Frame) * .5f) +
-				                                       FVector::UpVector * (Height * .5f),
-				                                   FVector(Frame, Maze.WallThickness, Height) * .01f));
-
 			DoorFrames->AddInstance(FTransform(Rotation,
-			                                   Base + FVector::UpVector * (Height - Frame * .5f),
-			                                   FVector(Width, Maze.WallThickness, Frame) * .01f));
+			                                   Base + FVector::UpVector * (Height * .5f),
+			                                   FVector(Width, Maze.WallThickness, Height) * .01f));
 			DoorLeaves->AddInstance(Leaf);
 			DoorHandles->AddInstance(HandleTransform(Door, GetActorLocation(), Width, Maze.WallThickness));
 		}
@@ -105,14 +103,21 @@ void AMazeWorld::PrepareDoorAssets()
 	if (GetNetMode() == NM_DedicatedServer)
 		return;
 
-	if (VisualMaterials.IsValidIndex(3))
+	const auto* Settings = GetDefault<UMazeLocationSettings>();
+	UStaticMesh* FrameMesh = Settings->DoorFrameMesh().Get();
+	UStaticMesh* LeafMesh = Settings->DoorLeafMesh().Get();
+	UStaticMesh* HandleMesh = Settings->DoorHandleMesh().Get();
+
+	if (!FrameMesh || !LeafMesh || !HandleMesh)
 	{
-		DoorFrames->SetMaterial(0, VisualMaterials[3]);
-		DoorLeaves->SetMaterial(0, VisualMaterials[3]);
+		GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->Fail(TEXT("Frosted door meshes are unavailable"));
+
+		return;
 	}
 
-	if (VisualMaterials.IsValidIndex(2))
-		DoorHandles->SetMaterial(0, VisualMaterials[2]);
+	DoorFrames->SetStaticMesh(FrameMesh);
+	DoorLeaves->SetStaticMesh(LeafMesh);
+	DoorHandles->SetStaticMesh(HandleMesh);
 }
 
 void AMazeWorld::UpdateDoors(float DeltaSeconds)

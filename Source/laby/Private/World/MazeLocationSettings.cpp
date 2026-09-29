@@ -17,6 +17,24 @@ TSoftObjectPtr<USoundWave> UMazeLocationSettings::MenuAmbientSound() const
 	return TSoftObjectPtr<USoundWave>(FSoftObjectPath(TEXT("/Game/UI/Glass/S_MenuAmbient.S_MenuAmbient")));
 }
 
+TSoftObjectPtr<UStaticMesh> UMazeLocationSettings::DoorFrameMesh() const
+{
+	return TSoftObjectPtr<UStaticMesh>(
+	    FSoftObjectPath(TEXT("/Game/Doors/FrostedPanelDoor/Meshes/SM_FrostedDoorFrame.SM_FrostedDoorFrame")));
+}
+
+TSoftObjectPtr<UStaticMesh> UMazeLocationSettings::DoorLeafMesh() const
+{
+	return TSoftObjectPtr<UStaticMesh>(
+	    FSoftObjectPath(TEXT("/Game/Doors/FrostedPanelDoor/Meshes/SM_FrostedDoorLeaf.SM_FrostedDoorLeaf")));
+}
+
+TSoftObjectPtr<UStaticMesh> UMazeLocationSettings::DoorHandleMesh() const
+{
+	return TSoftObjectPtr<UStaticMesh>(
+	    FSoftObjectPath(TEXT("/Game/Doors/FrostedPanelDoor/Meshes/SM_FrostedDoorHandle.SM_FrostedDoorHandle")));
+}
+
 bool UMazeLocationSettings::Validate(FString& Error) const
 {
 	if (ChunkCells < 2 || ChunkCells > 32 || LoadRadius < 1 || LoadRadius > 8 || UnloadRadius <= LoadRadius ||

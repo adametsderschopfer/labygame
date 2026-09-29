@@ -6,6 +6,7 @@
 
 class UMaterialInterface;
 class USoundWave;
+class UStaticMesh;
 
 UENUM()
 enum class EMazeLocationMode : uint8
@@ -56,6 +57,9 @@ public:
 	TSoftObjectPtr<UMaterialInterface> PoolTileMaterial() const;
 	TSoftObjectPtr<UMaterialInterface> WaterMaterial() const;
 	TSoftObjectPtr<USoundWave> MenuAmbientSound() const;
+	TSoftObjectPtr<UStaticMesh> DoorFrameMesh() const;
+	TSoftObjectPtr<UStaticMesh> DoorLeafMesh() const;
+	TSoftObjectPtr<UStaticMesh> DoorHandleMesh() const;
 
 	bool Validate(FString& Error) const;
 };
