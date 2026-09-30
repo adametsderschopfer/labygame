@@ -5,6 +5,7 @@
 #include "ECS/MazeExplorationSystem.h"
 #include "ECS/MazeItemSystem.h"
 #include "ECS/MazeSignal.h"
+#include "ECS/MazeNoiseSystem.h"
 #include "ECS/MazeDoorSystem.h"
 #include "ECS/MazeWaterSystem.h"
 #include "MassEntitySubsystem.h"
@@ -39,6 +40,7 @@ void UMazeECSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	                                    FMazePlayerPoseFragment::StaticStruct(),
 	                                    FMazePlayerCommandFragment::StaticStruct(),
 	                                    FMazeSignalFragment::StaticStruct(),
+	                                    FMazeNoiseFragment::StaticStruct(),
 	                                    FMazeProgressFragment::StaticStruct(),
 	                                    FMazeExplorationFragment::StaticStruct(),
 	                                    FMazeItemsFragment::StaticStruct()};
@@ -58,6 +60,10 @@ void UMazeECSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	InputQuery->AddRequirement<FMazeLocomotionFragment>(EMassFragmentAccess::ReadWrite);
 	SignalQuery = MakeUnique<FMassEntityQuery>(Manager.AsShared());
 	SignalQuery->AddRequirement<FMazeSignalFragment>(EMassFragmentAccess::ReadWrite);
+	NoiseQuery = MakeUnique<FMassEntityQuery>(Manager.AsShared());
+	NoiseQuery->AddRequirement<FMazeNoiseFragment>(EMassFragmentAccess::ReadWrite);
+	NoiseQuery->AddRequirement<FMazePlayerPoseFragment>(EMassFragmentAccess::ReadOnly);
+	NoiseQuery->AddRequirement<FMazeVitalsFragment>(EMassFragmentAccess::ReadOnly);
 
 	const UScriptStruct* DoorFragments[] = {FMazeDoorFragment::StaticStruct()};
 
@@ -91,6 +97,7 @@ void UMazeECSSubsystem::Deinitialize()
 	GenerationQuery.Reset();
 	InputQuery.Reset();
 	SignalQuery.Reset();
+	NoiseQuery.Reset();
 
 	if (MassSubsystem && MassSubsystem->GetEntityManager().IsEntityValid(SessionEntity))
 		MassSubsystem->GetMutableEntityManager().DestroyEntity(SessionEntity);
@@ -119,7 +126,8 @@ void UMazeECSSubsystem::Tick(float DeltaSeconds)
 	TRACE_CPUPROFILER_EVENT_SCOPE(Maze_ECS_Tick);
 	Super::Tick(DeltaSeconds);
 
-	if (!MassSubsystem || !VitalsQuery || !SignalQuery || !GetWorld()->HasBegunPlay() || GetWorld()->IsPaused())
+	if (!MassSubsystem || !VitalsQuery || !SignalQuery || !NoiseQuery || !GetWorld()->HasBegunPlay() ||
+	    GetWorld()->IsPaused())
 		return;
 
 	auto Context = MassSubsystem->GetMutableEntityManager().CreateExecutionContext(DeltaSeconds);
@@ -133,6 +141,33 @@ void UMazeECSSubsystem::Tick(float DeltaSeconds)
 		                                for (auto& Signal : Signals)
 			                                FMazeSignalSystem::Update(Signal, DeltaSeconds, bAuthority);
 	                                });
+
+	const auto Session = ReadSession();
+	const auto Maze = ReadMaze(Session.Maze);
+
+	NoiseQuery->ForEachEntityChunk(
+	    Context,
+	    [DeltaSeconds, bAuthority, Session, Maze](FMassExecutionContext& Chunk)
+	    {
+		    auto Noises = Chunk.GetMutableFragmentView<FMazeNoiseFragment>();
+		    const auto Poses = Chunk.GetFragmentView<FMazePlayerPoseFragment>();
+		    const auto Vitals = Chunk.GetFragmentView<FMazeVitalsFragment>();
+
+		    for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
+		    {
+			    FMazeNoiseSystem::Synchronize(Noises[Index], Session.Maze, Maze);
+
+			    if (bAuthority)
+				    FMazeNoiseSystem::Update(Noises[Index],
+				                             Poses[Index],
+				                             DeltaSeconds,
+				                             Session.bSessionStarted && Maze.Data && !Maze.bNeedsGeneration &&
+				                                 FMazeVitalsSystem::IsAlive(Vitals[Index].Value));
+			    else
+				    Noises[Index].PresentationElapsed = FMath::Min(FMazeNoiseDefinition::TrailSeconds,
+				                                                   Noises[Index].PresentationElapsed + DeltaSeconds);
+		    }
+	    });
 
 	if (!bAuthority)
 		return;
@@ -191,10 +226,15 @@ bool UMazeECSSubsystem::ToggleHeadlamp(FMassEntityHandle Entity)
 	const auto* Pose = FindFragment<FMazePlayerPoseFragment>(Entity);
 	const auto Room = ReadRoom();
 
-	return Items && FMazeItemSystem::ToggleHeadlamp(*Items,
-	                                                Pose && Pose->bInputEnabled &&
-	                                                    FMazeVitalsSystem::IsAlive(ReadVitals(Entity)) &&
-	                                                    (!Room.bActive || Room.bStarted));
+	const bool bAccepted = Items && FMazeItemSystem::ToggleHeadlamp(
+	                                    *Items,
+	                                    Pose && Pose->bInputEnabled && FMazeVitalsSystem::IsAlive(ReadVitals(Entity)) &&
+	                                        (!Room.bActive || Room.bStarted));
+
+	if (bAccepted)
+		EmitNoise(Entity, EMazeNoiseSource::Headlamp);
+
+	return bAccepted;
 }
 
 bool UMazeECSSubsystem::SelectInventorySlot(FMassEntityHandle Entity, int32 Slot)
@@ -547,6 +587,7 @@ bool UMazeECSSubsystem::RequestSignal(FMassEntityHandle Entity, FMazeSignalSnaps
 		return false;
 
 	OutSignal = Signal->Value;
+	EmitNoise(Entity, EMazeNoiseSource::Whistle);
 
 	return true;
 }
@@ -573,6 +614,66 @@ FMazeSignalView UMazeECSSubsystem::ReadSignal(FMassEntityHandle Entity) const
 	}
 
 	return Result;
+}
+
+void UMazeECSSubsystem::EmitNoise(FMassEntityHandle Entity, EMazeNoiseSource Source)
+{
+	if (GetWorld()->GetNetMode() == NM_Client || GetWorld()->IsPaused())
+		return;
+
+	auto* Noise = FindFragment<FMazeNoiseFragment>(Entity);
+	const auto Session = ReadSession();
+	const auto* Maze = FindFragment<FMazeGenerationFragment>(Session.Maze);
+
+	if (!Noise || !Maze || !Maze->Data || Maze->bNeedsGeneration || !Session.bSessionStarted)
+		return;
+
+	FMazeNoiseSystem::Synchronize(*Noise, Session.Maze, *Maze);
+	FMazeNoiseSystem::Emit(*Noise, Source);
+}
+
+FMazeNoiseSnapshot UMazeECSSubsystem::ReadNoise(FMassEntityHandle Entity) const
+{
+	const auto* Noise = FindFragment<FMazeNoiseFragment>(Entity);
+	const auto Session = ReadSession();
+	const auto* Maze = FindFragment<FMazeGenerationFragment>(Session.Maze);
+
+	if (!Noise || !Maze || !Maze->Data || Maze->bNeedsGeneration || Noise->Maze != Session.Maze ||
+	    Noise->Value.MazeRevision != Maze->Revision || Noise->Value.MazeSeed != Maze->Seed)
+		return {};
+
+	return FMazeNoiseSystem::Snapshot(*Noise, false);
+}
+
+FMazeNoiseSnapshot UMazeECSSubsystem::ReadNoiseForReplication(FMassEntityHandle Entity) const
+{
+	const auto* Noise = FindFragment<FMazeNoiseFragment>(Entity);
+
+	if (!Noise || ReadNoise(Entity).MazeRevision == 0)
+		return {};
+
+	return FMazeNoiseSystem::Snapshot(*Noise, true);
+}
+
+bool UMazeECSSubsystem::ReceiveNoise(FMassEntityHandle Entity, const FMazeNoiseSnapshot& Snapshot)
+{
+	if (GetWorld()->GetNetMode() != NM_Client)
+		return false;
+
+	auto* Noise = FindFragment<FMazeNoiseFragment>(Entity);
+	const auto Session = ReadSession();
+	const auto* Maze = FindFragment<FMazeGenerationFragment>(Session.Maze);
+
+	if (!Noise || !Maze || !Maze->Data || Maze->bNeedsGeneration || Snapshot.MazeRevision != Maze->Revision ||
+	    Snapshot.MazeSeed != Maze->Seed)
+		return false;
+
+	if (!FMazeNoiseSystem::Receive(*Noise, Snapshot))
+		return false;
+
+	Noise->Maze = Session.Maze;
+
+	return true;
 }
 
 void UMazeECSSubsystem::UpdateProgress(FMassEntityHandle Entity)
@@ -873,6 +974,7 @@ bool UMazeECSSubsystem::ToggleDoor(FMassEntityHandle Player, int32 DoorIndex, co
 		return false;
 
 	FMazeDoorSystem::Toggle(*Door, Pose->Location);
+	EmitNoise(Player, EMazeNoiseSource::Door);
 
 	return true;
 }

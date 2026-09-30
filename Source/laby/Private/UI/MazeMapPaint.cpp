@@ -773,6 +773,39 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 
 #endif
 
+	for (const FMazeMapFootprint& Mark : View.Footprints)
+	{
+		if (!View.Layout)
+			continue;
+
+		const int32 X = FMath::FloorToInt(Mark.Position.X), Y = FMath::FloorToInt(Mark.Position.Y);
+		const int32 Index = Y * View.Layout->Size + X;
+
+		if (X < 0 || Y < 0 || X >= View.Layout->Size || Y >= View.Layout->Size || !View.Seen.IsValidIndex(Index) ||
+		    View.Seen[Index] == 0)
+			continue;
+
+		const FVector2D Position = Offset + Mark.Position * View.Step;
+		const float Radius = FMath::Clamp(View.Step * 0.14f, 2.5f, 5.f);
+
+		TArray<FVector2D> Circle;
+
+		for (int32 Segment = 0; Segment < 20; ++Segment)
+		{
+			const float A = 2.f * PI * Segment / 20.f;
+
+			Circle.Add(Position + FVector2D(FMath::Cos(A), FMath::Sin(A)) * Radius);
+		}
+
+		const float Alpha = Mark.Opacity * FMath::Lerp(0.45f, 1.f, Mark.Strength) * 0.8f;
+
+		// Native vertex alpha gives a radial fade from the dot center to its transparent edge.
+		Polygon(Position, Circle, Accent.CopyWithNewOpacity(Alpha), Layer, 0.f);
+	}
+
+	FlushPolygons(Layer);
+	++Layer;
+
 	for (const FMazeMapSignal& Signal : View.Signals)
 	{
 		const FVector2D Center = Offset + Signal.Position * View.Step;

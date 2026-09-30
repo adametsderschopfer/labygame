@@ -285,6 +285,30 @@ int32 UMazeExplorationMapWidget::PaintMap(const FGeometry& Geometry,
 
 	View.Signals = Signals;
 
+	const auto Noise = ECS->ReadNoise(Player->GetPlayerEntity());
+	TArray<FMazeMapFootprint> Footprints;
+
+	for (int32 Index = 0; Index < Noise.Footprints.Num(); ++Index)
+	{
+		const auto& Mark = Noise.Footprints[Index];
+
+		if (Mark.RemainingSeconds <= 0)
+			continue;
+
+		const FVector MarkLocal = (Mark.Location - Maze.Origin) / Maze.Cell;
+		auto& Dot = Footprints.AddDefaulted_GetRef();
+
+		Dot.Position = FVector2D(MarkLocal.X, MarkLocal.Y);
+
+		const float Rank = float(Index + 1) / Noise.Footprints.Num();
+
+		Dot.Opacity = FMath::Clamp(Mark.RemainingSeconds / FMazeNoiseDefinition::TrailSeconds, 0.f, 1.f) *
+		              FMath::Lerp(0.3f, 1.f, Rank);
+		Dot.Strength = Mark.Strength;
+	}
+
+	View.Footprints = Footprints;
+
 	// Borrow only for this synchronous paint; stale discovery never reveals a regenerated maze.
 	if (const auto* Exploration = ECS->ReadExploration(Player->GetPlayerEntity());
 	    Exploration && Exploration->Maze == Session.Maze && Exploration->Revision == Maze.Revision)

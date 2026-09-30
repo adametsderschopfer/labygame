@@ -7,6 +7,7 @@
 #include "Mass/EntityHandle.h"
 #include "InputCoreTypes.h"
 #include "Player/MazeCameraMotion.h"
+#include "ECS/MazeNoise.h"
 #include "MazeCharacter.generated.h"
 
 UCLASS()
@@ -75,6 +76,14 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Signal)
 	FMazeSignalSnapshot ReplicatedSignal;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Noise)
+	FMazeNoiseSnapshot ReplicatedNoise;
+
+	UFUNCTION()
+	void OnRep_Noise();
+
+	bool bPendingNoiseSnapshot = false;
 
 	UFUNCTION()
 	void OnRep_PlayerSnapshot();

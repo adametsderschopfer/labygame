@@ -14,6 +14,13 @@ struct FMazeMapSignal
 	bool bLocal = false;
 };
 
+struct FMazeMapFootprint
+{
+	FVector2D Position = FVector2D::ZeroVector;
+	float Opacity = 0.f;
+	float Strength = 0.f;
+};
+
 // Borrowed presentation inputs, consumed synchronously by one paint call. No world state is retained.
 struct FMazeMapPaintView
 {
@@ -31,6 +38,7 @@ struct FMazeMapPaintView
 	const FMazeLayout* Layout = nullptr;
 	TConstArrayView<uint8> Seen;
 	TConstArrayView<FMazeMapSignal> Signals;
+	TConstArrayView<FMazeMapFootprint> Footprints;
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 	TConstArrayView<int32> DevelopmentRoute;
 #endif

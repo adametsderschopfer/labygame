@@ -2,8 +2,9 @@
 #include "World/MazeLocationSubsystem.h"
 #include "Player/MazeCharacter.h"
 #include "ECS/MazeVitalsSystem.h"
-#include "ECS/MazePlayerControlDefinition.h"
+#include "ECS/MazeECSSubsystem.h"
 #include "Components/AudioComponent.h"
+#include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
@@ -13,15 +14,9 @@ namespace
 {
 	struct FMazeFootstepAudioDefinition
 	{
-		float WalkDistance = 180.f;
-		float RunDistance = 240.f;
-		float SneakDistance = 140.f;
-		float FirstStepDistance = 35.f;
 		float WalkVolume = 0.22f;
 		float RunVolume = 0.28f;
 		float SneakVolume = 0.12f;
-		float MinimumSpeed = 15.f;
-		float MaximumDelta = 0.15f;
 	};
 	constexpr FMazeFootstepAudioDefinition FootstepDefinition;
 	constexpr int32 FootstepVariants = 6;
@@ -84,9 +79,7 @@ void UMazeFootstepAudioComponent::InitializeAudio()
 
 void UMazeFootstepAudioComponent::ResetPlayback()
 {
-	DistanceSinceStep = 0.f;
-	bHasPreviousLocation = false;
-	bFirstStep = true;
+	bNeedsBaseline = true;
 
 	if (Audio && Audio->IsPlaying())
 		Audio->Stop();
@@ -121,55 +114,41 @@ void UMazeFootstepAudioComponent::TickComponent(float DeltaTime,
 
 	if (!Audio || !Character || !Character->IsLocallyControlled() || !PC || PC->IsMoveInputIgnored() ||
 	    UGameplayStatics::IsGamePaused(this) || !FMazeVitalsSystem::IsAlive(Character->GetVitals()) ||
-	    !Movement->IsMovingOnGround() || DeltaTime <= 0.f || DeltaTime > FootstepDefinition.MaximumDelta ||
-	    Movement->Velocity.Size2D() < FootstepDefinition.MinimumSpeed)
+	    !Movement->IsMovingOnGround() || DeltaTime <= 0.f)
 	{
 		ResetPlayback();
 
 		return;
 	}
 
-	const FVector Location = Character->GetActorLocation();
+	const auto* ECS = GetWorld()->GetSubsystem<UMazeECSSubsystem>();
+	const auto Noise = ECS ? ECS->ReadNoise(Character->GetPlayerEntity()) : FMazeNoiseSnapshot();
 
-	if (!bHasPreviousLocation)
+	if (Noise.MazeRevision == 0)
+		return;
+
+	if (bNeedsBaseline || LastMazeRevision != Noise.MazeRevision || LastMazeSeed != Noise.MazeSeed)
 	{
-		PreviousLocation = Location;
-		bHasPreviousLocation = true;
+		LastMazeRevision = Noise.MazeRevision;
+		LastMazeSeed = Noise.MazeSeed;
+		LastStepSequence = Noise.StepSequence;
+		bNeedsBaseline = false;
 
 		return;
 	}
 
-	const float Distance = FVector::Dist2D(Location, PreviousLocation);
-
-	PreviousLocation = Location;
-
-	const float Speed = Movement->Velocity.Size2D();
-
-	// Ignore teleports/corrections and never emit a burst to catch up after a hitch.
-	if (Distance > Speed * DeltaTime * 2.f + 10.f)
-	{
-		ResetPlayback();
-
-		return;
-	}
-
-	const bool bSneaking = Movement->IsCrouching();
-	const bool bRunning =
-	    !bSneaking &&
-	    Speed > (FMazePlayerControlDefinition::WalkSpeed + FMazePlayerControlDefinition::SprintSpeed) * 0.5f;
-	const int32 Action = bSneaking ? 2 : (bRunning ? 1 : 0);
-	const float StepDistance = bSneaking
-	                               ? FootstepDefinition.SneakDistance
-	                               : (bRunning ? FootstepDefinition.RunDistance : FootstepDefinition.WalkDistance);
-
-	DistanceSinceStep += Distance;
-
-	if (DistanceSinceStep < (bFirstStep ? FootstepDefinition.FirstStepDistance : StepDistance))
+	if (LastStepSequence == Noise.StepSequence)
 		return;
 
-	DistanceSinceStep = 0.f;
-	bFirstStep = false;
+	LastStepSequence = Noise.StepSequence;
 
+	if (Noise.StepSequence == 0 || Noise.Footprints.IsEmpty() || Noise.Footprints.Last().RemainingSeconds <= 0.f)
+		return;
+
+	// Consume the latest accepted event once; never replay a burst after a network/hitch gap.
+	const bool bSneaking = Noise.StepType == EMazeFootstepType::Crouch;
+	const bool bRunning = Noise.StepType == EMazeFootstepType::Run;
+	const int32 Action = bSneaking ? 2 : bRunning ? 1 : 0;
 	const int32 Variant = LastVariant == INDEX_NONE
 	                          ? Variation.RandRange(0, FootstepVariants - 1)
 	                          : (LastVariant + Variation.RandRange(1, FootstepVariants - 1)) % FootstepVariants;

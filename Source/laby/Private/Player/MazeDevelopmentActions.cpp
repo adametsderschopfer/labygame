@@ -115,13 +115,12 @@ void AMazePlayerController::SetDevelopmentCollision(bool bEnabled)
 		DevelopmentPresentation->bOriginalVolumes = Viewport->EngineShowFlags.Volumes;
 	}
 
-	Viewport->EngineShowFlags.SetCollision(bEnabled);
-	Viewport->ToggleShowCollision();
+	if (Viewport->EngineShowFlags.Collision != bEnabled)
+		Viewport->HandleShowCommand(TEXT("Collision"), *GLog, GetWorld());
 
-	if (!bEnabled && DevelopmentPresentation->bOriginalVolumes)
+	if (!bEnabled && Viewport->EngineShowFlags.Volumes != DevelopmentPresentation->bOriginalVolumes)
 	{
-		Viewport->EngineShowFlags.SetVolumes(true);
-		Viewport->ToggleShowVolumes();
+		Viewport->HandleShowCommand(TEXT("Volumes"), *GLog, GetWorld());
 	}
 }
 

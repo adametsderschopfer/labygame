@@ -7,6 +7,7 @@
 #include "ECS/MazeVitals.h"
 #include "ECS/MazePlayerControlDefinition.h"
 #include "ECS/MazeSignal.h"
+#include "ECS/MazeNoise.h"
 #include "Maze/MazeSurface.h"
 #include "Maze/MazeRoomGeometry.h"
 #include "MazeECSFragments.generated.h"

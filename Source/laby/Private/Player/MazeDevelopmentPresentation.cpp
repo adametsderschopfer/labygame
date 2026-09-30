@@ -123,7 +123,7 @@ void AMazePlayerController::RefreshDevelopmentPresentation(float DeltaTime)
 	                        FText::AsCultureInvariant(LexToString(Maze.Seed)))
 	        : MazeDevelopmentText(TEXT("Seed unavailable"), TEXT("Seed недоступен"), TEXT("Semilla no disponible"));
 
-	if (const auto* MazePawn = GetPawn(); MazePawn && Maze.Data)
+	if (const APawn* MazePawn = GetPawn(); MazePawn && Maze.Data)
 	{
 		const auto Place = FMazeDevelopmentSystem::Locate(Maze, MazePawn->GetActorLocation());
 		const FText Area =
@@ -207,10 +207,11 @@ void AMazePlayerController::DestroyDevelopmentPresentation()
 	if (auto* OriginalViewport = DevelopmentPresentation->Viewport.Get();
 	    OriginalViewport && OriginalViewport->GetWorld() == GetWorld() && DevelopmentPresentation->bSavedCollision)
 	{
-		OriginalViewport->EngineShowFlags.SetCollision(DevelopmentPresentation->bOriginalCollision);
-		OriginalViewport->ToggleShowCollision();
-		OriginalViewport->EngineShowFlags.SetVolumes(DevelopmentPresentation->bOriginalVolumes);
-		OriginalViewport->ToggleShowVolumes();
+		if (OriginalViewport->EngineShowFlags.Collision != DevelopmentPresentation->bOriginalCollision)
+			OriginalViewport->HandleShowCommand(TEXT("Collision"), *GLog, GetWorld());
+
+		if (OriginalViewport->EngineShowFlags.Volumes != DevelopmentPresentation->bOriginalVolumes)
+			OriginalViewport->HandleShowCommand(TEXT("Volumes"), *GLog, GetWorld());
 	}
 
 	DevelopmentPresentation.Reset();

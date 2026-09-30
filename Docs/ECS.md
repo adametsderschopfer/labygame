@@ -611,7 +611,7 @@ InstancedStaticMeshComponent, без collision и navigation. При rebuild у�
 
 | Сущность | Компоненты Mass | Обработка |
 | --- | --- | --- |
-| Игрок | Vitals, PlayerInput, PlayerPose, Locomotion, PlayerCommand, Signal, Progress, Exploration, Items | Управление, скорость, прыжок, урон, восстановление, свисток-маяк, определение выхода, исследование, экипированные предметы |
+| Игрок | Vitals, PlayerInput, PlayerPose, Locomotion, PlayerCommand, Signal, Noise, Progress, Exploration, Items | Управление, скорость, прыжок, урон, восстановление, свисток-маяк, шум и шаги, определение выхода, исследование, экипированные предметы |
 | Лабиринт | Generation | Seed, размеры, топология, поверхность стен, положение пола, старта и выходов |
 | Сессия | Session | Активный лабиринт, открытое меню/настройки, начало игры, видимость карты |
 
@@ -682,10 +682,9 @@ Actor/Character, PlayerController, GameMode и HUD служат адаптера
 
 ## Локальные звуки шагов
 
-- `UMazeFootstepAudioComponent` — только представление локального персонажа. Оно читает физические наблюдения CharacterMovement и read-only показатели ECS; игровых событий шума/слышимости, состояния ECS или сетевых правил не добавляет.
-- Динамический компонент создаётся в BeginPlay `AMazeCharacter`, его косметический тик идёт в `TG_PostPhysics` после CharacterMovement. Кэш расстояния и выбора WAV принадлежит этому компоненту и сбрасывается на остановке, потере земли/управления, паузе, смерти, телепорте и `ClearLocalInput`. EndPlay останавливает AudioComponent и освобождает ссылки на ассеты. Dedicated server не воспроизводит звук.
-- Используются отдельные WASD Sound Stone Walk/Run/Sneak записи (6 вариантов на действие). Настройки, лицензия и импорт описаны в `Docs/Footsteps.md`. Для удалённых игроков звук пока не реализован; это не источник авторитетной информации для AI.
-
+- `UMazeFootstepAudioComponent` — локальное представление собственного персонажа. Оно читает detached `ReadNoise` snapshot из ECS и воспроизводит новый принятый `StepSequence` один раз. Классификация и ритм шага принадлежат `FMazeNoiseSystem`, отдельного счётчика расстояния в компоненте больше нет.
+- Динамический компонент создаётся в BeginPlay `AMazeCharacter`; косметический тик идёт в `TG_PostPhysics` после CharacterMovement. Компонент владеет AudioComponent, выбором WAV/pitch и последним воспроизведённым sequence/revision/seed. Фокус, пауза, потеря земли, смерть и ClearLocalInput сбрасывают baseline, без воспроизведения старых событий после возврата. EndPlay освобождает ресурсы; dedicated server не создаёт звук, но рассчитывает ECS-шум всех игроков.
+- Используются прежние WASD Stone Walk/Run/Sneak записи (6 вариантов), громкости и pitch. Настройки, лицензия и импорт описаны в `Docs/Footsteps.md`. Пространственное аудио удалённых игроков не добавлено. Клиент получает авторитетные шаги без предсказания; сетевой лаг может задерживать локальное воспроизведение.
 ## Свисток-маяк игрока
 
 - `FMazeSignalFragment` сущности игрока владеет последним принятым сигналом, серверным откатом и временем показа на карте. `FMazeSignalSystem` принимает одноразовый запрос только от живого игрока с разрешённым вводом после старта сессии и комнаты, нормализует направление, увеличивает sequence и запускает откат на 4 секунды и показ на 3 секунды. При паузе оба таймера стоят; при уничтожении сущности состояние исчезает вместе с ней.
@@ -819,14 +818,74 @@ representation: resident/pending visual chunks, preparation counts, pending PSOs
 and source geometry bytes (not process memory or VRAM). Shared MazeRoomLabel
 preserves existing localization keys and is used by map and diagnostics.
 
-Collision uses UE 5.8 UGameViewportClient EngineShowFlags/ToggleShowCollision,
+Collision uses UE 5.8 UGameViewportClient's public HandleShowCommand,
 including hidden collider scene proxies; original collision/volume flags are restored
 on teardown only for the same world/viewport. All added controls, strings, state,
 URL parsing, teleport/resource hooks and immortality are excluded in Shipping/Test.
 Player/world creation resets cheats and preferences. Teardown removes both widgets.
 
-For this extension only formatting, source/diff and installed-engine API inspection
-were performed. Builds, Play and tests were explicitly not run at the user's request.
-The earlier build results above apply to the initial menu, not this extension. The
-new controller presentation field/native vitals member require safe application on
-the next full editor rebuild; the running editor was not terminated or patched.
+The extension was initially committed without building as requested. The subsequent
+player-noise task included an explicit build request: full Win64 Development Editor
+and Shipping game builds succeeded with the editor closed, including this extension.
+Private viewport helpers were replaced with the public engine show-command handler.
+No Play or gameplay tests were run; the user's editor was not terminated.
+
+## Player noise and movement trail (2026-09-30)
+
+Each player entity now has a focused FMazeNoiseFragment. Value.Coefficient is the
+sole authoritative recent-noise intensity in [0,1]; LastSource/EventSequence
+identify accepted emissions, StepSequence/StepType identify accepted footsteps.
+The fragment owns stride history and up to five transient marks, never an Actor
+per footprint. FMazeNoiseDefinition is the single gameplay configuration: whistle
+1.0, running step 0.55, walking 0.28, crouched step 0.10, lamp click +0.04 and door
+interaction +0.08. Step/whistle impulses raise the coefficient to at least their
+strength; clicks add and clamp to 1. Silence decays by 0.6 per simulation second.
+
+FMazeNoiseSystem is pure. UMazeECSSubsystem's existing synchronous game-thread
+Tick runs NoiseQuery after signal display/cooldown updates, before vitals updates.
+It reads the engine-observed pose and health; on server/standalone it detects
+actual grounded displacement, chooses stride/type from physical speed/crouch,
+updates intensity and ages marks. Walk/run/crouch strides remain 180/240/140 cm;
+first step 35 cm. Large delta, correction/teleport, absent input/ground or low
+speed cannot emit a burst. Discontinuities clear the trail even while menus are
+open; death or generation/entity/seed/revision changes reset history. Pause freezes
+noise and mark aging. Native CharacterMovement still owns motion/collision.
+
+Only successful RequestSignal, ToggleHeadlamp and ToggleDoor emit their respective
+noise impulse, once after existing authority/ownership/session/action validation.
+Door noise represents the accepted handle interaction (open or close), not a
+per-frame leaf animation pulse. Rejected, exhausted/cooldown-blocked actions and
+client replication never emit gameplay noise. Current flashlight/door wave assets
+are unchanged: this feature adds the gameplay fact, not new audio resources.
+
+AMazeCharacter ReplicatedNoise is an owner-only transport mirror. OnRep applies
+validated bounded snapshots to client ECS through ReceiveNoise, retrying if the
+corresponding topology has not arrived; no entity handles cross travel/network.
+Snapshots carry seed/revision, native FVector_NetQuantize mark positions, mark ages
+quantized to tenths of a second and coefficient to 0.05 increments. Clients never
+run emission/stride/coefficient rules: PresentationElapsed only fades received
+marks, leaving the authoritative received coefficient untouched. The local audio
+adapter consumes the latest step once without replaying missed sequences or
+expired events; no client prediction or new RPC was added. Server noise is still
+computed for remote players and dedicated-server worlds independently of audio.
+
+ReadNoise returns detached copies. Both map sizes draw only the owning player's
+last five marks, with a 3-second lifetime, older-to-newer opacity gradient and
+radial vertex-alpha fade. Unknown terrain is not revealed; existing whistle rings
+remain. Geometry is bounded to five 20-segment fans, uses the existing Slate batch,
+and introduces no texture, widget asset, location dependency or loading work.
+Representation eviction has no effect on noise identity/cadence; its short history
+expires by design, not by chunk unloading.
+
+UE 5.8's native AI Hearing ReportNoiseEvent was inspected, but no AI consumers or
+AIModule dependency are needed for this feature. Hearing can later consume ECS
+emissions as an adapter; it must not become another owner of noise/gameplay rules.
+Native Mass queries, CharacterMovement observations, quantized vector replication
+and Slate vertex gradients are used now. No experimental plugin was introduced.
+
+Formatting and static diff/ownership/lifecycle inspection completed. At the user's
+request, full Win64 Development Editor and Shipping game builds succeeded with the
+editor closed. Shipping object-symbol inspection found no development feature
+symbols. No Play, automation tests or audio/render captures were run. The reflected
+fragment/snapshot and replicated property were applied through the full build,
+without terminating the user's editor or using Live Coding on existing layouts.

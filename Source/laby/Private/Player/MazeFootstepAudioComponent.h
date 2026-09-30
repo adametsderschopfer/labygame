@@ -7,7 +7,7 @@
 class UAudioComponent;
 class USoundWave;
 
-// Per-pawn local presentation only; never produces gameplay noise or AI events.
+// Local audio consumes accepted ECS step sequences; owns only playback resources/caches.
 UCLASS(Transient)
 class UMazeFootstepAudioComponent : public UActorComponent
 {
@@ -30,10 +30,10 @@ private:
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<USoundWave>> Sounds;
 
-	FVector PreviousLocation = FVector::ZeroVector;
-	float DistanceSinceStep = 0.f;
-	bool bHasPreviousLocation = false;
-	bool bFirstStep = true;
+	uint32 LastStepSequence = 0;
+	uint32 LastMazeRevision = 0;
+	int32 LastMazeSeed = 0;
+	bool bNeedsBaseline = true;
 	int32 LastVariant = INDEX_NONE;
 	FRandomStream Variation{29873};
 };

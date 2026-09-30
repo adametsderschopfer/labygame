@@ -82,6 +82,9 @@ public:
 	bool RequestSignal(FMassEntityHandle Entity, FMazeSignalSnapshot& OutSignal);
 	bool ReceiveSignal(FMassEntityHandle Entity, const FMazeSignalSnapshot& Signal);
 	FMazeSignalView ReadSignal(FMassEntityHandle Entity) const;
+	FMazeNoiseSnapshot ReadNoise(FMassEntityHandle Entity) const;
+	FMazeNoiseSnapshot ReadNoiseForReplication(FMassEntityHandle Entity) const;
+	bool ReceiveNoise(FMassEntityHandle Entity, const FMazeNoiseSnapshot& Snapshot);
 	int32 ReadReachedExit(FMassEntityHandle Entity) const;
 	FMassEntityHandle CreateMaze(int32 Seed, FVector Origin);
 	void DestroyMaze(FMassEntityHandle Entity);
@@ -123,6 +126,7 @@ private:
 	TUniquePtr<FMassEntityQuery> GenerationQuery;
 	TUniquePtr<FMassEntityQuery> InputQuery;
 	TUniquePtr<FMassEntityQuery> SignalQuery;
+	TUniquePtr<FMassEntityQuery> NoiseQuery;
 	FMassArchetypeHandle PlayerArchetype;
 	FMassArchetypeHandle MazeArchetype;
 	FMassArchetypeHandle DoorArchetype;
@@ -138,5 +142,6 @@ private:
 	void RebuildWorldItems(FMassEntityHandle MazeEntity);
 	void DestroyWorldItems(FMassEntityHandle MazeEntity);
 	void UpdateProgress(FMassEntityHandle Entity);
+	void EmitNoise(FMassEntityHandle Entity, EMazeNoiseSource Source);
 	template <typename T> T* FindFragment(FMassEntityHandle Entity) const;
 };

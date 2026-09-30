@@ -306,6 +306,9 @@ void AMazeCharacter::BeginPlay()
 	{
 		OnRep_PlayerSnapshot();
 		OnRep_Items();
+
+		if (ReplicatedNoise.MazeRevision != 0)
+			OnRep_Noise();
 	}
 	else
 		ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);
@@ -323,6 +326,7 @@ void AMazeCharacter::BeginPlay()
 
 void AMazeCharacter::EndPlay(const EEndPlayReason::Type Reason)
 {
+	bPendingNoiseSnapshot = false;
 	ClearLocalInput();
 	CameraMotion = FMazeCameraMotion();
 
@@ -519,6 +523,9 @@ void AMazeCharacter::Tick(float DeltaSeconds)
 	if (!ECSSubsystem || (!HasAuthority() && !IsLocallyControlled()))
 		return;
 
+	if (!HasAuthority() && bPendingNoiseSnapshot)
+		OnRep_Noise();
+
 	// Input focus and physics are observations, not gameplay state owned by the Actor.
 	if (const auto* PC = Cast<APlayerController>(Controller); PC && IsLocallyControlled())
 	{
@@ -575,6 +582,7 @@ void AMazeCharacter::Tick(float DeltaSeconds)
 		ReplicatedVitals = GetVitals();
 		ReplicatedExit = GetReachedExit();
 		ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);
+		ReplicatedNoise = ECSSubsystem->ReadNoiseForReplication(PlayerEntity);
 	}
 
 	if (!IsLocallyControlled() && !Command.bDead)
@@ -1146,6 +1154,7 @@ void AMazeCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME_CONDITION(AMazeCharacter, ReplicatedExit, COND_OwnerOnly);
 	DOREPLIFETIME(AMazeCharacter, ReplicatedItems);
 	DOREPLIFETIME(AMazeCharacter, ReplicatedSignal);
+	DOREPLIFETIME_CONDITION(AMazeCharacter, ReplicatedNoise, COND_OwnerOnly);
 }
 
 void AMazeCharacter::OnRep_Items()
@@ -1181,6 +1190,30 @@ void AMazeCharacter::OnRep_PlayerSnapshot()
 {
 	if (ECSSubsystem)
 		ECSSubsystem->ReceivePlayer(PlayerEntity, ReplicatedVitals, ReplicatedExit);
+}
+
+void AMazeCharacter::OnRep_Noise()
+{
+	bPendingNoiseSnapshot = false;
+
+	if (HasAuthority() || ReplicatedNoise.MazeRevision == 0)
+		return;
+
+	if (!ECSSubsystem)
+	{
+		bPendingNoiseSnapshot = true;
+
+		return;
+	}
+
+	if (ECSSubsystem->ReceiveNoise(PlayerEntity, ReplicatedNoise))
+		return;
+
+	const auto Maze = ECSSubsystem->ReadMaze(ECSSubsystem->ReadSession().Maze);
+
+	// Seed/topology replication can arrive after this owner-only snapshot. Retry only until generation catches up.
+	bPendingNoiseSnapshot = !Maze.Data || ReplicatedNoise.MazeRevision > Maze.Revision ||
+	                        (ReplicatedNoise.MazeRevision == Maze.Revision && ReplicatedNoise.MazeSeed != Maze.Seed);
 }
 
 void AMazeCharacter::ServerSetSprint_Implementation(bool bHeld)

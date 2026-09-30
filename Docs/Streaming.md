@@ -384,3 +384,15 @@ collision residency, manifest asset, new asynchronous participant or memory-budg
 change is introduced. Diagnostic source bytes do not claim bounded world memory.
 These development-only paths need user-run teleport/loading checks; no Play/tests
 or performance captures were launched.
+
+## Noise state and footprint presentation
+
+Noise is per-player ECS state regardless of resident visual chunks. Physics stays
+resident and CharacterMovement observations drive the existing synchronous ECS
+schedule on authority, including dedicated servers. Five transient map marks expire
+by simulation time/revision/death, rather than visual eviction. The UI reads copied
+snapshots and draws bounded native Slate vertex fans; no footprint Actors, extra
+textures/materials, manifest entries, async participants or streaming-radius changes
+are added. Existing registered footstep/whistle resources and preload policy remain.
+Remote sound playback/prediction, AI hearing consumers and performance measurements
+are outside this change; gameplay checking remains user-run.
