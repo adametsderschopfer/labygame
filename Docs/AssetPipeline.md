@@ -1,5 +1,16 @@
 # 3D asset and content pipeline
 
+## Card access presentation
+
+Cards use resident cube components and existing ivory/metal finishes, including
+a local native first-person view when selected. Readers use grouped ISM on both
+wall faces. Their generated unlit red/green screen shares one material and
+per-instance custom data; no per-door dynamic material or light is needed.
+The new material lives under `Content/Doors/CardAccess/Materials`, with source
+and provenance in `ArtSource/Doors/CardAccess/README.md`. The Maze location
+manifest preloads/cooks it before typed resource resolution. Mass ECS owns
+gameplay and regeneration; presentation does not reroll a lock or restore loot.
+
 This document defines the target contract for new and touched visual content in
 LABY. It covers source files, Unreal packages, prefab-like composition, runtime
 representation, loading and quality gates. It does not require a bulk migration

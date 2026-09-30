@@ -272,6 +272,15 @@
 					"Children": [
 						{
 							"Source": {
+								"Text": "LOCKED"
+							},
+							"Translation": {
+								"Text": "LOCKED"
+							},
+							"Key": "Locked"
+						},
+						{
+							"Source": {
 								"Text": "ЗАКРЫТЬ"
 							},
 							"Translation": {
@@ -384,6 +393,24 @@
 				{
 					"Namespace": "Items",
 					"Children": [
+						{
+							"Source": {
+								"Text": "Access card"
+							},
+							"Translation": {
+								"Text": "Access card"
+							},
+							"Key": "AccessCard"
+						},
+						{
+							"Source": {
+								"Text": "CARD"
+							},
+							"Translation": {
+								"Text": "CARD"
+							},
+							"Key": "ShortAccessCard"
+						},
 						{
 							"Source": {
 								"Text": "ФОН"

@@ -240,7 +240,7 @@
 							"Keys": [
 								{
 									"Key": "EastShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(841)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(873)"
 								}
 							]
 						},
@@ -251,7 +251,7 @@
 							"Keys": [
 								{
 									"Key": "East",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(845)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(877)"
 								}
 							]
 						},
@@ -262,7 +262,7 @@
 							"Keys": [
 								{
 									"Key": "NorthShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(840)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(872)"
 								}
 							]
 						},
@@ -273,7 +273,7 @@
 							"Keys": [
 								{
 									"Key": "North",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(844)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(876)"
 								}
 							]
 						},
@@ -284,7 +284,7 @@
 							"Keys": [
 								{
 									"Key": "SouthShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(842)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(874)"
 								}
 							]
 						},
@@ -295,7 +295,7 @@
 							"Keys": [
 								{
 									"Key": "South",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(846)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(878)"
 								}
 							]
 						},
@@ -306,7 +306,7 @@
 							"Keys": [
 								{
 									"Key": "WestShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(843)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(875)"
 								}
 							]
 						},
@@ -317,7 +317,7 @@
 							"Keys": [
 								{
 									"Key": "West",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(847)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(879)"
 								}
 							]
 						}
@@ -328,12 +328,23 @@
 					"Children": [
 						{
 							"Source": {
+								"Text": "LOCKED"
+							},
+							"Keys": [
+								{
+									"Key": "Locked",
+									"Path": "Source/laby/Private/UI/MazeItemPresentation.cpp(323)"
+								}
+							]
+						},
+						{
+							"Source": {
 								"Text": "ЗАКРЫТЬ"
 							},
 							"Keys": [
 								{
 									"Key": "Close",
-									"Path": "Source/laby/Private/UI/MazeItemPresentation.cpp(320)"
+									"Path": "Source/laby/Private/UI/MazeItemPresentation.cpp(324)"
 								}
 							]
 						},
@@ -344,7 +355,7 @@
 							"Keys": [
 								{
 									"Key": "Open",
-									"Path": "Source/laby/Private/UI/MazeItemPresentation.cpp(320)"
+									"Path": "Source/laby/Private/UI/MazeItemPresentation.cpp(325)"
 								}
 							]
 						}
@@ -453,7 +464,7 @@
 							"Keys": [
 								{
 									"Key": "StaminaRecovering",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(356)"
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(376)"
 								}
 							]
 						}
@@ -464,12 +475,34 @@
 					"Children": [
 						{
 							"Source": {
+								"Text": "Access card"
+							},
+							"Keys": [
+								{
+									"Key": "AccessCard",
+									"Path": "Source/laby/Private/UI/MazeItemPresentation.cpp(229)"
+								}
+							]
+						},
+						{
+							"Source": {
+								"Text": "CARD"
+							},
+							"Keys": [
+								{
+									"Key": "ShortAccessCard",
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(355)"
+								}
+							]
+						},
+						{
+							"Source": {
 								"Text": "ФОН"
 							},
 							"Keys": [
 								{
 									"Key": "ShortHeadlamp",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(255)"
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(356)"
 								}
 							]
 						},
@@ -480,7 +513,7 @@
 							"Keys": [
 								{
 									"Key": "Headlamp",
-									"Path": "Source/laby/Private/UI/MazeItemPresentation.cpp(228)"
+									"Path": "Source/laby/Private/UI/MazeItemPresentation.cpp(230)"
 								}
 							]
 						}
@@ -1017,7 +1050,7 @@
 							"Keys": [
 								{
 									"Key": "RoomClosed",
-									"Path": "Source/laby/Private/World/MazeGameMode.cpp(97)"
+									"Path": "Source/laby/Private/World/MazeGameMode.cpp(120)"
 								}
 							]
 						},
@@ -1044,7 +1077,7 @@
 							"Keys": [
 								{
 									"Key": "RecordsShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(44)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(43)"
 								}
 							]
 						},
@@ -1055,7 +1088,7 @@
 							"Keys": [
 								{
 									"Key": "Records",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(45)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(44)"
 								}
 							]
 						},
@@ -1066,7 +1099,7 @@
 							"Keys": [
 								{
 									"Key": "LaundryShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(52)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(50)"
 								}
 							]
 						},
@@ -1077,7 +1110,7 @@
 							"Keys": [
 								{
 									"Key": "PoolShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(76)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(73)"
 								}
 							]
 						},
@@ -1088,7 +1121,7 @@
 							"Keys": [
 								{
 									"Key": "Pool",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(76)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(73)"
 								}
 							]
 						},
@@ -1099,7 +1132,7 @@
 							"Keys": [
 								{
 									"Key": "Laundry",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(53)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(51)"
 								}
 							]
 						},
@@ -1110,7 +1143,7 @@
 							"Keys": [
 								{
 									"Key": "HydrotherapyShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(68)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(65)"
 								}
 							]
 						},
@@ -1121,7 +1154,7 @@
 							"Keys": [
 								{
 									"Key": "Hydrotherapy",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(69)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(66)"
 								}
 							]
 						},
@@ -1132,7 +1165,7 @@
 							"Keys": [
 								{
 									"Key": "GeneratorShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(56)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(54)"
 								}
 							]
 						},
@@ -1143,7 +1176,7 @@
 							"Keys": [
 								{
 									"Key": "Generator",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(57)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(55)"
 								}
 							]
 						},
@@ -1154,7 +1187,7 @@
 							"Keys": [
 								{
 									"Key": "IsolationShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(36)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(35)"
 								}
 							]
 						},
@@ -1165,7 +1198,7 @@
 							"Keys": [
 								{
 									"Key": "Isolation",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(37)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(36)"
 								}
 							]
 						},
@@ -1176,7 +1209,7 @@
 							"Keys": [
 								{
 									"Key": "Recreation",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(61)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(59)"
 								}
 							]
 						},
@@ -1187,7 +1220,7 @@
 							"Keys": [
 								{
 									"Key": "WashroomShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(72)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(69)"
 								}
 							]
 						},
@@ -1198,7 +1231,7 @@
 							"Keys": [
 								{
 									"Key": "RecreationShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(60)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(58)"
 								}
 							]
 						},
@@ -1209,7 +1242,7 @@
 							"Keys": [
 								{
 									"Key": "TreatmentShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(28)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(27)"
 								}
 							]
 						},
@@ -1220,7 +1253,7 @@
 							"Keys": [
 								{
 									"Key": "StaffShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(40)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(39)"
 								}
 							]
 						},
@@ -1231,7 +1264,7 @@
 							"Keys": [
 								{
 									"Key": "Ward",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(22)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(21)"
 								}
 							]
 						},
@@ -1242,7 +1275,7 @@
 							"Keys": [
 								{
 									"Key": "Washroom",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(73)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(70)"
 								}
 							]
 						},
@@ -1253,7 +1286,7 @@
 							"Keys": [
 								{
 									"Key": "Staff",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(41)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(40)"
 								}
 							]
 						},
@@ -1264,7 +1297,7 @@
 							"Keys": [
 								{
 									"Key": "Treatment",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(29)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(28)"
 								}
 							]
 						},
@@ -1275,7 +1308,7 @@
 							"Keys": [
 								{
 									"Key": "StorageShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(48)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(47)"
 								}
 							]
 						},
@@ -1286,7 +1319,7 @@
 							"Keys": [
 								{
 									"Key": "ExaminationShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(32)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(31)"
 								}
 							]
 						},
@@ -1297,7 +1330,7 @@
 							"Keys": [
 								{
 									"Key": "DiningShort",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(64)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(62)"
 								}
 							]
 						},
@@ -1308,7 +1341,7 @@
 							"Keys": [
 								{
 									"Key": "Storage",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(49)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(47)"
 								}
 							]
 						},
@@ -1319,7 +1352,7 @@
 							"Keys": [
 								{
 									"Key": "Examination",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(33)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(32)"
 								}
 							]
 						},
@@ -1330,7 +1363,7 @@
 							"Keys": [
 								{
 									"Key": "Dining",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(65)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(62)"
 								}
 							]
 						}
@@ -1476,7 +1509,7 @@
 							"Keys": [
 								{
 									"Key": "Recovering",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(360)"
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(380)"
 								}
 							]
 						},
@@ -1487,7 +1520,7 @@
 							"Keys": [
 								{
 									"Key": "You",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(891)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(923)"
 								}
 							]
 						},
@@ -1498,7 +1531,7 @@
 							"Keys": [
 								{
 									"Key": "Stamina",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(361)"
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(381)"
 								}
 							]
 						},
@@ -1520,7 +1553,7 @@
 							"Keys": [
 								{
 									"Key": "Exit",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(895)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(927)"
 								},
 								{
 									"Key": "Quit",
@@ -1612,7 +1645,7 @@
 							"Keys": [
 								{
 									"Key": "Explored",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(892)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(924)"
 								}
 							]
 						},
@@ -1656,7 +1689,7 @@
 							"Keys": [
 								{
 									"Key": "Room",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(897)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(929)"
 								}
 							]
 						},
@@ -1722,7 +1755,7 @@
 							"Keys": [
 								{
 									"Key": "Start",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(894)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(926)"
 								}
 							]
 						},
@@ -1733,7 +1766,7 @@
 							"Keys": [
 								{
 									"Key": "Unknown",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(893)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(925)"
 								}
 							]
 						},
@@ -1788,7 +1821,7 @@
 							"Keys": [
 								{
 									"Key": "Gap",
-									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(896)"
+									"Path": "Source/laby/Private/UI/MazeMapPaint.cpp(928)"
 								}
 							]
 						},
@@ -1980,7 +2013,7 @@
 							"Keys": [
 								{
 									"Key": "ExitText",
-									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(375)"
+									"Path": "Source/laby/Private/UI/MazeWidgets.cpp(395)"
 								}
 							]
 						},
@@ -2106,7 +2139,7 @@
 							"Keys": [
 								{
 									"Key": "Exit",
-									"Path": "Source/laby/Private/World/MazeWorld.cpp(385)"
+									"Path": "Source/laby/Private/World/MazeWorld.cpp(474)"
 								}
 							]
 						}

@@ -49,14 +49,19 @@ public:
 	bool ReadHeadlampEnabled(FMassEntityHandle Entity) const;
 	bool ToggleHeadlamp(FMassEntityHandle Entity);
 	bool SelectInventorySlot(FMassEntityHandle Entity, int32 Slot);
-	FMazeWorldItemView ReadWorldItem(FMassEntityHandle Maze) const;
+	bool CycleInventorySlot(FMassEntityHandle Entity, int32 Step);
+	FMazeWorldItemView ReadWorldItem(FMassEntityHandle Maze, int32 ItemId = FMazeItemDefinition::HeadlampWorldId) const;
 	bool PickupWorldItem(FMassEntityHandle Player,
 	                     FMassEntityHandle Maze,
 	                     int32 ItemId,
 	                     const FVector& EyeLocation,
 	                     const FVector& AimDirection);
 	bool DropSelectedItem(FMassEntityHandle Player, FMassEntityHandle Maze, const FVector& Location);
-	void ReceiveWorldItemSnapshot(FMassEntityHandle Maze, uint32 Revision, const FVector& Location, bool bAvailable);
+	void ReceiveWorldItemSnapshot(FMassEntityHandle Maze,
+	                              uint32 Revision,
+	                              const FVector& Location,
+	                              bool bAvailable,
+	                              int32 ItemId = FMazeItemDefinition::HeadlampWorldId);
 	void ReceiveItems(FMassEntityHandle Entity, const FMazeItemsSnapshot& Snapshot);
 	FMazeVitals ReadVitals(FMassEntityHandle Entity) const;
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST

@@ -183,9 +183,10 @@ int32 MazeItemPresentation::PaintFocus(const UUserWidget& Owner,
 	const auto* Player = Controller ? Cast<AMazeCharacter>(Controller->GetPawn()) : nullptr;
 	TArray<FVector> WorldOutline;
 	FVector ItemLocation;
+	EMazeItemKind Kind = EMazeItemKind::None;
 
 	if (!Player || Controller->IsMenuOpen() || Controller->IsMapOpen() ||
-	    !Player->GetFocusedPickup(WorldOutline, ItemLocation))
+	    !Player->GetFocusedPickup(WorldOutline, ItemLocation, &Kind))
 		return Layer;
 
 	FVector2D Minimum(TNumericLimits<double>::Max(), TNumericLimits<double>::Max());
@@ -225,7 +226,8 @@ int32 MazeItemPresentation::PaintFocus(const UUserWidget& Owner,
 	const auto KeyFont = MazeInterfaceStyle::Font(17, 0);
 	const auto Measure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
 	const float KeyWidth = FMath::Max(32.f, Measure->Measure(KeyText, KeyFont).X + 16.f);
-	const FText ItemName = NSLOCTEXT("Maze.Items", "Headlamp", "Фонарик");
+	const FText ItemName = Kind == EMazeItemKind::AccessCard ? NSLOCTEXT("Maze.Items", "AccessCard", "Access card")
+	                                                         : NSLOCTEXT("Maze.Items", "Headlamp", "Фонарик");
 	const auto ItemFont = MazeInterfaceStyle::Font(17, 0);
 	const FVector2D ItemTextSize = Measure->Measure(ItemName, ItemFont);
 	const float NameAreaWidth = FMath::Max(120.f, FMath::CeilToFloat(ItemTextSize.X) + 24.f);
@@ -305,8 +307,10 @@ int32 MazeItemPresentation::PaintDoorFocus(const UUserWidget& Owner,
 	const auto* Player = Controller ? Cast<AMazeCharacter>(Controller->GetPawn()) : nullptr;
 	FVector Handle;
 	bool bOpen = false;
+	bool bLocked = false;
 
-	if (!Player || Controller->IsMenuOpen() || Controller->IsMapOpen() || !Player->GetFocusedDoor(Handle, bOpen))
+	if (!Player || Controller->IsMenuOpen() || Controller->IsMapOpen() ||
+	    !Player->GetFocusedDoor(Handle, bOpen, &bLocked))
 		return Layer;
 
 	FVector2D Anchor;
@@ -316,18 +320,20 @@ int32 MazeItemPresentation::PaintDoorFocus(const UUserWidget& Owner,
 
 	const FVector2D Screen = Geometry.GetLocalSize();
 	const FText KeyText = MazeKeyBindings::GetKey(TEXT("Interact")).GetDisplayName();
-	const FText ActionText =
-	    bOpen ? NSLOCTEXT("Maze.Doors", "Close", "ЗАКРЫТЬ") : NSLOCTEXT("Maze.Doors", "Open", "ОТКРЫТЬ");
+	const FText ActionText = bLocked ? NSLOCTEXT("Maze.Doors", "Locked", "LOCKED")
+	                         : bOpen ? NSLOCTEXT("Maze.Doors", "Close", "ЗАКРЫТЬ")
+	                                 : NSLOCTEXT("Maze.Doors", "Open", "ОТКРЫТЬ");
 	const auto Font = MazeInterfaceStyle::Font(17, 0);
 	const auto Measure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
 	const FVector2D ActionTextSize = Measure->Measure(ActionText, Font);
 	const float NameAreaWidth = FMath::Max(132.f, FMath::CeilToFloat(ActionTextSize.X) + 24.f);
 	const float KeyWidth = FMath::Max(40.f, Measure->Measure(KeyText, Font).X + 16.f);
-	const FVector2D Size(NameAreaWidth + 12.f + KeyWidth + 12.f, 52.f);
+	const FVector2D Size(NameAreaWidth + (bLocked ? 0.f : 12.f + KeyWidth + 12.f), 52.f);
 	const FVector2D Position(FMath::Clamp(Anchor.X + 24.f, 12.f, Screen.X - Size.X - 12.f),
 	                         FMath::Clamp(Anchor.Y - 70.f, 12.f, Screen.Y - Size.Y - 12.f));
 	const auto Palette = MazeInterfaceStyle::Palette();
-	const FLinearColor Accent = Palette.Accent.CopyWithNewOpacity(.95f);
+	const FLinearColor Accent =
+	    bLocked ? FLinearColor(.42f, .44f, .46f, .95f) : Palette.Accent.CopyWithNewOpacity(.95f);
 	const FVector2D Elbow(Anchor.X + 15.f, Position.Y + Size.Y * .5f);
 	const TArray<FVector2D> Leader = {Anchor, Elbow, Position + FVector2D(0.f, Size.Y * .5f)};
 
@@ -356,7 +362,10 @@ int32 MazeItemPresentation::PaintDoorFocus(const UUserWidget& Owner,
 	    ActionText,
 	    Font,
 	    ESlateDrawEffect::None,
-	    Palette.Ink);
+	    bLocked ? Accent : Palette.Ink);
+
+	if (bLocked)
+		return Layer;
 
 	const FVector2D KeyPosition = Position + FVector2D(NameAreaWidth + 12.f, 9.f);
 

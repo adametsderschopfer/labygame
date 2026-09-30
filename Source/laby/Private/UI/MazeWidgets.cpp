@@ -245,18 +245,30 @@ void UMazeHUDWidget::NativeConstruct()
 	LastShownSlot = INDEX_NONE;
 
 	if (auto* Inventory = Cast<UCanvasPanel>(GetWidgetFromName(TEXT("InventorySlots"))))
-		if (!GetWidgetFromName(TEXT("WardSlotItem1")))
+		for (int32 Index = 1; Index <= FMazeItemDefinition::InventoryCapacity; ++Index)
 		{
-			auto* Label = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("WardSlotItem1"));
+			const FName Name(*FString::Printf(TEXT("WardSlotItem%d"), Index));
 
-			Label->SetFont(MazeInterfaceStyle::Font(14, 0));
+			if (GetWidgetFromName(Name))
+				continue;
+
+			auto* Image = GetWidgetFromName(*FString::Printf(TEXT("WardSlot%d"), Index));
+
+			if (!Image)
+				Image = GetWidgetFromName(*FString::Printf(TEXT("InventorySlot%d"), Index));
+
+			const auto* ImageSlot = Image ? Cast<UCanvasPanelSlot>(Image->Slot) : nullptr;
+
+			if (!ImageSlot)
+				continue;
+
+			auto* Label = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), Name);
+			Label->SetFont(MazeInterfaceStyle::Font(12, 0));
 			Label->SetJustification(ETextJustify::Center);
 			Label->SetVisibility(ESlateVisibility::HitTestInvisible);
-			Label->SetText(NSLOCTEXT("Maze.Items", "ShortHeadlamp", "ФОН"));
 			auto* CanvasSlot = Inventory->AddChildToCanvas(Label);
-
-			CanvasSlot->SetPosition(FVector2D(4.f, 16.f));
-			CanvasSlot->SetSize(FVector2D(46.f, 24.f));
+			CanvasSlot->SetPosition(ImageSlot->GetPosition() + FVector2D(2.f, (ImageSlot->GetSize().Y - 24.f) * .5f));
+			CanvasSlot->SetSize(FVector2D(ImageSlot->GetSize().X - 4.f, 24.f));
 		}
 
 	for (const auto& Entry : MazeText::WidgetLabels())
@@ -328,17 +340,25 @@ void UMazeHUDWidget::NativeTick(const FGeometry& Geometry, float DeltaSeconds)
 		LastShownSlot = Inventory.SelectedSlot;
 	}
 
-	const FMazeItemInstance* Lamp = Inventory.Items.FindByPredicate(
-	    [](const FMazeItemInstance& Item)
-	    {
-		    return Item.Kind == EMazeItemKind::Headlamp && Item.Slot == EMazeEquipmentSlot::Head;
-	    });
+	for (int32 InventoryIndex = 0; InventoryIndex < FMazeItemDefinition::InventoryCapacity; ++InventoryIndex)
+	{
+		const FName Name(*FString::Printf(TEXT("WardSlotItem%d"), InventoryIndex + 1));
+		const FMazeItemInstance* Item =
+		    Inventory.Items.IsValidIndex(InventoryIndex) && Inventory.Items[InventoryIndex].Id != INDEX_NONE
+		        ? &Inventory.Items[InventoryIndex]
+		        : nullptr;
 
-	Visible(this, TEXT("WardSlotItem1"), Lamp != nullptr);
+		Visible(this, *Name.ToString(), Item != nullptr);
 
-	if (auto* Label = Cast<UTextBlock>(GetWidgetFromName(TEXT("WardSlotItem1"))))
-		Label->SetColorAndOpacity(FSlateColor(Lamp && Lamp->bEnabled ? MazeInterfaceStyle::Palette().Accent
-		                                                             : MazeInterfaceStyle::Palette().Ink));
+		if (auto* Label = Cast<UTextBlock>(GetWidgetFromName(Name)); Label && Item)
+		{
+			Label->SetText(Item->Kind == EMazeItemKind::AccessCard ? NSLOCTEXT("Maze.Items", "ShortAccessCard", "CARD")
+			                                                       : NSLOCTEXT("Maze.Items", "ShortHeadlamp", "ФОН"));
+			Label->SetColorAndOpacity(FSlateColor(Item->Kind == EMazeItemKind::Headlamp && Item->bEnabled
+			                                          ? MazeInterfaceStyle::Palette().Accent
+			                                          : MazeInterfaceStyle::Palette().Ink));
+		}
+	}
 
 	bool bDead = false;
 	int32 ReachedExit = 0;

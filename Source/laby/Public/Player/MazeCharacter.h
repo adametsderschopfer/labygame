@@ -32,14 +32,15 @@ public:
 	                         AActor* DamageCauser) override;
 	FMazeVitals GetVitals() const;
 	FMazeItemsSnapshot GetItems() const;
-	bool GetFocusedPickup(TArray<FVector>& OutOutline, FVector& OutLocation) const;
-	bool GetFocusedDoor(FVector& OutHandle, bool& bOutOpen) const;
+	bool GetFocusedPickup(TArray<FVector>& OutOutline, FVector& OutLocation, EMazeItemKind* OutKind = nullptr) const;
+	bool GetFocusedDoor(FVector& OutHandle, bool& bOutOpen, bool* bOutLocked = nullptr) const;
 	FMassEntityHandle GetPlayerEntity() const
 	{
 		return PlayerEntity;
 	}
 
 	void ClearLocalInput();
+	void RestoreHeldMovementInput();
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 	void ToggleDevelopmentCamera();
 	virtual void FellOutOfWorld(const class UDamageType& DamageType) override;
@@ -60,6 +61,12 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Equipment")
 	TObjectPtr<class USpotLightComponent> HeadlampLight;
+
+	UPROPERTY()
+	TObjectPtr<class UStaticMeshComponent> HeldCard;
+
+	UPROPERTY()
+	TObjectPtr<class UStaticMeshComponent> HeldCardStripe;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Items)
 	FMazeItemsSnapshot ReplicatedItems;
@@ -96,6 +103,8 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerSelectInventorySlot(int32 Slot);
 	UFUNCTION(Server, Reliable)
+	void ServerCycleInventorySlot(int32 Step);
+	UFUNCTION(Server, Reliable)
 	void ServerPickupItem();
 	UFUNCTION(Server, Reliable)
 	void ServerDropItem();
@@ -108,7 +117,8 @@ private:
 	void PickupItem();
 	void DropItem();
 	void GetInteractionView(FVector& OutEye, FVector& OutAim) const;
-	class AMazeWorld* TraceFocusedWorldItem() const;
+	class AMazeWorld* TraceFocusedWorldItem(int32* OutItemId = nullptr) const;
+	void CycleInventorySlot(FKey Key);
 	int32 TraceFocusedDoor(FVector& OutHandle, bool& bOutOpen) const;
 	void RequestSignal();
 	void PlaySignal(const FMazeSignalSnapshot& Signal);

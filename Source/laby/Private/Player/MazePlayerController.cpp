@@ -23,6 +23,15 @@
 
 namespace
 {
+	// Native game-only capture without losing held movement on map close.
+	struct FMazeMapReturnInputMode : FInputModeGameOnly
+	{
+		virtual bool ShouldFlushInputOnViewportFocus() const override
+		{
+			return false;
+		}
+	};
+
 	const FName MenuAmbientTag(TEXT("MazeMenuAmbient"));
 	constexpr float MenuAmbientVolume = 0.55f;
 
@@ -238,19 +247,19 @@ void AMazePlayerController::ToggleMap()
 	if (auto* MazePawn = Cast<AMazeCharacter>(GetPawn()))
 		MazePawn->ClearLocalInput();
 
-	FlushPressedKeys();
 	ResetIgnoreMoveInput();
 	ResetIgnoreLookInput();
 	bShowMouseCursor = IsMapOpen();
 
 	if (IsMapOpen())
 	{
-		SetIgnoreMoveInput(true);
 		SetIgnoreLookInput(true);
 		ExplorationMap->CenterOnPlayer();
 		ExplorationMap->SetVisibility(ESlateVisibility::Visible);
 
-		FInputModeUIOnly Mode;
+		FInputModeGameAndUI Mode;
+
+		Mode.SetHideCursorDuringCapture(false);
 
 		Mode.SetWidgetToFocus(ExplorationMap->TakeWidget());
 		Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
@@ -259,8 +268,13 @@ void AMazePlayerController::ToggleMap()
 	else
 	{
 		ExplorationMap->SetVisibility(ESlateVisibility::HitTestInvisible);
-		SetInputMode(FInputModeGameOnly());
+
+		// Native game-only capture keeps held keys across this focus transition.
+		SetInputMode(FMazeMapReturnInputMode());
 	}
+
+	if (auto* MazePawn = Cast<AMazeCharacter>(GetPawn()))
+		MazePawn->RestoreHeldMovementInput();
 }
 
 void AMazePlayerController::RemoveMenuWidget()

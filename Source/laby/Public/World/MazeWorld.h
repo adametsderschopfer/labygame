@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ECS/MazeECSFragments.h"
+#include "ECS/MazeItems.h"
 #include "MazeWorld.generated.h"
 
 class UInstancedStaticMeshComponent;
@@ -72,8 +73,9 @@ public:
 	FVector StartLocation() const;
 	TSharedPtr<const FMazeGeneratedData, ESPMode::ThreadSafe> GetGeneratedData() const;
 	float GetCellSize() const;
+	int32 PickupId(const UPrimitiveComponent* Component) const;
 	bool IsPickupComponent(const UPrimitiveComponent* Component) const;
-	bool GetPickupOutline(TArray<FVector>& OutPoints) const;
+	bool GetPickupOutline(TArray<FVector>& OutPoints, int32 ItemId = FMazeItemDefinition::HeadlampWorldId) const;
 	bool IsDoorCollisionComponent(const UPrimitiveComponent* Component, int32 Instance, int32 DoorIndex) const;
 	FMassEntityHandle GetMazeEntity() const
 	{
@@ -104,6 +106,8 @@ private:
 	TSharedPtr<FMazeChunkJob> PendingChunk;
 	TArray<float> AppliedDoorOpenAmounts;
 	TArray<int8> AppliedDoorSwingSigns;
+	TArray<int32> ReaderDoorIndices;
+	TArray<bool> AppliedDoorUnlocks;
 	bool bInitialChunksReady = false;
 	bool bPresentationStarted = false;
 
@@ -124,6 +128,21 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_WorldItem)
 	FMazeWorldItemNetworkSnapshot ReplicatedWorldItem;
+
+	UPROPERTY(ReplicatedUsing = OnRep_WorldItem)
+	FMazeWorldItemNetworkSnapshot ReplicatedCard;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> CardBody;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> CardStripe;
+
+	UPROPERTY()
+	TObjectPtr<UInstancedStaticMeshComponent> DoorReaders;
+
+	UPROPERTY()
+	TObjectPtr<UInstancedStaticMeshComponent> DoorScreens;
 
 	UPROPERTY()
 	TObjectPtr<UInstancedStaticMeshComponent> DoorFrames;

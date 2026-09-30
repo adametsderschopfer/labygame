@@ -1,5 +1,98 @@
 # ECS игровой логики
 
+## Область наведения на предметы
+
+`FMazeItemDefinition::FocusRadiusCm` задаёт невидимую область наведения радиусом
+18 см вокруг ECS-положения лежащего предмета. `FMazeItemSystem::CanFocus`
+проверяет доступность, прежнюю дальность 250 см и направление. Вариант с detached
+`FMazeWorldItemView` использует ту же проверку, что и серверный подбор по fragment.
+`CanFocusNearby` дополнительно ограничивает расстояние от центра до луча взгляда.
+Точное попадание в модель сохраняет прежние условия, в том числе на её краях.
+
+`AMazeCharacter::TraceFocusedWorldItem` сначала выбирает точное попадание в
+модель, затем ближайший доступный предмет в области наведения. Штатный
+`UWorld::LineTraceSingleByChannel` UE 5.8 проверяет видимость до реального
+положения предмета: стены, закрытые двери и другие препятствия блокируют подбор.
+Sphere sweep не используется, поскольку пол возле маленького предмета сам
+перекрывал бы расширенную трассировку. Дополнительная физическая коллизия и
+компоненты не нужны.
+
+HUD, локальное нажатие и серверный RPC используют один адаптер выбора. Сервер
+повторяет проверку до прежнего синхронного `PickupWorldItem`; владение состоянием,
+authority, пауза и проверки ввода/жизни/сессии сохраняются. Кандидаты читаются
+заново из ECS без сохранения handles или snapshot между вызовами; после подбора,
+выброса и регенерации область автоматически следует доступности и положению.
+Новых processors, timers, ресурсов, manifest paths или правил стриминга нет.
+
+## Карта доступа и запертые двери
+
+`FMazeItemsFragment` игрока владеет картой `AccessCard` со слотом экипировки
+`Hand`. Для использования её ячейка должна быть выбрана; наличие в другой
+ячейке не разрешает открыть запертую дверь. Инвентарь содержит четыре фиксированные
+ячейки. `FMazeItemSystem::Pickup` занимает выбранную, затем первую свободную,
+если выбранная занята; полный инвентарь отклоняет запрос. `Drop` очищает одну
+ячейку без сдвига остальных. HUD читает тип/питание предмета в каждой ячейке.
+Смена выбора сама по себе не переключает питание налобного фонарика.
+
+При `RebuildWorldItems` создаются две мировые Mass entities: фонарик (ID 1) и
+карта (ID 2), рядом со стартом. Подбор/выброс синхронны на игровом потоке:
+сервер повторяет engine trace и проверяет мир, ревизию, здоровье, ввод,
+дальность, паузу и старт комнаты. Каждый мировой предмет имеет отдельное
+транспортное зеркало положения/доступности; клиентский OnRep применяет его
+по ID и revision через subsystem. Регенерация пересоздаёт мировые предметы;
+инвентарь живёт до уничтожения игрока. Эвикция визуальных чанков их не меняет.
+
+`FMazeDoorFragment` владеет `bRequiresCard` и `bUnlocked`. Чистый
+`FMazeDoorSystem::IsCardDoor` выбирает около 30% проёмов локальным seeded stream
+от seed и стабильного индекса. Доля в `FMazeDoorDefinition` — вероятность, не
+точная квота. Нажатие E у ручки или считывателя использует прежний owning-pawn
+RPC и серверную проверку прямой видимости. После boundary validation
+`FMazeDoorSystem::TryToggle` отклоняет замок без выбранной карты; с картой
+разблокирует и открывает дверь. Карта не расходуется. Unlock общий для игроков
+и сохраняется до новой генерации; затем дверь закрывается/открывается без карты.
+Шум создаётся только для принятого запроса. Порядок движения/engine overlap
+в PrePhysics сохранён. Снимок передаёт два байта на дверь: прежний ход/цель/знак
+и unlock. Клиенты применяют зеркало в ECS без самостоятельных правил доступа.
+
+Дальность взаимодействия у ручки/считывателя — 120 см; HUD и серверная
+валидация используют один `FMazeDoorDefinition::InteractionRangeCm`.
+При движении `AMazeWorld` передаёт изменившиеся transforms через native ISM
+change tracking UE 5.8 (`bMarkRenderStateDirty=false`); физические тела
+обновляются этим же вызовом. Custom data экранов использует тот же частичный
+путь. Полный render proxy не пересоздаётся каждый кадр анимации двери.
+
+`AMazeWorld` создаёт два общих resident ISM: корпуса и экраны считывателей на
+обеих сторонах стены. Shared unlit материал читает custom data 0 через native
+VertexInterpolator: красный до unlock, зелёный после. Нет света или dynamic
+material на каждый замок. Материал включён в location preload/cook manifest;
+см. `ArtSource/Doors/CardAccess/README.md`. Dedicated server не создаёт reader
+instances, но сохраняет ECS, физику двери и скрытую query-геометрию предметов.
+Rebuild/EndPlay очищают instances и caches; прежний lifecycle удаляет entities.
+
+HUD рисует серую плашку «ЗАПЕРТО» без клавиши для недоступной двери. Выбор карты
+даёт обычную подсказку открытия. Камера показывает локальную выбранную карту
+через native first-person primitive UE 5.8 без коллизии, теней и gameplay state;
+меню, карта, смерть и teardown скрывают представление.
+
+Колесо вне карты отправляет валидированный шаг -1/+1 через owning-pawn RPC.
+`FMazeItemSystem::NextSlot` вычисляет циклическую следующую ячейку от актуального
+серверного SelectedSlot, без зависимости от задержки клиентского snapshot.
+Authority, pause, жизнь и доступность ввода проверяются прежним entry point
+выбора ячейки. Открытая карта использует колесо для прежнего масштабирования.
+
+При смене фокуса карты ввод сначала очищается, затем восстанавливается только
+текущее удерживаемое движение/бег/присед через наблюдения клавиш; one-shot jump
+не повторяется. Native GameAndUI пропускает необработанные клавиши движения,
+оставляя drag/zoom карте. При закрытии native game-only capture подавляет
+focus key flushing. Взгляд блокируется только пока карта открыта. ECS simulation
+и CharacterMovement продолжают работать; меню, потеря фокуса, unpossession и
+teardown сохраняют прежнюю полную очистку ввода.
+
+UE 5.8 ISM custom data, material expressions, first-person primitive и GameAndUI
+проверены по установленным заголовкам. Mass Representation/PCG не нужны:
+небольшая группа резидентных деталей не оправдывает новые processors,
+зависимости и расписание. Новых gameplay timers или фоновых задач нет.
+
 ## Низкие сокращения
 
 `FMazeLayout::Generate` после выбора типов комнат и до провалов выбирает редкие
@@ -648,12 +741,12 @@ Actor/Character, PlayerController, GameMode и HUD служат адаптера
 
 ## Предметы и налобный фонарик
 
-- `FMazeItemsFragment` сущности игрока — единственный владелец переносимых предметов. Каждый экземпляр содержит тип, уникальный в пределах игрока ID и слот экипировки. `NextInstanceId` принадлежит тому же фрагменту. `CreatePlayer` создаёт пустой список. HUD читает снимок инвентаря; первая из четырёх ячеек показывает надетый фонарик и его питание.
-- `FMazeWorldItemFragment` отдельной Mass-сущности владеет доступностью и положением фонарика. Начальное положение выводится из `Start`; после выбрасывания положение меняет ECS. Ревизия и ссылка на лабиринт отделяют поколения. При новой генерации мировая сущность пересоздаётся, при уничтожении лабиринта удаляется. Подбор переносит предмет в инвентарь одного игрока и делает мировую сущность недоступной всем.
+- `FMazeItemsFragment` сущности игрока — единственный владелец переносимых предметов. Каждый экземпляр содержит тип, уникальный в пределах игрока ID и слот экипировки. `NextInstanceId` принадлежит тому же фрагменту. `CreatePlayer` создаёт четыре пустые фиксированные ячейки. Подбор занимает выбранную или первую свободную; HUD отображает тип и питание вещи в её ячейке. Выбрасывание не сдвигает остальные вещи.
+- `FMazeWorldItemFragment` отдельной Mass-сущности владеет доступностью и положением одной вещи: фонарика или карты доступа. Начальное положение выводится из `Start`; после выбрасывания положение меняет ECS. Ревизия и ссылка на лабиринт отделяют поколения. При новой генерации мировая сущность пересоздаётся, при уничтожении лабиринта удаляется. Подбор переносит предмет в инвентарь одного игрока и делает мировую сущность недоступной всем.
 - Клиент показывает обводку проекции предмета, карточку и клавишу `E` после `Visibility`-трассировки. Нажатие отправляет intent без координат и ID. Сервер повторяет трассировку из собственного взгляда; `PickupWorldItem` проверяет мир, ревизию, расстояние, направление, здоровье, ввод, паузу и старт комнаты. `FMazeItemSystem::Pickup` выполняет переход один раз. Автоматического Mass-процессора нет: подбор синхронен на игровом потоке.
-- `AMazeWorld` держит один резидентный цилиндрический меш из базовых ресурсов Unreal. Доступность и положение зеркалируются одним реплицируемым снимком с ревизией; `OnRep` переносит его в клиентский ECS. Компонент отвечает за показ и query-коллизию, а не за правило подбора. Эвикция визуальных чанков не пересоздаёт предмет.
+- `AMazeWorld` держит резидентные цилиндры фонарика и кубы карты из базовых ресурсов Unreal. Доступность и положение каждой вещи зеркалируются отдельным реплицируемым снимком с ревизией; `OnRep` переносит его в клиентский ECS. Компонент отвечает за показ и query-коллизию, а не за правило подбора. Эвикция визуальных чанков не пересоздаёт предмет.
 - `ReadItems` возвращает снимок по значению, `ReadHeadlampEnabled` — результат системы. Actor не получает изменяемые ссылки. Его `ReplicatedItems` — только транспортное зеркало: обновляется из ECS на сервере, реплицируется всем релевантным клиентам, а `OnRep_Items` передаёт снимок в клиентский ECS через `ReceiveItems`. Этот метод принимает данные только в клиентском мире. Клиенты сами предметы не выдают.
-- `AMazeCharacter` создаёт только движковый ресурс `USpotLightComponent`. Каждый тик, включая удалённых персонажей, он читает разрешение света из ECS и выставляет направление через `GetBaseAimRotation` (с реплицируемым pitch). Источник закреплён чуть выше верхушки капсулы; наклон взгляда поворачивает луч, не перемещая источник внутрь тела. Параметры света централизованы в `FMazeHeadlampDefinition`. На dedicated server свет выключен.
+- `AMazeCharacter` создаёт движковый свет `USpotLightComponent` и локальное представление выбранной карты перед камерой. Каждый тик, включая удалённых персонажей, он читает разрешение света из ECS и выставляет направление через `GetBaseAimRotation` (с реплицируемым pitch). Источник закреплён чуть выше верхушки капсулы; наклон взгляда поворачивает луч, не перемещая источник внутрь тела. Параметры света централизованы в `FMazeHeadlampDefinition`. На dedicated server свет выключен.
 - После подбора фонарик выключен по умолчанию и сохраняет питание до смены персонажа. Заряда и таймеров нет. При `EndPlay` сущность игрока с инвентарём удаляется, свет выключается и транспортное зеркало очищается. Изменение отражаемого фрагмента и компонентов мира требует полной сборки и нового мира.
 
 ## Exploration maps
@@ -663,7 +756,7 @@ Actor/Character, PlayerController, GameMode и HUD служат адаптера
 - The player entity owns `FMazeExplorationFragment`: discovered cells, maze handle/revision and the last sampled position. Data resets on entity destruction or maze regeneration; there is no disk persistence or shared team discovery. The unused `LastForward` field is temporarily retained solely for live Mass layout compatibility; it is neither read nor updated by exploration.
 - `ResolvePlayer` calls `FMazeExplorationSystem::Update` after storing the pose and resolving input availability, before movement commands. Discovery now follows the player's position: the current cell and unobstructed cell centers within a two-cell radius (9.25 m at the current scale), in every direction. Initial spawn/revision reset reveals the immediate surroundings. Movement by 0.05 cell refreshes the radius, and entering an unknown cell reveals it immediately; turning in place does not expand the map. `FMazeExplorationDefinition` owns the distances. The existing pure grid-edge ray traversal still stops at walls and exact diagonal corners; engine actor traces/perception would add dependencies and physics queries for topology ECS already owns. No new engine facility is needed: native FVector2D/FMath distance operations are used. Disabled input, death and positions outside maze bounds/height suspend discovery. Seen cells remain known; changing this rule does not erase an existing map, which fully resets on a new generation. Both maps and room highlights consume the same Seen mask. Scheduling, multiplayer authority and lifecycle remain unchanged. Focused movement/direction/wall/reset checks were added without running tests or Play.
 - Discovery is local navigation data. Clients compute their own mask from the replicated topology and local pose; server health and exit rules remain independent. `ReadExploration` validates the entity, maze handle and revision and returns const data for immediate painting only. Widgets never retain fragment pointers.
-- `Session.bMapOpen` is local interface state, like the existing menu (split-screen is unsupported). `SetMapOpen` invokes the system transition; the controller clears only its own character input, changes focus and blocks its movement/look. Other server players remain unaffected. Zoom and pan belong to widget presentation only.
+- `Session.bMapOpen` is local interface state, like the existing menu (split-screen is unsupported). `SetMapOpen` invokes the system transition; the controller clears only its own character input, changes focus, blocks look and restores held movement/sprint/crouch after clearing input. GameAndUI forwards movement while the map handles drag/zoom. Game-only capture on close preserves held keys. Walking, running and ECS simulation continue. Other server players remain unaffected. Zoom and pan belong to widget presentation only.
 - `WBP_ExplorationMap` owns the new minimap slot. The editor module creates the missing Blueprint on startup. `UMazeExplorationMapWidget` renders discovered cells in the bottom-right corner and uses the same mask in fullscreen mode. M/Esc close, drag pans, wheel zooms, Home recenters. EndPlay removes the widget. A native layout fallback handles an absent asset.
 - The development map and its F7 binding have been removed. Only the exploration minimap and M map remain.
 
@@ -705,7 +798,7 @@ Actor/Character, PlayerController, GameMode и HUD служат адаптера
 из редакторского автора Ward UI без изменения игровых правил.
 
 - FMazeItemsFragment владеет выбранным индексом одной из четырёх ячеек. Клавиши
-  1–4 отправляют intent через owning-pawn RPC; subsystem проверяет authority,
+  1–4 и колесо мыши отправляют intent через owning-pawn RPC; subsystem проверяет authority,
   паузу, живого игрока, доступность ввода и старт комнаты, а FMazeItemSystem
   проверяет диапазон и меняет индекс один раз. Поле SelectedSlot входит в
   ReplicatedItems; HUD только подсвечивает выбранную ячейку. Пустую ячейку
@@ -726,7 +819,7 @@ Actor/Character, PlayerController, GameMode и HUD служат адаптера
 - IE_Pressed действия Headlamp отправляет однократный intent через owning-pawn ServerToggleHeadlamp. Клиент не предсказывает состояние. RPC не принимает entity ID; Unreal проверяет owning connection.
 - Адаптер проверяет контроллер и блокировку ввода. Subsystem проверяет authority, pause, сущность, здоровье, input-enabled pose и старт комнаты. FMazeItemSystem выполняет переход синхронно один раз только для фонарика в выбранной ячейке.
 - ReadHeadlampEnabled учитывает слот и bEnabled. ReplicatedItems остаётся зеркалом; OnRep применяет snapshot к клиентскому ECS. Таймеров, очереди нажатий и дополнительных тиков нет.
-- `G` отправляет запрос выбросить предмет из выбранной ячейки. Серверный адаптер проверяет стену перед персонажем и поверхность пола штатными трассировками Unreal; в RPC не передаётся клиентская точка выбрасывания. `DropSelectedItem` проверяет authority, паузу, здоровье, управление, активную комнату, лабиринт, ревизию и расстояние до точки. `FMazeItemSystem::Drop` удаляет выбранный фонарик из инвентаря и одновременно делает его прежнюю мировую сущность доступной в новой точке. Подбор после выбрасывания снова использует существующий путь `PickupWorldItem`; выбрасывание не создаёт дополнительных Actor или Mass-сущностей. В клиентский ECS попадают только серверные снимки инвентаря и мировой вещи.
+- `G` отправляет запрос выбросить предмет из выбранной ячейки. Серверный адаптер проверяет стену перед персонажем и поверхность пола штатными трассировками Unreal; в RPC не передаётся клиентская точка выбрасывания. `DropSelectedItem` проверяет authority, паузу, здоровье, управление, активную комнату, лабиринт, ревизию и расстояние до точки. `FMazeItemSystem::Drop` очищает ячейку выбранного фонарика или карты доступа и одновременно делает его прежнюю мировую сущность доступной в новой точке. Подбор после выбрасывания снова использует существующий путь `PickupWorldItem`; выбрасывание не создаёт дополнительных Actor или Mass-сущностей. В клиентский ECS попадают только серверные снимки инвентаря и мировой вещи.
 - EndPlay очищает сущность/зеркало. Пауза и меню блокируют переключение, сохраняя питание. Новое отражаемое поле и RPC требуют полной сборки. Тесты и Play не запускались.
 
 ## Упрощение HUD и удаление карты разработчика

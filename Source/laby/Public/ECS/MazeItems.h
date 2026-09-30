@@ -9,14 +9,16 @@ UENUM()
 enum class EMazeItemKind : uint8
 {
 	None,
-	Headlamp
+	Headlamp,
+	AccessCard
 };
 
 UENUM()
 enum class EMazeEquipmentSlot : uint8
 {
 	None,
-	Head
+	Head,
+	Hand
 };
 
 // Instance identifiers are scoped to the owning player, never world entity handles.
@@ -55,7 +57,7 @@ struct FMazeItemsFragment : public FMassFragment
 	FMazeItemsSnapshot Value;
 };
 
-// One stable pickup per generated maze. The world component only presents this state.
+// Stable pickups per generated maze. World components only present this state.
 USTRUCT()
 struct FMazeWorldItemFragment : public FMassFragment
 {
@@ -85,6 +87,7 @@ struct FMazeWorldItemView
 struct FMazeItemDefinition
 {
 	static constexpr float FocusRange = 250.f;
+	static constexpr float FocusRadiusCm = 18.f;
 	static constexpr float MinimumAimDot = 0.88f;
 	static constexpr float EyePoseTolerance = 130.f;
 	static constexpr float DropForwardCm = 95.f;
@@ -93,6 +96,8 @@ struct FMazeItemDefinition
 	static constexpr float DropHeightCm = 15.f;
 	static constexpr float DropRangeCm = 200.f;
 	static constexpr int32 InventoryCapacity = 4;
+	static constexpr int32 HeadlampWorldId = 1;
+	static constexpr int32 CardWorldId = 2;
 	static FVector StartOffset()
 	{
 		return FVector(-95.f, -20.f, -78.f);

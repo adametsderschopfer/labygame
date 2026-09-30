@@ -57,6 +57,9 @@ public:
 	TSoftObjectPtr<UMaterialInterface> PoolTileMaterial() const;
 	TSoftObjectPtr<UMaterialInterface> WaterMaterial() const;
 	TSoftObjectPtr<USoundWave> MenuAmbientSound() const;
+	TSoftObjectPtr<UMaterialInterface> DoorReaderMaterial() const;
+	TSoftObjectPtr<UMaterialInterface> CardMaterial() const;
+	TSoftObjectPtr<UMaterialInterface> CardStripeMaterial() const;
 	TSoftObjectPtr<UStaticMesh> DoorFrameMesh() const;
 	TSoftObjectPtr<UStaticMesh> DoorLeafMesh() const;
 	TSoftObjectPtr<UStaticMesh> DoorHandleMesh() const;

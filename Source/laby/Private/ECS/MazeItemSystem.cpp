@@ -3,6 +3,14 @@
 void FMazeItemSystem::InitializeLoadout(FMazeItemsFragment& Items)
 {
 	Items.Value = FMazeItemsSnapshot();
+	Items.Value.Items.SetNum(FMazeItemDefinition::InventoryCapacity);
+}
+
+bool FMazeItemSystem::IsCardSelected(const FMazeItemsSnapshot& Items)
+{
+	return Items.Items.IsValidIndex(Items.SelectedSlot) && Items.Items[Items.SelectedSlot].Id != INDEX_NONE &&
+	       Items.Items[Items.SelectedSlot].Kind == EMazeItemKind::AccessCard &&
+	       Items.Items[Items.SelectedSlot].Slot == EMazeEquipmentSlot::Hand;
 }
 
 bool FMazeItemSystem::HasHeadlamp(const FMazeItemsFragment& Items)
@@ -63,15 +71,48 @@ bool FMazeItemSystem::SelectSlot(FMazeItemsFragment& Items, int32 Slot, bool bCa
 	return true;
 }
 
+int32 FMazeItemSystem::NextSlot(int32 Slot, int32 Step)
+{
+	return (Slot + Step + FMazeItemDefinition::InventoryCapacity) % FMazeItemDefinition::InventoryCapacity;
+}
+
 bool FMazeItemSystem::CanFocus(const FMazeWorldItemFragment& WorldItem,
                                const FVector& EyeLocation,
                                const FVector& AimDirection)
 {
-	const FVector ToItem = WorldItem.Location - EyeLocation;
+	return CanFocus(FMazeWorldItemView{WorldItem.Id, WorldItem.Kind, WorldItem.Location, WorldItem.bAvailable},
+	                EyeLocation,
+	                AimDirection);
+}
 
-	return WorldItem.bAvailable && ToItem.SizeSquared() <= FMath::Square(FMazeItemDefinition::FocusRange) &&
-	       FVector::DotProduct(ToItem.GetSafeNormal(), AimDirection.GetSafeNormal()) >=
-	           FMazeItemDefinition::MinimumAimDot;
+bool FMazeItemSystem::CanFocus(const FMazeWorldItemView& WorldItem,
+                               const FVector& EyeLocation,
+                               const FVector& AimDirection)
+{
+	if (!WorldItem.bAvailable || WorldItem.Location.ContainsNaN() || EyeLocation.ContainsNaN() ||
+	    AimDirection.ContainsNaN())
+		return false;
+
+	const FVector ToItem = WorldItem.Location - EyeLocation;
+	const FVector Aim = AimDirection.GetSafeNormal();
+
+	return ToItem.SizeSquared() <= FMath::Square(FMazeItemDefinition::FocusRange) &&
+	       FVector::DotProduct(ToItem.GetSafeNormal(), Aim) >= FMazeItemDefinition::MinimumAimDot;
+}
+
+bool FMazeItemSystem::CanFocusNearby(const FMazeWorldItemView& WorldItem,
+                                     const FVector& EyeLocation,
+                                     const FVector& AimDirection)
+{
+	if (!CanFocus(WorldItem, EyeLocation, AimDirection))
+		return false;
+
+	const FVector ToItem = WorldItem.Location - EyeLocation;
+	const FVector Aim = AimDirection.GetSafeNormal();
+	const double AlongAim = FVector::DotProduct(ToItem, Aim);
+	const FVector AimOffset = ToItem - Aim * AlongAim;
+
+	return AlongAim > 0. && AimOffset.SizeSquared() <= FMath::Square(FMazeItemDefinition::FocusRadiusCm);
 }
 
 bool FMazeItemSystem::Pickup(FMazeWorldItemFragment& WorldItem,
@@ -80,17 +121,35 @@ bool FMazeItemSystem::Pickup(FMazeWorldItemFragment& WorldItem,
                              const FVector& AimDirection,
                              bool bCanAct)
 {
-	if (!bCanAct || !CanFocus(WorldItem, EyeLocation, AimDirection) || WorldItem.Kind != EMazeItemKind::Headlamp ||
-	    HasHeadlamp(Items) || Items.Value.Items.Num() >= FMazeItemDefinition::InventoryCapacity)
+	if (!bCanAct || !CanFocus(WorldItem, EyeLocation, AimDirection) ||
+	    (WorldItem.Kind != EMazeItemKind::Headlamp && WorldItem.Kind != EMazeItemKind::AccessCard) ||
+	    (WorldItem.Kind == EMazeItemKind::Headlamp && HasHeadlamp(Items)))
+		return false;
+
+	Items.Value.Items.SetNum(FMazeItemDefinition::InventoryCapacity);
+
+	int32 TargetSlot = Items.Value.SelectedSlot;
+
+	if (!Items.Value.Items.IsValidIndex(TargetSlot))
+		return false;
+
+	if (Items.Value.Items[TargetSlot].Id != INDEX_NONE)
+		TargetSlot = Items.Value.Items.IndexOfByPredicate(
+		    [](const FMazeItemInstance& Item)
+		    {
+			    return Item.Id == INDEX_NONE;
+		    });
+
+	if (TargetSlot == INDEX_NONE)
 		return false;
 
 	FMazeItemInstance Lamp;
 
 	Lamp.Id = Items.Value.NextInstanceId++;
 	Lamp.Kind = WorldItem.Kind;
-	Lamp.Slot = EMazeEquipmentSlot::Head;
+	Lamp.Slot = WorldItem.Kind == EMazeItemKind::Headlamp ? EMazeEquipmentSlot::Head : EMazeEquipmentSlot::Hand;
 	Lamp.bEnabled = false;
-	Items.Value.Items.Add(Lamp);
+	Items.Value.Items[TargetSlot] = Lamp;
 	WorldItem.bAvailable = false;
 
 	return true;
@@ -108,11 +167,11 @@ bool FMazeItemSystem::Drop(FMazeItemsFragment& Items,
 
 	const FMazeItemInstance& Item = Items.Value.Items[Slot];
 
-	if (Item.Id == INDEX_NONE || Item.Kind != EMazeItemKind::Headlamp || Item.Kind != WorldItem.Kind ||
-	    Item.Slot != EMazeEquipmentSlot::Head)
+	if (Item.Id == INDEX_NONE || Item.Kind != WorldItem.Kind ||
+	    (Item.Kind != EMazeItemKind::Headlamp && Item.Kind != EMazeItemKind::AccessCard))
 		return false;
 
-	Items.Value.Items.RemoveAt(Slot);
+	Items.Value.Items[Slot] = FMazeItemInstance();
 	WorldItem.Location = Location;
 	WorldItem.bAvailable = true;
 

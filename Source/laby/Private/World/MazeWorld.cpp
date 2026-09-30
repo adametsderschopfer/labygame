@@ -40,6 +40,15 @@ AMazeWorld::AMazeWorld()
 	HeadlampBody->SetupAttachment(Walls);
 	HeadlampLens = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeadlampLens"));
 	HeadlampLens->SetupAttachment(Walls);
+	CardBody = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CardBody"));
+	CardBody->SetupAttachment(Walls);
+	CardStripe = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CardStripe"));
+	CardStripe->SetupAttachment(Walls);
+	DoorReaders = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorReaders"));
+	DoorReaders->SetupAttachment(Walls);
+	DoorScreens = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorScreens"));
+	DoorScreens->SetupAttachment(Walls);
+	DoorScreens->SetNumCustomDataFloats(1);
 	DoorFrames = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorFrames"));
 	DoorFrames->SetupAttachment(Walls);
 	DoorLeaves = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DoorLeaves"));
@@ -54,6 +63,18 @@ AMazeWorld::AMazeWorld()
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PlainMaterial(
 	    TEXT("/Game/Materials/M_MazePlain.M_MazePlain"));
 
+	for (auto* Part : {CardBody.Get(), CardStripe.Get()})
+	{
+		Part->SetStaticMesh(Cube.Object);
+		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Part->SetCollisionResponseToAllChannels(ECR_Ignore);
+		Part->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		Part->SetCanEverAffectNavigation(false);
+		Part->SetVisibility(false);
+	}
+
+	CardBody->SetRelativeScale3D(FVector(.086f, .054f, .004f));
+	CardStripe->SetRelativeScale3D(FVector(.072f, .012f, .001f));
 	Floor->SetStaticMesh(Cube.Object);
 	HeadlampBody->SetStaticMesh(Cylinder.Object);
 	HeadlampBody->SetRelativeScale3D(FVector(.12f, .12f, .32f));
@@ -83,7 +104,8 @@ AMazeWorld::AMazeWorld()
 	Floor->SetCanEverAffectNavigation(false);
 	Walls->SetCanEverAffectNavigation(false);
 
-	for (auto* Component : {DoorFrames.Get(), DoorLeaves.Get(), DoorHandles.Get()})
+	for (auto* Component :
+	     {DoorFrames.Get(), DoorLeaves.Get(), DoorHandles.Get(), DoorReaders.Get(), DoorScreens.Get()})
 	{
 		Component->SetStaticMesh(Cube.Object);
 		Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -91,6 +113,9 @@ AMazeWorld::AMazeWorld()
 		Component->SetMobility(EComponentMobility::Movable);
 	}
 
+	DoorReaders->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	DoorReaders->SetCollisionResponseToAllChannels(ECR_Ignore);
+	DoorReaders->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	DoorCollision->SetStaticMesh(Cube.Object);
 	DoorCollision->SetCollisionProfileName(TEXT("BlockAll"));
 	DoorCollision->SetCanEverAffectNavigation(false);
@@ -156,6 +181,14 @@ void AMazeWorld::EndPlay(const EEndPlayReason::Type Reason)
 	DoorCollision->ClearInstances();
 	AppliedDoorOpenAmounts.Reset();
 	AppliedDoorSwingSigns.Reset();
+	ReaderDoorIndices.Reset();
+	AppliedDoorUnlocks.Reset();
+	DoorReaders->ClearInstances();
+	DoorScreens->ClearInstances();
+	CardBody->SetVisibility(false);
+	CardStripe->SetVisibility(false);
+	CardBody->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CardStripe->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HeadlampBody->SetVisibility(false);
 	HeadlampLens->SetVisibility(false);
 	GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->RemoveParticipant(this);
@@ -178,21 +211,52 @@ void AMazeWorld::OnRep_Seed()
 void AMazeWorld::OnRep_WorldItem()
 {
 	if (ECSSubsystem)
+	{
 		ECSSubsystem->ReceiveWorldItemSnapshot(
 		    MazeEntity, ReplicatedWorldItem.MazeRevision, ReplicatedWorldItem.Location, ReplicatedWorldItem.bAvailable);
+		ECSSubsystem->ReceiveWorldItemSnapshot(MazeEntity,
+		                                       ReplicatedCard.MazeRevision,
+		                                       ReplicatedCard.Location,
+		                                       ReplicatedCard.bAvailable,
+		                                       FMazeItemDefinition::CardWorldId);
+	}
 
 	RefreshWorldItem();
 }
 
-bool AMazeWorld::IsPickupComponent(const UPrimitiveComponent* Component) const
+int32 AMazeWorld::PickupId(const UPrimitiveComponent* Component) const
 {
-	return Component && (Component == HeadlampBody || Component == HeadlampLens) && ECSSubsystem &&
-	       ECSSubsystem->ReadWorldItem(MazeEntity).bAvailable;
+	const int32 Id = Component && (Component == CardBody || Component == CardStripe) ? FMazeItemDefinition::CardWorldId
+	                 : Component && (Component == HeadlampBody || Component == HeadlampLens)
+	                     ? FMazeItemDefinition::HeadlampWorldId
+	                     : INDEX_NONE;
+
+	return ECSSubsystem && Id != INDEX_NONE && ECSSubsystem->ReadWorldItem(MazeEntity, Id).bAvailable ? Id : INDEX_NONE;
 }
 
-bool AMazeWorld::GetPickupOutline(TArray<FVector>& OutPoints) const
+bool AMazeWorld::IsPickupComponent(const UPrimitiveComponent* Component) const
 {
-	if (!IsPickupComponent(HeadlampBody))
+	return PickupId(Component) != INDEX_NONE;
+}
+
+bool AMazeWorld::GetPickupOutline(TArray<FVector>& OutPoints, int32 ItemId) const
+{
+	if (ItemId == FMazeItemDefinition::CardWorldId)
+	{
+		if (PickupId(CardBody) != ItemId)
+			return false;
+
+		OutPoints.Reset();
+
+		for (float X : {-50.f, 50.f})
+			for (float Y : {-50.f, 50.f})
+				for (float Z : {-50.f, 50.f})
+					OutPoints.Add(CardBody->GetComponentTransform().TransformPosition(FVector(X, Y, Z)));
+
+		return true;
+	}
+
+	if (ItemId != FMazeItemDefinition::HeadlampWorldId || !IsPickupComponent(HeadlampBody))
 		return false;
 
 	OutPoints.Reset();
@@ -214,6 +278,31 @@ void AMazeWorld::RefreshWorldItem()
 {
 	if (!ECSSubsystem)
 		return;
+
+	const FMazeWorldItemView Card = ECSSubsystem->ReadWorldItem(MazeEntity, FMazeItemDefinition::CardWorldId);
+
+	if (HasAuthority() &&
+	    (ReplicatedCard.MazeRevision != ECSSubsystem->ReadMaze(MazeEntity).Revision ||
+	     !ReplicatedCard.Location.Equals(Card.Location) || ReplicatedCard.bAvailable != Card.bAvailable))
+	{
+		ReplicatedCard.MazeRevision = ECSSubsystem->ReadMaze(MazeEntity).Revision;
+		ReplicatedCard.Location = Card.Location;
+		ReplicatedCard.bAvailable = Card.bAvailable;
+		ForceNetUpdate();
+	}
+
+	CardBody->SetWorldLocation(Card.Location);
+	CardStripe->SetWorldLocation(Card.Location + FVector(0.f, 1.5f, .25f));
+
+	const bool bCardVisible = Card.bAvailable && GetNetMode() != NM_DedicatedServer;
+
+	CardBody->SetVisibility(bCardVisible);
+	CardStripe->SetVisibility(bCardVisible);
+
+	const auto CardCollision = Card.bAvailable ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision;
+
+	CardBody->SetCollisionEnabled(CardCollision);
+	CardStripe->SetCollisionEnabled(CardCollision);
 
 	const FMazeWorldItemView Item = ECSSubsystem->ReadWorldItem(MazeEntity);
 
@@ -263,6 +352,7 @@ void AMazeWorld::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 	DOREPLIFETIME(AMazeWorld, Seed);
 	DOREPLIFETIME(AMazeWorld, ReplicatedDoorStates);
 	DOREPLIFETIME(AMazeWorld, ReplicatedWorldItem);
+	DOREPLIFETIME(AMazeWorld, ReplicatedCard);
 }
 
 FVector AMazeWorld::StartLocation() const
@@ -310,8 +400,7 @@ void AMazeWorld::Build()
 	const auto Maze = ECSSubsystem->ReadMaze(MazeEntity);
 
 	if (!HasAuthority())
-		ECSSubsystem->ReceiveWorldItemSnapshot(
-		    MazeEntity, ReplicatedWorldItem.MazeRevision, ReplicatedWorldItem.Location, ReplicatedWorldItem.bAvailable);
+		OnRep_WorldItem();
 
 	RefreshWorldItem();
 
@@ -464,6 +553,10 @@ void AMazeWorld::PrepareMaterials()
 
 	HeadlampBody->SetMaterial(0, VisualMaterials[2]);
 	HeadlampLens->SetMaterial(0, VisualMaterials[3]);
+	CardBody->SetMaterial(0, VisualMaterials[3]);
+	CardStripe->SetMaterial(0, VisualMaterials[2]);
+	DoorReaders->SetMaterial(0, VisualMaterials[2]);
+	DoorScreens->SetMaterial(0, GetDefault<UMazeLocationSettings>()->DoorReaderMaterial().Get());
 
 	if (const auto Lamps = ECSSubsystem->BuildMazeLampLocations(MazeEntity))
 		MazeLampAudio::Rebuild(*this, *Lamps);

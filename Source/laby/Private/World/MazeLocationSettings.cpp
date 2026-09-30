@@ -1,5 +1,11 @@
 #include "World/MazeLocationSettings.h"
 
+TSoftObjectPtr<UMaterialInterface> UMazeLocationSettings::DoorReaderMaterial() const
+{
+	return TSoftObjectPtr<UMaterialInterface>(
+	    FSoftObjectPath(TEXT("/Game/Doors/CardAccess/Materials/M_CardReaderScreen.M_CardReaderScreen")));
+}
+
 TSoftObjectPtr<UMaterialInterface> UMazeLocationSettings::PoolTileMaterial() const
 {
 	return TSoftObjectPtr<UMaterialInterface>(
@@ -33,6 +39,18 @@ TSoftObjectPtr<UStaticMesh> UMazeLocationSettings::DoorHandleMesh() const
 {
 	return TSoftObjectPtr<UStaticMesh>(
 	    FSoftObjectPath(TEXT("/Game/Doors/FrostedPanelDoor/Meshes/SM_FrostedDoorHandle.SM_FrostedDoorHandle")));
+}
+
+TSoftObjectPtr<UMaterialInterface> UMazeLocationSettings::CardMaterial() const
+{
+	return TSoftObjectPtr<UMaterialInterface>(
+	    FSoftObjectPath(TEXT("/Game/Materials/Laboratory/MI_LabServiceIvory.MI_LabServiceIvory")));
+}
+
+TSoftObjectPtr<UMaterialInterface> UMazeLocationSettings::CardStripeMaterial() const
+{
+	return TSoftObjectPtr<UMaterialInterface>(
+	    FSoftObjectPath(TEXT("/Game/Materials/Laboratory/MI_LabTrimMetal.MI_LabTrimMetal")));
 }
 
 bool UMazeLocationSettings::Validate(FString& Error) const

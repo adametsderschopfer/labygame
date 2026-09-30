@@ -12,6 +12,10 @@
 #include "Maze/MazeRoomDefinition.h"
 #include "ECS/MazePlayerControlDefinition.h"
 #include "Components/SpotLightComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "World/MazeLocationSettings.h"
+#include "Engine/StaticMesh.h"
+#include "EngineUtils.h"
 #include "Camera/CameraComponent.h"
 #include "UI/MazeInterfacePreferences.h"
 #include "Player/MazeKeyBindings.h"
@@ -243,6 +247,30 @@ AMazeCharacter::AMazeCharacter()
 		Camera->PostProcessSettings.AddBlendable(MaskVisor.Object, 1.f);
 
 	Camera->PostProcessBlendWeight = 1.f;
+	HeldCard = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeldCard"));
+	HeldCardStripe = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeldCardStripe"));
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> CardCube(TEXT("/Engine/BasicShapes/Cube.Cube"));
+
+	for (auto* Part : {HeldCard.Get(), HeldCardStripe.Get()})
+	{
+		Part->SetupAttachment(Camera);
+		Part->SetStaticMesh(CardCube.Object);
+		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Part->SetCanEverAffectNavigation(false);
+		Part->SetOnlyOwnerSee(true);
+		Part->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+		Part->SetCastShadow(false);
+		Part->SetVisibility(false);
+	}
+
+	HeldCard->SetRelativeLocation(FVector(38.f, 16.f, -17.f));
+	HeldCard->SetRelativeRotation(FRotator(18.f, 0.f, -12.f));
+	HeldCard->SetRelativeScale3D(FVector(.004f, .086f, .054f));
+	HeldCardStripe->SetupAttachment(HeldCard);
+	HeldCardStripe->SetRelativeLocation(FVector(-.65f, 0.f, 25.f));
+	HeldCardStripe->SetRelativeRotation(FRotator::ZeroRotator);
+	HeldCardStripe->SetRelativeScale3D(FVector(.2f, .84f, .22f));
 
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 	auto* CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("DevelopmentCameraBoom"));
@@ -335,6 +363,8 @@ void AMazeCharacter::EndPlay(const EEndPlayReason::Type Reason)
 
 	PlayerEntity = FMassEntityHandle();
 	HeadlampLight->SetVisibility(false);
+	HeldCard->SetVisibility(false);
+	HeldCardStripe->SetVisibility(false);
 
 	if (SignalReverbSubmix)
 	{
@@ -374,8 +404,11 @@ FMazeItemsSnapshot AMazeCharacter::GetItems() const
 	return ECSSubsystem ? ECSSubsystem->ReadItems(PlayerEntity) : FMazeItemsSnapshot();
 }
 
-AMazeWorld* AMazeCharacter::TraceFocusedWorldItem() const
+AMazeWorld* AMazeCharacter::TraceFocusedWorldItem(int32* OutItemId) const
 {
+	if (OutItemId)
+		*OutItemId = INDEX_NONE;
+
 	if (!ECSSubsystem || !Controller)
 		return nullptr;
 
@@ -387,13 +420,60 @@ AMazeWorld* AMazeCharacter::TraceFocusedWorldItem() const
 	FHitResult Hit;
 	FCollisionQueryParams Query(SCENE_QUERY_STAT(MazeItemFocus), false, this);
 
-	if (!GetWorld()->LineTraceSingleByChannel(
+	// Precise hits take priority when several nearby focus areas overlap.
+	if (GetWorld()->LineTraceSingleByChannel(
 	        Hit, Eye, Eye + Aim * FMazeItemDefinition::FocusRange, ECC_Visibility, Query))
-		return nullptr;
+	{
+		auto* Maze = Cast<AMazeWorld>(Hit.GetActor());
+		const int32 Id = Maze ? Maze->PickupId(Hit.GetComponent()) : INDEX_NONE;
 
-	auto* Maze = Cast<AMazeWorld>(Hit.GetActor());
+		if (Id != INDEX_NONE &&
+		    FMazeItemSystem::CanFocus(ECSSubsystem->ReadWorldItem(Maze->GetMazeEntity(), Id), Eye, Aim))
+		{
+			if (OutItemId)
+				*OutItemId = Id;
 
-	return Maze && Maze->IsPickupComponent(Hit.GetComponent()) ? Maze : nullptr;
+			return Maze;
+		}
+	}
+
+	AMazeWorld* BestMaze = nullptr;
+	int32 BestId = INDEX_NONE;
+	double BestDistanceSquared = TNumericLimits<double>::Max();
+
+	for (TActorIterator<AMazeWorld> It(GetWorld()); It; ++It)
+	{
+		auto* Maze = *It;
+
+		for (const int32 Id : {FMazeItemDefinition::HeadlampWorldId, FMazeItemDefinition::CardWorldId})
+		{
+			const auto Item = ECSSubsystem->ReadWorldItem(Maze->GetMazeEntity(), Id);
+
+			if (!FMazeItemSystem::CanFocusNearby(Item, Eye, Aim))
+				continue;
+
+			const double DistanceSquared = FVector::DistSquared(Eye, Item.Location);
+
+			if (DistanceSquared >= BestDistanceSquared)
+				continue;
+
+			// Trace to the actual item, so the enlarged area cannot reach through walls or doors.
+			FHitResult VisibilityHit;
+
+			if (GetWorld()->LineTraceSingleByChannel(VisibilityHit, Eye, Item.Location, ECC_Visibility, Query) &&
+			    (VisibilityHit.GetActor() != Maze || Maze->PickupId(VisibilityHit.GetComponent()) != Id))
+				continue;
+
+			BestMaze = Maze;
+			BestId = Id;
+			BestDistanceSquared = DistanceSquared;
+		}
+	}
+
+	if (OutItemId)
+		*OutItemId = BestId;
+
+	return BestMaze;
 }
 
 void AMazeCharacter::GetInteractionView(FVector& OutEye, FVector& OutAim) const
@@ -412,7 +492,7 @@ void AMazeCharacter::GetInteractionView(FVector& OutEye, FVector& OutAim) const
 	}
 }
 
-bool AMazeCharacter::GetFocusedPickup(TArray<FVector>& OutOutline, FVector& OutLocation) const
+bool AMazeCharacter::GetFocusedPickup(TArray<FVector>& OutOutline, FVector& OutLocation, EMazeItemKind* OutKind) const
 {
 	if (!IsLocallyControlled() || !Controller || !FMazeVitalsSystem::IsAlive(GetVitals()) ||
 	    UGameplayStatics::IsGamePaused(this))
@@ -423,12 +503,18 @@ bool AMazeCharacter::GetFocusedPickup(TArray<FVector>& OutOutline, FVector& OutL
 	if ((Location && !Location->IsReady()) || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored())
 		return false;
 
-	const auto* Maze = TraceFocusedWorldItem();
+	int32 Id;
+	const auto* Maze = TraceFocusedWorldItem(&Id);
 
-	if (!Maze || !Maze->GetPickupOutline(OutOutline))
+	if (!Maze || !Maze->GetPickupOutline(OutOutline, Id))
 		return false;
 
-	OutLocation = ECSSubsystem->ReadWorldItem(Maze->GetMazeEntity()).Location;
+	const auto Item = ECSSubsystem->ReadWorldItem(Maze->GetMazeEntity(), Id);
+
+	OutLocation = Item.Location;
+
+	if (OutKind)
+		*OutKind = Item.Kind;
 
 	return true;
 }
@@ -456,10 +542,10 @@ int32 AMazeCharacter::TraceFocusedDoor(FVector& OutHandle, bool& bOutOpen) const
 
 	for (const FMazeDoorView& Door : ECSSubsystem->ReadDoors(MazeEntity))
 	{
-		if (!FMazeDoorSystem::CanFocus(Door, Eye, Aim, Width))
+		if (!FMazeDoorSystem::CanFocus(Door, Eye, Aim, Width, Maze.WallThickness))
 			continue;
 
-		const FVector Handle = FMazeDoorSystem::HandleLocation(Door, Width);
+		const FVector Handle = FMazeDoorSystem::FocusLocation(Door, Eye, Aim, Width, Maze.WallThickness);
 		const float DistanceSquared = FVector::DistSquared(Eye, Handle);
 
 		if (DistanceSquared >= BestDistanceSquared)
@@ -485,7 +571,7 @@ int32 AMazeCharacter::TraceFocusedDoor(FVector& OutHandle, bool& bOutOpen) const
 	return BestIndex;
 }
 
-bool AMazeCharacter::GetFocusedDoor(FVector& OutHandle, bool& bOutOpen) const
+bool AMazeCharacter::GetFocusedDoor(FVector& OutHandle, bool& bOutOpen, bool* bOutLocked) const
 {
 	if (!IsLocallyControlled() || !Controller || !FMazeVitalsSystem::IsAlive(GetVitals()) ||
 	    UGameplayStatics::IsGamePaused(this))
@@ -496,7 +582,18 @@ bool AMazeCharacter::GetFocusedDoor(FVector& OutHandle, bool& bOutOpen) const
 	if ((Location && !Location->IsReady()) || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored())
 		return false;
 
-	return TraceFocusedDoor(OutHandle, bOutOpen) != INDEX_NONE;
+	const int32 Index = TraceFocusedDoor(OutHandle, bOutOpen);
+
+	if (bOutLocked)
+	{
+		*bOutLocked = false;
+
+		for (const auto& Door : ECSSubsystem->ReadDoors(ECSSubsystem->ReadSession().Maze))
+			if (Door.Index == Index)
+				*bOutLocked = !FMazeDoorSystem::CanUse(Door, FMazeItemSystem::IsCardSelected(GetItems()));
+	}
+
+	return Index != INDEX_NONE;
 }
 
 int32 AMazeCharacter::GetReachedExit() const
@@ -736,6 +833,8 @@ void AMazeCharacter::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindKey(EKeys::Two, IE_Pressed, this, &AMazeCharacter::SelectInventorySlot);
 	Input->BindKey(EKeys::Three, IE_Pressed, this, &AMazeCharacter::SelectInventorySlot);
 	Input->BindKey(EKeys::Four, IE_Pressed, this, &AMazeCharacter::SelectInventorySlot);
+	Input->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &AMazeCharacter::CycleInventorySlot);
+	Input->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &AMazeCharacter::CycleInventorySlot);
 }
 
 void AMazeCharacter::InitializeSignalAudio()
@@ -912,6 +1011,31 @@ void AMazeCharacter::ServerSelectInventorySlot_Implementation(int32 Slot)
 	}
 }
 
+void AMazeCharacter::ServerCycleInventorySlot_Implementation(int32 Step)
+{
+	if ((Step != -1 && Step != 1) || !Controller || Controller->IsMoveInputIgnored() ||
+	    Controller->IsLookInputIgnored() || !ECSSubsystem)
+		return;
+
+	if (ECSSubsystem->CycleInventorySlot(PlayerEntity, Step))
+	{
+		ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);
+		RefreshHeadlamp();
+		ForceNetUpdate();
+	}
+}
+
+void AMazeCharacter::CycleInventorySlot(FKey Key)
+{
+	const auto* PC = Cast<AMazePlayerController>(Controller);
+
+	if (!IsLocallyControlled() || !PC || PC->IsMenuOpen() || PC->IsMapOpen() || PC->IsMoveInputIgnored() ||
+	    PC->IsLookInputIgnored() || UGameplayStatics::IsGamePaused(this))
+		return;
+
+	ServerCycleInventorySlot(Key == EKeys::MouseScrollUp ? -1 : 1);
+}
+
 void AMazeCharacter::PickupItem()
 {
 	if (!IsLocallyControlled() || !Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() ||
@@ -957,14 +1081,15 @@ void AMazeCharacter::ServerPickupItem_Implementation()
 	if (!Controller || Controller->IsMoveInputIgnored() || Controller->IsLookInputIgnored() || !ECSSubsystem)
 		return;
 
-	auto* Maze = TraceFocusedWorldItem();
+	int32 Id;
+	auto* Maze = TraceFocusedWorldItem(&Id);
 
 	FVector Eye;
 	FVector Aim;
 
 	GetInteractionView(Eye, Aim);
 
-	if (!Maze || !ECSSubsystem->PickupWorldItem(PlayerEntity, Maze->GetMazeEntity(), 1, Eye, Aim))
+	if (!Maze || !ECSSubsystem->PickupWorldItem(PlayerEntity, Maze->GetMazeEntity(), Id, Eye, Aim))
 		return;
 
 	ReplicatedItems = ECSSubsystem->ReadItems(PlayerEntity);
@@ -1046,6 +1171,24 @@ void AMazeCharacter::LookUp(float Value)
 	if (ECSSubsystem)
 		ECSSubsystem->SetInputAxis(
 		    PlayerEntity, EMazeInputAxis::Pitch, FMazeInterfacePreferences::Read().bInvertMouseY ? -Value : Value);
+}
+
+void AMazeCharacter::RestoreHeldMovementInput()
+{
+	const auto* PC = Cast<AMazePlayerController>(Controller);
+
+	if (!ECSSubsystem || !PC || PC->IsMoveInputIgnored())
+		return;
+
+	Forward(float(MazeKeyBindings::IsHeld(*PC, TEXT("Forward"))) -
+	        float(MazeKeyBindings::IsHeld(*PC, TEXT("Backward"))));
+	Right(float(MazeKeyBindings::IsHeld(*PC, TEXT("Right"))) - float(MazeKeyBindings::IsHeld(*PC, TEXT("Left"))));
+
+	if (MazeKeyBindings::IsHeld(*PC, TEXT("Sprint")))
+		SprintStart();
+
+	if (MazeKeyBindings::IsHeld(*PC, TEXT("Crouch")))
+		CrouchStart();
 }
 
 void AMazeCharacter::SprintStart()
@@ -1167,6 +1310,24 @@ void AMazeCharacter::OnRep_Items()
 
 void AMazeCharacter::RefreshHeadlamp()
 {
+	const auto* PC = Cast<AMazePlayerController>(Controller);
+	const bool bShowCard = IsLocallyControlled() && PC && !PC->IsMenuOpen() && !PC->IsMapOpen() &&
+	                       FMazeVitalsSystem::IsAlive(GetVitals()) && FMazeItemSystem::IsCardSelected(GetItems());
+
+	HeldCard->SetVisibility(bShowCard);
+	HeldCardStripe->SetVisibility(bShowCard);
+
+	if (bShowCard)
+	{
+		const auto* Settings = GetDefault<UMazeLocationSettings>();
+
+		if (auto* Material = Settings->CardMaterial().Get())
+			HeldCard->SetMaterial(0, Material);
+
+		if (auto* Material = Settings->CardStripeMaterial().Get())
+			HeldCardStripe->SetMaterial(0, Material);
+	}
+
 	const bool bVisible =
 	    GetNetMode() != NM_DedicatedServer && ECSSubsystem && ECSSubsystem->ReadHeadlampEnabled(PlayerEntity);
 

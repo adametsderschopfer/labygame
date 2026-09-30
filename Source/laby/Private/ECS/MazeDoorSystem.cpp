@@ -1,5 +1,57 @@
 #include "ECS/MazeDoorSystem.h"
 
+bool FMazeDoorSystem::IsCardDoor(int32 Seed, int32 Index)
+{
+	FRandomStream Random(
+	    static_cast<int32>(static_cast<uint32>(Seed) ^ 0x43a91f27u ^ (static_cast<uint32>(Index) * 196613u)));
+
+	return Random.FRand() < FMazeDoorDefinition::CardDoorFraction;
+}
+
+FVector FMazeDoorSystem::ReaderLocation(const FMazeDoorView& Door, float OpeningWidth, float WallThickness, float Side)
+{
+	return Door.Center + Door.SlideAxis * (OpeningWidth * .5f + FMazeDoorDefinition::ReaderSideOffsetCm) +
+	       Door.Normal * Side * (WallThickness * .5f + 4.f) + FVector::UpVector * FMazeDoorDefinition::ReaderHeightCm;
+}
+
+FVector FMazeDoorSystem::FocusLocation(
+    const FMazeDoorView& Door, const FVector& Eye, const FVector& Aim, float OpeningWidth, float WallThickness)
+{
+	const FVector Handle = HandleLocation(Door, OpeningWidth);
+
+	if (!Door.bRequiresCard)
+		return Handle;
+
+	const FVector Reader = ReaderLocation(
+	    Door, OpeningWidth, WallThickness, FVector::DotProduct(Eye - Door.Center, Door.Normal) >= 0.f ? 1.f : -1.f);
+	const FVector Direction = Aim.GetSafeNormal();
+
+	return FVector::CrossProduct(Reader - Eye, Direction).SizeSquared() <
+	               FVector::CrossProduct(Handle - Eye, Direction).SizeSquared()
+	           ? Reader
+	           : Handle;
+}
+
+bool FMazeDoorSystem::CanUse(const FMazeDoorView& Door, bool bCardSelected)
+{
+	return !Door.bRequiresCard || Door.bUnlocked || bCardSelected;
+}
+
+bool FMazeDoorSystem::TryToggle(FMazeDoorFragment& Door, const FVector& PlayerLocation, bool bCardSelected)
+{
+	if (Door.bRequiresCard && !Door.bUnlocked)
+	{
+		if (!bCardSelected)
+			return false;
+
+		Door.bUnlocked = true;
+	}
+
+	Toggle(Door, PlayerLocation);
+
+	return true;
+}
+
 FVector FMazeDoorSystem::HandleLocation(const FMazeDoorView& Door, float OpeningWidth)
 {
 	const float LeafWidth = OpeningWidth - 2.f * FMazeDoorDefinition::FrameWidthCm;
@@ -12,9 +64,10 @@ FVector FMazeDoorSystem::HandleLocation(const FMazeDoorView& Door, float Opening
 	       FVector::UpVector * FMazeDoorDefinition::HandleHeightCm;
 }
 
-bool FMazeDoorSystem::CanFocus(const FMazeDoorView& Door, const FVector& Eye, const FVector& Aim, float OpeningWidth)
+bool FMazeDoorSystem::CanFocus(
+    const FMazeDoorView& Door, const FVector& Eye, const FVector& Aim, float OpeningWidth, float WallThickness)
 {
-	const FVector Delta = HandleLocation(Door, OpeningWidth) - Eye;
+	const FVector Delta = FocusLocation(Door, Eye, Aim, OpeningWidth, WallThickness) - Eye;
 	const float Distance = Delta.Size();
 
 	return !Eye.ContainsNaN() && !Aim.ContainsNaN() && Distance <= FMazeDoorDefinition::InteractionRangeCm &&
@@ -23,15 +76,20 @@ bool FMazeDoorSystem::CanFocus(const FMazeDoorView& Door, const FVector& Eye, co
 	       FVector::DotProduct(Delta, Aim) > 0.f;
 }
 
-bool FMazeDoorSystem::CanInteract(const FMazeDoorFragment& Door,
-                                  const FVector& Eye,
-                                  const FVector& Aim,
-                                  float OpeningWidth)
+bool FMazeDoorSystem::CanInteract(
+    const FMazeDoorFragment& Door, const FVector& Eye, const FVector& Aim, float OpeningWidth, float WallThickness)
 {
-	const FMazeDoorView View{
-	    Door.Index, Door.Center, Door.SlideAxis, Door.Normal, Door.OpenAmount, Door.bWantsOpen, Door.SwingSign};
+	const FMazeDoorView View{Door.Index,
+	                         Door.Center,
+	                         Door.SlideAxis,
+	                         Door.Normal,
+	                         Door.OpenAmount,
+	                         Door.bWantsOpen,
+	                         Door.SwingSign,
+	                         Door.bRequiresCard,
+	                         Door.bUnlocked};
 
-	return CanFocus(View, Eye, Aim, OpeningWidth);
+	return CanFocus(View, Eye, Aim, OpeningWidth, WallThickness);
 }
 
 void FMazeDoorSystem::Toggle(FMazeDoorFragment& Door, const FVector& PlayerLocation)

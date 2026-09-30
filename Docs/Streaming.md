@@ -1,5 +1,16 @@
 # Location preparation and streaming
 
+## Card access resources
+
+Card pickups and reader housings/screens remain resident under the existing
+world adapter and reset on regeneration/teardown. They use cube components and
+grouped ISM, with no per-door Actors or new chunk participants. ECS identity and
+unlock state survive cosmetic chunk eviction. Dedicated servers skip readers,
+retain door physics and hidden pickup query geometry. The shared screen material
+is in the Maze location manifest; typed references resolve it after preload.
+Radii, resident physics and per-frame chunk budgets are unchanged. No new
+asynchronous tasks or runtime lights are introduced.
+
 ## Ownership
 
 The maze entity owns the immutable topology, floor transforms, ceiling transforms,

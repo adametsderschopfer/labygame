@@ -4,6 +4,7 @@
 #include "ECS/MazeDoorSystem.h"
 #include "ECS/MazeECSSubsystem.h"
 #include "Engine/World.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/OverlapResult.h"
 #include "Materials/MaterialInterface.h"
 #include "Math/RotationMatrix.h"
@@ -56,7 +57,9 @@ namespace
 
 bool AMazeWorld::IsDoorCollisionComponent(const UPrimitiveComponent* Component, int32 Instance, int32 DoorIndex) const
 {
-	return Component == DoorCollision && Instance == DoorIndex;
+	return (Component == DoorCollision && Instance == DoorIndex) ||
+	       (Component == DoorReaders && Instance >= 0 && ReaderDoorIndices.IsValidIndex(Instance / 2) &&
+	        ReaderDoorIndices[Instance / 2] == DoorIndex);
 }
 
 void AMazeWorld::RebuildDoorInstances()
@@ -67,6 +70,10 @@ void AMazeWorld::RebuildDoorInstances()
 	DoorCollision->ClearInstances();
 	AppliedDoorOpenAmounts.Reset();
 	AppliedDoorSwingSigns.Reset();
+	DoorReaders->ClearInstances();
+	DoorScreens->ClearInstances();
+	ReaderDoorIndices.Reset();
+	AppliedDoorUnlocks.Reset();
 
 	if (!ECSSubsystem)
 		return;
@@ -92,6 +99,25 @@ void AMazeWorld::RebuildDoorInstances()
 			DoorHandles->AddInstance(HandleTransform(Door, GetActorLocation(), Width, Maze.WallThickness));
 		}
 
+		if (Door.bRequiresCard && bVisual)
+		{
+			ReaderDoorIndices.Add(Door.Index);
+
+			for (float Side : {-1.f, 1.f})
+			{
+				const FVector Reader =
+				    FMazeDoorSystem::ReaderLocation(Door, Width, Maze.WallThickness, Side) - GetActorLocation();
+
+				DoorReaders->AddInstance(FTransform(Rotation, Reader, FVector(.18f, .06f, .28f)));
+
+				const int32 Screen = DoorScreens->AddInstance(FTransform(
+				    Rotation, Reader + Door.Normal * Side * 3.2f + FVector(0.f, 0.f, 2.f), FVector(.13f, .005f, .16f)));
+
+				DoorScreens->SetCustomDataValue(Screen, 0, Door.bUnlocked ? 1.f : 0.f, false);
+			}
+		}
+
+		AppliedDoorUnlocks.Add(Door.bUnlocked);
 		DoorCollision->AddInstance(Leaf);
 		AppliedDoorOpenAmounts.Add(Door.OpenAmount);
 		AppliedDoorSwingSigns.Add(Door.SwingSign);
@@ -108,7 +134,7 @@ void AMazeWorld::PrepareDoorAssets()
 	UStaticMesh* LeafMesh = Settings->DoorLeafMesh().Get();
 	UStaticMesh* HandleMesh = Settings->DoorHandleMesh().Get();
 
-	if (!FrameMesh || !LeafMesh || !HandleMesh)
+	if (!FrameMesh || !LeafMesh || !HandleMesh || !Settings->DoorReaderMaterial().Get())
 	{
 		GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->Fail(TEXT("Frosted door meshes are unavailable"));
 
@@ -195,6 +221,21 @@ void AMazeWorld::UpdateDoors(float DeltaSeconds)
 
 	const bool bVisual = GetNetMode() != NM_DedicatedServer;
 
+	for (int32 ReaderIndex = 0; bVisual && ReaderIndex < ReaderDoorIndices.Num(); ++ReaderIndex)
+	{
+		const int32 DoorIndex = ReaderDoorIndices[ReaderIndex];
+
+		if (Doors.IsValidIndex(DoorIndex) && AppliedDoorUnlocks.IsValidIndex(DoorIndex) &&
+		    AppliedDoorUnlocks[DoorIndex] != Doors[DoorIndex].bUnlocked)
+		{
+			for (int32 Side = 0; Side < 2; ++Side)
+				DoorScreens->SetCustomDataValue(
+				    ReaderIndex * 2 + Side, 0, Doors[DoorIndex].bUnlocked ? 1.f : 0.f, false);
+
+			AppliedDoorUnlocks[DoorIndex] = Doors[DoorIndex].bUnlocked;
+		}
+	}
+
 	for (int32 Index = 0; Index < Doors.Num(); ++Index)
 	{
 		if (FMath::IsNearlyEqual(AppliedDoorOpenAmounts[Index], Doors[Index].OpenAmount) &&
@@ -203,13 +244,18 @@ void AMazeWorld::UpdateDoors(float DeltaSeconds)
 
 		const FTransform Leaf = LeafTransform(Doors[Index], GetActorLocation(), Width, Height, Maze.WallThickness);
 
-		DoorCollision->UpdateInstanceTransform(Index, Leaf, false, true, true);
+		// UE tracks changed instance data and submits it at frame end without recreating the render proxy.
+		DoorCollision->UpdateInstanceTransform(Index, Leaf, false, false, true);
 
 		if (bVisual)
 		{
-			DoorLeaves->UpdateInstanceTransform(Index, Leaf, false, true, true);
+			DoorLeaves->UpdateInstanceTransform(Index, Leaf, false, false, true);
 			DoorHandles->UpdateInstanceTransform(
-			    Index, HandleTransform(Doors[Index], GetActorLocation(), Width, Maze.WallThickness), false, true, true);
+			    Index,
+			    HandleTransform(Doors[Index], GetActorLocation(), Width, Maze.WallThickness),
+			    false,
+			    false,
+			    true);
 		}
 
 		AppliedDoorOpenAmounts[Index] = Doors[Index].OpenAmount;

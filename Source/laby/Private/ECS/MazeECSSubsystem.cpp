@@ -253,6 +253,16 @@ bool UMazeECSSubsystem::SelectInventorySlot(FMassEntityHandle Entity, int32 Slot
 	                                       (!Room.bActive || Room.bStarted));
 }
 
+bool UMazeECSSubsystem::CycleInventorySlot(FMassEntityHandle Entity, int32 Step)
+{
+	if (Step != -1 && Step != 1)
+		return false;
+
+	const auto* Items = FindFragment<FMazeItemsFragment>(Entity);
+
+	return Items && SelectInventorySlot(Entity, FMazeItemSystem::NextSlot(Items->Value.SelectedSlot, Step));
+}
+
 void UMazeECSSubsystem::ReceiveItems(FMassEntityHandle Entity, const FMazeItemsSnapshot& Snapshot)
 {
 	if (GetWorld()->GetNetMode() != NM_Client)
@@ -262,13 +272,14 @@ void UMazeECSSubsystem::ReceiveItems(FMassEntityHandle Entity, const FMazeItemsS
 		Items->Value = Snapshot;
 }
 
-FMazeWorldItemView UMazeECSSubsystem::ReadWorldItem(FMassEntityHandle Maze) const
+FMazeWorldItemView UMazeECSSubsystem::ReadWorldItem(FMassEntityHandle Maze, int32 ItemId) const
 {
 	const auto* Generation = FindFragment<FMazeGenerationFragment>(Maze);
 
 	for (const FMassEntityHandle Entity : WorldItemEntities)
 		if (const auto* Item = FindFragment<FMazeWorldItemFragment>(Entity);
-		    Item && Generation && Item->Maze == Maze && Item->MazeRevision == Generation->Revision)
+		    Item && Generation && Item->Maze == Maze && Item->MazeRevision == Generation->Revision &&
+		    Item->Id == ItemId)
 			return {Item->Id, Item->Kind, Item->Location, Item->bAvailable};
 
 	return FMazeWorldItemView();
@@ -280,14 +291,14 @@ bool UMazeECSSubsystem::PickupWorldItem(FMassEntityHandle Player,
                                         const FVector& EyeLocation,
                                         const FVector& AimDirection)
 {
-	if (GetWorld()->GetNetMode() == NM_Client || GetWorld()->IsPaused() || ItemId != 1 || ReadSession().Maze != Maze)
+	if (GetWorld()->GetNetMode() == NM_Client || GetWorld()->IsPaused() || ReadSession().Maze != Maze)
 		return false;
 
 	auto* Items = FindFragment<FMazeItemsFragment>(Player);
 	const auto* Pose = FindFragment<FMazePlayerPoseFragment>(Player);
 	const auto* Vitals = FindVitals(Player);
 	const auto Room = ReadRoom();
-	const auto View = ReadWorldItem(Maze);
+	const auto View = ReadWorldItem(Maze, ItemId);
 
 	if (!Items || !Pose || !Vitals || !Pose->bInputEnabled || !FMazeVitalsSystem::IsAlive(*Vitals) ||
 	    (Room.bActive && !Room.bStarted) || !View.bAvailable || View.Id != ItemId ||
@@ -324,16 +335,16 @@ bool UMazeECSSubsystem::DropSelectedItem(FMassEntityHandle Player,
 
 	for (const FMassEntityHandle Entity : WorldItemEntities)
 		if (auto* Item = FindFragment<FMazeWorldItemFragment>(Entity);
-		    Item && Item->Maze == MazeEntity && Item->MazeRevision == Maze->Revision && Item->Id == 1)
+		    Item && Item->Maze == MazeEntity && Item->MazeRevision == Maze->Revision &&
+		    Items->Value.Items.IsValidIndex(Items->Value.SelectedSlot) &&
+		    Item->Kind == Items->Value.Items[Items->Value.SelectedSlot].Kind)
 			return FMazeItemSystem::Drop(*Items, *Item, Location, true);
 
 	return false;
 }
 
-void UMazeECSSubsystem::ReceiveWorldItemSnapshot(FMassEntityHandle MazeEntity,
-                                                 uint32 Revision,
-                                                 const FVector& Location,
-                                                 bool bAvailable)
+void UMazeECSSubsystem::ReceiveWorldItemSnapshot(
+    FMassEntityHandle MazeEntity, uint32 Revision, const FVector& Location, bool bAvailable, int32 ItemId)
 {
 	if (GetWorld()->GetNetMode() != NM_Client)
 		return;
@@ -345,7 +356,7 @@ void UMazeECSSubsystem::ReceiveWorldItemSnapshot(FMassEntityHandle MazeEntity,
 
 	for (const FMassEntityHandle Entity : WorldItemEntities)
 		if (auto* Item = FindFragment<FMazeWorldItemFragment>(Entity);
-		    Item && Item->Maze == MazeEntity && Item->MazeRevision == Revision)
+		    Item && Item->Maze == MazeEntity && Item->MazeRevision == Revision && Item->Id == ItemId)
 		{
 			Item->Location = Location;
 			Item->bAvailable = bAvailable;
@@ -813,13 +824,23 @@ void UMazeECSSubsystem::RebuildWorldItems(FMassEntityHandle MazeEntity)
 	if (!MassSubsystem || !Maze || !Maze->Data)
 		return;
 
-	const FMassEntityHandle Entity = MassSubsystem->GetMutableEntityManager().CreateEntity(WorldItemArchetype);
-	auto* Item = FindFragment<FMazeWorldItemFragment>(Entity);
+	// Copy values before structural entity creation; fragment storage may move.
+	const uint32 Revision = Maze->Revision;
+	const FVector Start = Maze->Origin + Maze->Data->Start + FMazeItemDefinition::StartOffset();
 
-	Item->Maze = MazeEntity;
-	Item->MazeRevision = Maze->Revision;
-	Item->Location = Maze->Origin + Maze->Data->Start + FMazeItemDefinition::StartOffset();
-	WorldItemEntities.Add(Entity);
+	for (int32 Id : {FMazeItemDefinition::HeadlampWorldId, FMazeItemDefinition::CardWorldId})
+	{
+		const FMassEntityHandle Entity = MassSubsystem->GetMutableEntityManager().CreateEntity(WorldItemArchetype);
+		auto* Item = FindFragment<FMazeWorldItemFragment>(Entity);
+
+		Item->Maze = MazeEntity;
+		Item->MazeRevision = Revision;
+		Item->Id = Id;
+		Item->Kind = Id == FMazeItemDefinition::CardWorldId ? EMazeItemKind::AccessCard : EMazeItemKind::Headlamp;
+		Item->Location =
+		    Start + (Id == FMazeItemDefinition::CardWorldId ? FVector(0.f, 48.f, -8.f) : FVector::ZeroVector);
+		WorldItemEntities.Add(Entity);
+	}
 }
 
 FMazeGenerationFragment UMazeECSSubsystem::ReadMaze(FMassEntityHandle Entity) const
@@ -864,6 +885,10 @@ void UMazeECSSubsystem::RebuildDoors(FMassEntityHandle MazeEntity)
 	static const FVector Directions[] = {
 	    FVector(0.f, -1.f, 0.f), FVector(1.f, 0.f, 0.f), FVector(0.f, 1.f, 0.f), FVector(-1.f, 0.f, 0.f)};
 	const TArray<FMazeDoorway> Doorways = Maze->Data->Layout.Doorways();
+	const int32 Seed = Maze->Seed;
+	const uint32 Revision = Maze->Revision;
+	const FVector Origin = Maze->Origin;
+	const float Cell = Maze->Cell;
 	auto& Manager = MassSubsystem->GetMutableEntityManager();
 
 	DoorEntities.Reserve(DoorEntities.Num() + Doorways.Num());
@@ -874,17 +899,17 @@ void UMazeECSSubsystem::RebuildDoors(FMassEntityHandle MazeEntity)
 		const FVector Normal = Directions[Doorway.Direction];
 		const FVector SlideAxis(-Normal.Y, Normal.X, 0.f);
 		const FVector LocalCenter =
-		    FVector((Doorway.Cell.X + 0.5f) * Maze->Cell, (Doorway.Cell.Y + 0.5f) * Maze->Cell, 0.f) +
-		    Normal * (Maze->Cell * 0.5f);
+		    FVector((Doorway.Cell.X + 0.5f) * Cell, (Doorway.Cell.Y + 0.5f) * Cell, 0.f) + Normal * (Cell * 0.5f);
 		const FMassEntityHandle Entity = Manager.CreateEntity(DoorArchetype);
 		auto& Door = Manager.GetFragmentDataChecked<FMazeDoorFragment>(Entity);
 
 		Door.Maze = MazeEntity;
-		Door.MazeRevision = Maze->Revision;
+		Door.MazeRevision = Revision;
 		Door.Index = Index;
-		Door.Center = Maze->Origin + LocalCenter;
+		Door.Center = Origin + LocalCenter;
 		Door.SlideAxis = SlideAxis;
 		Door.Normal = Normal;
+		Door.bRequiresCard = FMazeDoorSystem::IsCardDoor(Seed, Index);
 		DoorEntities.Add(Entity);
 	}
 }
@@ -909,7 +934,9 @@ TArray<FMazeDoorView> UMazeECSSubsystem::ReadDoors(FMassEntityHandle MazeEntity)
 			            Door->Normal,
 			            Door->OpenAmount,
 			            Door->bWantsOpen,
-			            Door->SwingSign});
+			            Door->SwingSign,
+			            Door->bRequiresCard,
+			            Door->bUnlocked});
 
 	Result.Sort(
 	    [](const FMazeDoorView& A, const FMazeDoorView& B)
@@ -925,12 +952,16 @@ TArray<uint8> UMazeECSSubsystem::ReadDoorStates(FMassEntityHandle MazeEntity) co
 	const TArray<FMazeDoorView> Doors = ReadDoors(MazeEntity);
 	TArray<uint8> Result;
 
-	Result.SetNumZeroed(Doors.Num());
+	Result.SetNumZeroed(Doors.Num() * 2);
 
 	for (const FMazeDoorView& Door : Doors)
-		if (Result.IsValidIndex(Door.Index))
-			Result[Door.Index] = static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Door.OpenAmount, 0.f, 1.f) * 63.f)) |
-			                     (Door.SwingSign < 0 ? 0x40 : 0) | (Door.bWantsOpen ? 0x80 : 0);
+		if (Result.IsValidIndex(Door.Index * 2 + 1))
+		{
+			Result[Door.Index * 2 + 1] = Door.bUnlocked ? 1 : 0;
+			Result[Door.Index * 2] =
+			    static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Door.OpenAmount, 0.f, 1.f) * 63.f)) |
+			    (Door.SwingSign < 0 ? 0x40 : 0) | (Door.bWantsOpen ? 0x80 : 0);
+		}
 
 	return Result;
 }
@@ -970,10 +1001,14 @@ bool UMazeECSSubsystem::ToggleDoor(FMassEntityHandle Player, int32 DoorIndex, co
 	    Door->Index != DoorIndex || !Maze || !Maze->Data || Door->MazeRevision != Maze->Revision ||
 	    Progress->Maze != Door->Maze || (ReadRoom().bActive && !ReadRoom().bStarted) ||
 	    !FMazeDoorSystem::CanInteract(
-	        *Door, Eye, Aim, FMazeRoomDefinition::OpeningWidth(Maze->Cell - Maze->WallThickness)))
+	        *Door, Eye, Aim, FMazeRoomDefinition::OpeningWidth(Maze->Cell - Maze->WallThickness), Maze->WallThickness))
 		return false;
 
-	FMazeDoorSystem::Toggle(*Door, Pose->Location);
+	const auto* Items = FindFragment<FMazeItemsFragment>(Player);
+
+	if (!FMazeDoorSystem::TryToggle(*Door, Pose->Location, Items && FMazeItemSystem::IsCardSelected(Items->Value)))
+		return false;
+
 	EmitNoise(Player, EMazeNoiseSource::Door);
 
 	return true;
@@ -986,17 +1021,19 @@ void UMazeECSSubsystem::ReceiveDoorStates(FMassEntityHandle MazeEntity, uint32 R
 
 	const auto* Maze = FindFragment<FMazeGenerationFragment>(MazeEntity);
 
-	if (!Maze || !Maze->Data || Maze->Revision != Revision || States.Num() != ReadDoors(MazeEntity).Num())
+	if (!Maze || !Maze->Data || Maze->Revision != Revision || States.Num() != ReadDoors(MazeEntity).Num() * 2)
 		return;
 
 	for (const FMassEntityHandle Entity : DoorEntities)
-		if (auto* Door = FindFragment<FMazeDoorFragment>(Entity);
-		    Door && Door->Maze == MazeEntity && Door->MazeRevision == Revision && States.IsValidIndex(Door->Index))
+		if (auto* Door = FindFragment<FMazeDoorFragment>(Entity); Door && Door->Maze == MazeEntity &&
+		                                                          Door->MazeRevision == Revision &&
+		                                                          States.IsValidIndex(Door->Index * 2 + 1))
 		{
-			Door->bWantsOpen = (States[Door->Index] & 0x80) != 0;
-			Door->SwingSign = (States[Door->Index] & 0x40) != 0 ? -1 : 1;
-			Door->OpenAmount = (States[Door->Index] & 0x3f) / 63.f;
+			Door->bWantsOpen = (States[Door->Index * 2] & 0x80) != 0;
+			Door->SwingSign = (States[Door->Index * 2] & 0x40) != 0 ? -1 : 1;
+			Door->OpenAmount = (States[Door->Index * 2] & 0x3f) / 63.f;
 			Door->PendingSwingSign = 0;
+			Door->bUnlocked = States[Door->Index * 2 + 1] != 0;
 		}
 }
 
