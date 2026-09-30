@@ -689,6 +689,7 @@ Actor/Character, PlayerController, GameMode и HUD служат адаптера
 ## Свисток-маяк игрока
 
 - `FMazeSignalFragment` сущности игрока владеет последним принятым сигналом, серверным откатом и временем показа на карте. `FMazeSignalSystem` принимает одноразовый запрос только от живого игрока с разрешённым вводом после старта сессии и комнаты, нормализует направление, увеличивает sequence и запускает откат на 4 секунды и показ на 3 секунды. При паузе оба таймера стоят; при уничтожении сущности состояние исчезает вместе с ней.
+- `FMazeVitalsFragment` того же игрока владеет запасом стамины и задержкой её восстановления. Стоимость свистка — 25 из 100, задана в `FMazeVitals`. `RequestSignal` на авторитетном игровом потоке проверяет состояние сессии и получает оба фрагмента; `FMazeSignalSystem::Request` сначала проверяет откат и направление, затем `FMazeVitalsSystem` списывает стоимость ровно один раз перед публикацией сигнала. При недостатке стамины сигнал, откат и звук не создаются. Списание начинает обычную задержку восстановления 1,5 секунды; нулевая стамина включает истощение. Синхронный тик ECS уменьшает откат и обновляет витальные показатели по simulation delta без дополнительного таймера; при паузе ни запрос, ни восстановление не выполняются. При уничтожении сущности оба состояния очищаются. Клиент получает запас стамины через существующее зеркало `ReplicatedVitals` владельца; нового RPC и фрагмента нет.
 - Owning client отправляет intent без координат через `ServerRequestSignal`. Сервер берёт положение и направление из своей `FMazePlayerPoseFragment`, поэтому клиент не выбирает точку маяка и не обходит откат. Принятый снимок реплицируется свойством Character всем клиентам; `OnRep` переносит его в клиентский ECS. Sequence подавляет повторную обработку одного снимка. Клиентское состояние является зеркалом серверного решения и не выполняет правила принятия.
 - `UMazeECSSubsystem::Tick` уменьшает время видимости сигнала во всех игровых мирах, а откат — только в авторитетном мире, до остальных витальных систем. API возвращает отдельный `FMazeSignalView`; виджеты не получают изменяемый фрагмент и не удерживают его между кадрами.
 - `AMazeCharacter` — тонкий аудиоадаптер. Он воспроизводит импортированный mono SoundWave через штатные UE 5.8 attenuation cone, пространственное затухание до 80 м, real-time occlusion и Audio Mixer reverb. Короткий visibility probe по серверному направлению усиливает только косметический reverb-send, если игрок свистит в стену; трассировка не создаёт игрового состояния и не влияет на принятие сигнала. Dedicated server звук не создаёт.
@@ -742,3 +743,90 @@ HUD больше не перебирает Actors для вывода seed/ра�
 генерации сохранена. Новых gameplay-состояний и правил нет.
 Удаление отражаемого класса и поля Mass требует полной сборки с закрытым
 редактором; Live Coding, Play и тесты для этой правки не запускались.
+
+## Development menu (2026-09-30)
+
+Backslash opens a native Slate development panel at the top right. UIOnly input,
+cleared held/one-shot input, and ignore-move/look flags prevent gameplay controls
+while it is open. Backslash, Escape and Close restore GameOnly input; map/menu,
+death and teardown remove the panel. It does not pause world simulation.
+
+The entire panel, strings, bindings, map overrides, route algorithm/cache, and
+infinite-stamina bridge/rules/state are guarded by
+`!UE_BUILD_SHIPPING && !UE_BUILD_TEST`. There are no debug Blueprint/content assets
+or debug localization resources to cook. The native development tool is an
+intentional exception to production Widget Blueprint layout: its implementation
+and ru/en/es labels can be removed by compilation together.
+
+`FMazeVitalsFragment.Value.bInfiniteStamina` is the only owner of the per-player
+cheat, a non-reflected development-only member. The typed subsystem setter checks
+world-scoped entity validity and standalone authority/session; the vitals system
+restores full stamina and clears exhaustion/recovery on enable, skips accepted
+jump/signal spending, and maintains full stamina during the existing synchronous
+vitals update. Health, physics, accepted-action validation and pause ordering are
+unchanged. No cheat RPC or client prediction was added. The checkbox is disabled
+in multiplayer. New player/world creation resets it; the checkbox reads ECS state.
+Native state additions require a full editor rebuild/restart before use.
+
+Reveal/route toggles are local controller presentation preferences only. Reveal
+supplies a temporary all-visible mask to both map painters, without modifying
+exploration, exit progress or gameplay state. Route uses pure BFS over immutable
+wall/floor topology to the nearest reachable exit, including doors that must be
+opened and links requiring crouch. It is a topology guide, not a physics/nav path.
+The widget caches derived cells by generation revision, seed and current cell;
+it rebuilds after movement/regeneration and clears when disabled. Paint borrows
+this cache synchronously. Travel destroys controller/widget caches and resets
+both toggles. No background work, new resources or streaming budgets are needed.
+
+The former NewMaze action/R binding is removed, including saved user mappings.
+Regenerate in the panel reuses standalone StartNewGame travel and therefore the
+existing ECS lifecycle, seed selection and resource readiness. Production New
+Game remains available through its existing menu.
+
+Verification: Win64 Development and Shipping game-target builds succeeded on
+2026-09-30. Shipping object symbol inspection found no development panel, route
+or stamina setter; the Development panel symbol is present in Development.
+Shipping panel object contains none of the checked en/ru/es debug labels.
+Format-Code.ps1 and ru/en/es localization Update completed. The editor exited
+during the task without agent termination; after verifying it was closed, the
+full Win64 Development Editor build also succeeded. No Play, gameplay tests or
+release packaging was run. The editor remains closed, ready for the next open.
+
+### Extended development controls
+
+Added seed display/copy (the exact integer, without locale grouping), same-seed
+travel through a standalone-only DevelopmentSeed URL parameter set before
+AMazeWorld finishes spawning, and start/nearest-reachable-exit teleports. The
+pure FMazeDevelopmentSystem derives location/cell/room and teleport destinations
+from the ECS immutable generation payload. The typed subsystem bridge validates
+world/entity, standalone authority, live player, active session and pause. Engine
+adapters resolve resident floor/capsule fit and execute TeleportTo; normal next-tick
+observations update ECS pose, exploration and exit progress. Teleport to exit crosses
+the existing exit threshold, without directly granting victory.
+
+The vitals fragment owns non-reflected development-only bDevelopmentImmortal;
+FMazeVitalsSystem owns its setter and damage rejection, including hazard/water.
+A thin FellOutOfWorld adapter asks ECS for rescue authorization and uses the common
+start teleport to prevent native KillZ Actor destruction bypassing the health rule.
+No resurrection, shipping rule, cheat RPC or alternate health state is added.
+
+A controller-owned development presentation object contains only local diagnostic
+preferences, cached text (refreshed at 4 Hz), widget references, teleport preparation
+status and original viewport flags. Coordinates/cell/localized room and resource
+readouts remain visible after closing the panel. The panel scrolls on small displays.
+Resource observations come from the location adapter and the current maze's world
+representation: resident/pending visual chunks, preparation counts, pending PSOs,
+and source geometry bytes (not process memory or VRAM). Shared MazeRoomLabel
+preserves existing localization keys and is used by map and diagnostics.
+
+Collision uses UE 5.8 UGameViewportClient EngineShowFlags/ToggleShowCollision,
+including hidden collider scene proxies; original collision/volume flags are restored
+on teardown only for the same world/viewport. All added controls, strings, state,
+URL parsing, teleport/resource hooks and immortality are excluded in Shipping/Test.
+Player/world creation resets cheats and preferences. Teardown removes both widgets.
+
+For this extension only formatting, source/diff and installed-engine API inspection
+were performed. Builds, Play and tests were explicitly not run at the user's request.
+The earlier build results above apply to the initial menu, not this extension. The
+new controller presentation field/native vitals member require safe application on
+the next full editor rebuild; the running editor was not terminated or patched.

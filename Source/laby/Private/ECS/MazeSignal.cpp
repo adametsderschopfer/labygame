@@ -1,6 +1,7 @@
 #include "ECS/MazeSignal.h"
 
 #include "ECS/MazeECSFragments.h"
+#include "ECS/MazeVitalsSystem.h"
 
 void FMazeSignalSystem::Update(FMazeSignalFragment& Signal, float DeltaSeconds, bool bAuthority)
 {
@@ -13,10 +14,8 @@ void FMazeSignalSystem::Update(FMazeSignalFragment& Signal, float DeltaSeconds, 
 		Signal.CooldownRemaining = FMath::Max(0.f, Signal.CooldownRemaining - DeltaSeconds);
 }
 
-bool FMazeSignalSystem::Request(FMazeSignalFragment& Signal,
-                                const FVector& Location,
-                                const FVector& Direction,
-                                bool bAllowed)
+bool FMazeSignalSystem::Request(
+    FMazeSignalFragment& Signal, FMazeVitals& Vitals, const FVector& Location, const FVector& Direction, bool bAllowed)
 {
 	if (!bAllowed || Signal.CooldownRemaining > 0.f || Location.ContainsNaN() || Direction.ContainsNaN())
 		return false;
@@ -24,6 +23,9 @@ bool FMazeSignalSystem::Request(FMazeSignalFragment& Signal,
 	const FVector NormalizedDirection = Direction.GetSafeNormal();
 
 	if (NormalizedDirection.IsNearlyZero())
+		return false;
+
+	if (!FMazeVitalsSystem::SpendSignalStamina(Vitals))
 		return false;
 
 	++Signal.Value.Sequence;

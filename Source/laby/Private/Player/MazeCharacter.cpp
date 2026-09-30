@@ -720,7 +720,6 @@ void AMazeCharacter::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindAction(TEXT("Sprint"), IE_Released, this, &AMazeCharacter::SprintStop);
 	Input->BindAction(TEXT("Crouch"), IE_Pressed, this, &AMazeCharacter::CrouchStart);
 	Input->BindAction(TEXT("Crouch"), IE_Released, this, &AMazeCharacter::CrouchStop);
-	Input->BindAction(TEXT("NewMaze"), IE_Pressed, this, &AMazeCharacter::RestartMaze);
 	Input->BindAction(TEXT("Headlamp"), IE_Pressed, this, &AMazeCharacter::ToggleHeadlamp);
 	Input->BindAction(TEXT("Interact"), IE_Pressed, this, &AMazeCharacter::PickupItem);
 	Input->BindAction(TEXT("DropItem"), IE_Pressed, this, &AMazeCharacter::DropItem);
@@ -1138,13 +1137,6 @@ void AMazeCharacter::JumpStop()
 {
 	if (ECSSubsystem)
 		ECSSubsystem->SetInputAction(PlayerEntity, EMazeInputAction::Jump, false);
-}
-
-void AMazeCharacter::RestartMaze()
-{
-	if (GetNetMode() == NM_Standalone)
-		if (auto* PC = Cast<AMazePlayerController>(Controller))
-			PC->StartNewGame();
 }
 
 void AMazeCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

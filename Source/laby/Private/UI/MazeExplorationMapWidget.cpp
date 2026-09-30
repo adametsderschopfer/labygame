@@ -10,6 +10,9 @@
 #include "EngineUtils.h"
 #include "Components/Button.h"
 #include "Widgets/SCompoundWidget.h"
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+#include "Maze/MazeDevelopmentRoute.h"
+#endif
 
 // UUserWidget::NativePaint runs AFTER the WidgetTree has painted. A native
 // underlay reserves the map's layers first, then paints the editable UMG controls.
@@ -287,11 +290,57 @@ int32 UMazeExplorationMapWidget::PaintMap(const FGeometry& Geometry,
 	    Exploration && Exploration->Maze == Session.Maze && Exploration->Revision == Maze.Revision)
 		View.Seen = Exploration->Seen;
 
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	TArray<uint8> DevelopmentSeen;
+
+	if (Controller->DevelopmentRevealMap())
+	{
+		DevelopmentSeen.Init(2, Maze.Data->Layout.Walls.Num());
+		View.Seen = DevelopmentSeen;
+	}
+
+	if (Controller->DevelopmentShowRoute())
+	{
+		const int32 X = FMath::FloorToInt(Local.X), Y = FMath::FloorToInt(Local.Y);
+		const int32 CellIndex = X >= 0 && Y >= 0 && X < Maze.Size && Y < Maze.Size ? Y * Maze.Size + X : INDEX_NONE;
+
+		if (DevelopmentRouteCell != CellIndex || DevelopmentRouteRevision != Maze.Revision ||
+		    DevelopmentRouteSeed != Maze.Seed)
+		{
+			DevelopmentRoute = BuildMazeDevelopmentRoute(Maze.Data->Layout, CellIndex);
+			DevelopmentRouteCell = CellIndex;
+			DevelopmentRouteRevision = Maze.Revision;
+			DevelopmentRouteSeed = Maze.Seed;
+		}
+
+		View.DevelopmentRoute = DevelopmentRoute;
+	}
+	else
+	{
+		DevelopmentRoute.Reset();
+		DevelopmentRouteCell = INDEX_NONE;
+	}
+
+#endif
+
 	return PaintMazeMap(Geometry, Elements, Layer, Style.GetColorAndOpacityTint(), View);
 }
 
 FReply UMazeExplorationMapWidget::NativeOnKeyDown(const FGeometry& Geometry, const FKeyEvent& Event)
 {
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+
+	if (Event.GetKey() == EKeys::Backslash)
+	{
+		if (!Event.IsRepeat())
+			if (auto* Controller = GetOwningPlayer<AMazePlayerController>())
+				Controller->ToggleDevelopmentMenu();
+
+		return FReply::Handled().ReleaseMouseCapture();
+	}
+
+#endif
+
 	if (auto* Controller = GetOwningPlayer<AMazePlayerController>(); Controller && Controller->IsMapOpen())
 	{
 		if (Event.GetKey() == MazeKeyBindings::GetKey(TEXT("Map")) || Event.GetKey() == EKeys::Escape)

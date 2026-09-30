@@ -24,7 +24,35 @@ struct FMazeVitalsSystem
 		if (!CanJump(V))
 			return false;
 
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+
+		if (V.bInfiniteStamina)
+			return true;
+
+#endif
+
 		V.Stamina -= FMazeVitals::JumpCost;
+		V.RecoveryWait = FMazeVitals::RecoveryDelay;
+
+		if (V.Stamina <= 0.f)
+			V.bExhausted = true;
+
+		return true;
+	}
+
+	static bool SpendSignalStamina(FMazeVitals& V)
+	{
+		if (!IsAlive(V) || V.Stamina < FMazeVitals::SignalCost)
+			return false;
+
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+
+		if (V.bInfiniteStamina)
+			return true;
+
+#endif
+
+		V.Stamina -= FMazeVitals::SignalCost;
 		V.RecoveryWait = FMazeVitals::RecoveryDelay;
 
 		if (V.Stamina <= 0.f)
@@ -37,6 +65,17 @@ struct FMazeVitalsSystem
 	{
 		if (!IsAlive(V) || !FMath::IsFinite(DeltaSeconds) || DeltaSeconds <= 0.f)
 			return;
+
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+
+		if (V.bInfiniteStamina)
+		{
+			SetDevelopmentInfiniteStamina(V, true);
+
+			return;
+		}
+
+#endif
 
 		if (bOnGround && bRunning && CanSprint(V))
 		{
@@ -62,10 +101,46 @@ struct FMazeVitalsSystem
 		}
 	}
 
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	static bool SetDevelopmentImmortal(FMazeVitals& V, bool bEnabled)
+	{
+		if (!IsAlive(V))
+			return false;
+
+		V.bDevelopmentImmortal = bEnabled;
+
+		return true;
+	}
+
+	static bool ShouldDevelopmentRescue(const FMazeVitals& V)
+	{
+		return IsAlive(V) && V.bDevelopmentImmortal;
+	}
+
+	static void SetDevelopmentInfiniteStamina(FMazeVitals& V, bool bEnabled)
+	{
+		V.bInfiniteStamina = bEnabled;
+
+		if (bEnabled)
+		{
+			V.Stamina = FMazeVitals::StaminaMaximum;
+			V.RecoveryWait = 0.f;
+			V.bExhausted = false;
+		}
+	}
+
+#endif
 	static float Damage(FMazeVitals& V, float Amount)
 	{
 		if (!FMath::IsFinite(Amount) || Amount <= 0.f || !IsAlive(V))
 			return 0.f;
+
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+
+		if (V.bDevelopmentImmortal)
+			return 0.f;
+
+#endif
 
 		const float Applied = FMath::Min(V.Health, Amount);
 		V.Health -= Applied;

@@ -3,13 +3,15 @@
 English (`en`) is the native target and default fallback for LABY. Russian (`ru`)
 and Spanish (`es`) are also supported and staged in packaged builds. The game
 settings page lets each player switch culture immediately and persists the choice
-in GameUserSettings. In editor Play, the project also enables Unreal's game
-localization preview for the selected culture; the engine does not load game
-translations there from `SetCurrentCulture` alone. The local preference is saved
-explicitly because Unreal skips `SetCurrentCulture`'s config write in the editor.
+in GameUserSettings. In editor Play, the project uses Unreal's game localization
+preview and reloads the selected compiled game resource. It does not change the
+editor's process-wide language. PIE restores the editor's game preview when it
+ends. The editor copy of the local game preference is saved explicitly because
+Unreal does not write it through game localization preview.
 Runtime UI, network messages, HUD and world labels use `FText` with stable
 `NSLOCTEXT` namespace/key identities. Player names, room codes and seed identifiers
-are culture-invariant data. Numeric UI values use Unreal's locale-aware formatting.
+are culture-invariant data. Numeric UI values use Unreal's locale-aware formatting;
+in editor Play, their number format follows the editor locale.
 
 ## Source conventions
 
@@ -37,6 +39,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Scripts/Update-Localization.
 ```
 
 This runs Gather, Export and Compile through Unreal's GatherText commandlet.
+Update preserves existing Russian and Spanish translations by stable key when the
+original source text has not changed. Import aligns archive source text with the
+manifest so compiled resources match the runtime `FText` identities. Update and
+Compile report an error if Russian or Spanish has empty translations.
 The commandlet disables the editor's ModelContextProtocol plugin so it does not
 compete with the running editor for the same local HTTP port.
 It does not start Play or gameplay tests. Pass `-EngineRoot` if Unreal is installed
@@ -52,6 +58,9 @@ format placeholders. Import edited PO files before another export, since export
 regenerates PO files from the archives. New text must not rely on a fallback
 language in any of the three supported cultures. The map compass uses separate
 localized short direction labels on the mini-map and full names on the large map.
+When the original source changes for an existing key, check its Russian and Spanish
+PO entries: Update leaves their `msgstr` empty for review. Translate them, then
+run Import and Compile.
 
 ## Add another language (example: German)
 
@@ -76,11 +85,20 @@ localized short direction labels on the mini-map and full names on the large map
    Asian scripts may need additional font assets; right-to-left languages also
    need layout review. Localization-ready text does not guarantee font coverage.
 
-Untranslated entries fall back to their source text, which is still Russian in
-some older widgets. All supported cultures therefore need explicit catalog
-coverage. UI text histories retain their localization identity when formatted,
-so translations can reorder arguments without changing gameplay or server data.
+The native English localization resource is loaded as the fallback for entries
+missing in Russian or Spanish. A new entry absent from every catalog still uses
+its source text, so author new source strings in English and keep all three
+catalogs complete. An unavailable language choice also falls back to English.
+UI text histories retain their localization identity when formatted, so
+translations can reorder arguments without changing gameplay or server data.
 
 Official references:
 - https://dev.epicgames.com/documentation/unreal-engine/localization-overview-for-unreal-engine
 - https://dev.epicgames.com/documentation/unreal-engine/managing-the-active-culture-at-runtime
+
+Development-tool exception: the backslash debug panel keeps en/ru/es labels inside
+development-only compilation guards in the MazeDevelopment UI/adapter files. These labels
+are not gathered into Game or staged locres; this satisfies the requirement that
+no part of the debug menu enters the final game. Production UI continues using
+the normal Game target. Update-Localization.ps1 is still run after removal of the
+old NewMaze key label, refreshing all three production catalogs.

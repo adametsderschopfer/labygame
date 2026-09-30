@@ -2,7 +2,9 @@
 #include "Misc/ConfigCacheIni.h"
 #include "Kismet/KismetInternationalizationLibrary.h"
 #if WITH_EDITOR
+#include "Internationalization/Internationalization.h"
 #include "Internationalization/TextLocalizationManager.h"
+#include "Misc/Paths.h"
 #endif
 
 namespace
@@ -14,6 +16,33 @@ namespace
 	bool IsSupportedLanguage(const FString& Culture)
 	{
 		return Culture == TEXT("ru") || Culture == TEXT("en") || Culture == TEXT("es");
+	}
+
+	bool ApplyCulture(const FString& Culture, bool bSave)
+	{
+#if WITH_EDITOR
+
+		if (GIsEditor)
+		{
+			if (!FInternationalization::Get().GetCulture(Culture).IsValid())
+				return false;
+
+			const FString ResourcePath =
+			    FPaths::ProjectContentDir() / TEXT("Localization/Game") / Culture / TEXT("Game.locres");
+
+			if (!FPaths::FileExists(ResourcePath))
+				return false;
+
+			FTextLocalizationManager::Get().EnableGameLocalizationPreview(Culture);
+			FTextLocalizationManager::Get().WaitForAsyncTasks();
+			FTextLocalizationManager::Get().UpdateFromLocalizationResource(ResourcePath);
+
+			return true;
+		}
+
+#endif
+
+		return UKismetInternationalizationLibrary::SetCurrentCulture(Culture, bSave);
 	}
 }
 
@@ -73,42 +102,46 @@ void FMazeMenuAudioPreferences::Save() const
 
 FString FMazeLanguagePreference::Current()
 {
+#if WITH_EDITOR
+
+	if (GIsEditor)
+	{
+		FString Culture = TEXT("en");
+
+		GConfig->GetString(LanguagePreferencesSection, TEXT("Culture"), Culture, GGameUserSettingsIni);
+
+		return IsSupportedLanguage(Culture) ? Culture : TEXT("en");
+	}
+
+#endif
+
 	return UKismetInternationalizationLibrary::GetCurrentLanguage();
 }
 
 bool FMazeLanguagePreference::Set(const FString& Culture, bool bSave)
 {
-	if (!IsSupportedLanguage(Culture) || !UKismetInternationalizationLibrary::SetCurrentCulture(Culture, bSave))
+	const bool bRequestedCultureApplied = IsSupportedLanguage(Culture) && ApplyCulture(Culture, bSave);
+	const FString AppliedCulture = bRequestedCultureApplied ? Culture : TEXT("en");
+
+	if (!bRequestedCultureApplied && !ApplyCulture(AppliedCulture, bSave))
 		return false;
-
-#if WITH_EDITOR
-
-	if (GIsEditor)
-	{
-		FTextLocalizationManager::Get().EnableGameLocalizationPreview(Culture);
-		FTextLocalizationManager::Get().WaitForAsyncTasks();
-	}
-
-#endif
 
 	if (bSave && GIsEditor)
 	{
-		GConfig->SetString(LanguagePreferencesSection, TEXT("Culture"), *Culture, GGameUserSettingsIni);
+		GConfig->SetString(LanguagePreferencesSection, TEXT("Culture"), *AppliedCulture, GGameUserSettingsIni);
 		GConfig->Flush(false, GGameUserSettingsIni);
 	}
 
-	return true;
+	return bRequestedCultureApplied;
 }
 
 void FMazeLanguagePreference::ApplySaved()
 {
 	FString Culture = Current().Left(2).ToLower();
 
-	if (GIsEditor)
-		GConfig->GetString(LanguagePreferencesSection, TEXT("Culture"), Culture, GGameUserSettingsIni);
-
 	if (!IsSupportedLanguage(Culture))
 		Culture = TEXT("en");
 
-	Set(Culture, false);
+	if (!Set(Culture, false))
+		Set(TEXT("en"), true);
 }

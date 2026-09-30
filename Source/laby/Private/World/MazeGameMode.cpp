@@ -33,8 +33,31 @@ void AMazeGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 	if (UGameplayStatics::HasOption(Options, TEXT("Room")))
 		GetWorld()->GetSubsystem<UMazeECSSubsystem>()->OpenRoom();
 
-	auto* Maze = GetWorld()->SpawnActor<AMazeWorld>();
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	const int32 DevelopmentSeed =
+	    GetNetMode() == NM_Standalone ? UGameplayStatics::GetIntOption(Options, TEXT("DevelopmentSeed"), 0) : 0;
+	AMazeWorld* Maze = nullptr;
 
+	if (DevelopmentSeed != 0)
+	{
+		Maze = GetWorld()->SpawnActorDeferred<AMazeWorld>(AMazeWorld::StaticClass(), FTransform::Identity);
+
+		if (!Maze)
+		{
+			ErrorMessage = TEXT("Unable to create maze world");
+
+			return;
+		}
+
+		Maze->Seed = DevelopmentSeed;
+		Maze->FinishSpawning(FTransform::Identity);
+	}
+	else
+		Maze = GetWorld()->SpawnActor<AMazeWorld>();
+
+#else
+	auto* Maze = GetWorld()->SpawnActor<AMazeWorld>();
+#endif
 	Maze->InitializeMaze();
 	GetWorld()->SpawnActor<APlayerStart>(Maze->StartLocation(), FRotator::ZeroRotator);
 }

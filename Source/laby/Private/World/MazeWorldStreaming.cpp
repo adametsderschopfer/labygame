@@ -22,6 +22,16 @@ void AMazeWorld::ClearChunks()
 	VisualMaterials.Reset();
 }
 
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+void AMazeWorld::InvalidateDevelopmentTeleportReadiness()
+{
+	// Reuse the first-entry preload gate at the new local player's position.
+	bInitialChunksReady = false;
+	GetWorld()->GetSubsystem<UMazeLocationSubsystem>()->ReportReady(this, false);
+}
+
+#endif
+
 int64 AMazeWorld::GetResidentGeometryBytes() const
 {
 	int64 Total = 0;

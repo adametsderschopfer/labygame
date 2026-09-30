@@ -200,13 +200,14 @@ void AMazePlayerController::SetupInputComponent()
 	    true;
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 	InputComponent->BindKey(EKeys::F6, IE_Pressed, this, &AMazePlayerController::ToggleDevelopmentCamera);
+	InputComponent->BindKey(EKeys::Backslash, IE_Pressed, this, &AMazePlayerController::ToggleDevelopmentMenu);
 #endif
 }
 
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 void AMazePlayerController::ToggleDevelopmentCamera()
 {
-	if (IsMenuOpen() || IsMapOpen() || !ReadSession().bSessionStarted)
+	if (IsMenuOpen() || IsMapOpen() || IsDevelopmentMenuOpen() || !ReadSession().bSessionStarted)
 		return;
 
 	if (auto* MazePawn = Cast<AMazeCharacter>(GetPawn()))
@@ -217,6 +218,13 @@ void AMazePlayerController::ToggleDevelopmentCamera()
 
 void AMazePlayerController::ToggleMap()
 {
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+
+	if (IsDevelopmentMenuOpen())
+		CloseDevelopmentMenu();
+
+#endif
+
 	if (!ECSSubsystem || !ExplorationMap || IsMenuOpen() || !ReadSession().bSessionStarted)
 		return;
 
@@ -273,6 +281,10 @@ void AMazePlayerController::RemoveMenuWidget()
 
 void AMazePlayerController::EndPlay(const EEndPlayReason::Type Reason)
 {
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	CloseDevelopmentMenu();
+	DestroyDevelopmentPresentation();
+#endif
 	RemoveMenuWidget();
 	StopMenuAmbient(*this, true);
 
@@ -294,6 +306,17 @@ void AMazePlayerController::EndPlay(const EEndPlayReason::Type Reason)
 
 void AMazePlayerController::ToggleMenu()
 {
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+
+	if (IsDevelopmentMenuOpen())
+	{
+		CloseDevelopmentMenu();
+
+		return;
+	}
+
+#endif
+
 	if (IsMapOpen())
 	{
 		ToggleMap();
@@ -346,6 +369,20 @@ void AMazePlayerController::PlayerTick(float DeltaTime)
 	if (!IsLocalController() || !ECSSubsystem)
 		return;
 
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+
+	if (IsDevelopmentMenuOpen())
+	{
+		const auto* DevelopmentPawn = Cast<AMazeCharacter>(GetPawn());
+
+		if (!DevelopmentPawn || DevelopmentPawn->GetVitals().Health <= 0 || !ReadSession().bSessionStarted)
+			CloseDevelopmentMenu();
+	}
+
+	RefreshDevelopmentPresentation(DeltaTime);
+
+#endif
+
 	if (IsMapOpen())
 	{
 		const auto* MapPlayer = Cast<AMazeCharacter>(GetPawn());
@@ -376,6 +413,10 @@ void AMazePlayerController::ServerStartRoom_Implementation()
 
 void AMazePlayerController::ShowNetworkMenu(bool bJoinScreen, bool bSettingsScreen, bool bLocalJoin)
 {
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	CloseDevelopmentMenu();
+#endif
+
 	// Room browsing remains hidden; all displayed layouts now belong to the editable Widget Blueprints.
 	if (!IsLocalController() || !ECSSubsystem || !GetWorld()->GetGameViewport())
 		return;

@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-09-29 11:16\n"
-"PO-Revision-Date: 2026-09-29 11:16\n"
+"POT-Creation-Date: 2026-09-30 11:06\n"
+"PO-Revision-Date: 2026-09-30 11:06\n"
 "Language-Team: \n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
@@ -21,8 +21,8 @@ msgid "Эта клавиша недоступна. Выберите другую
 msgstr "This key is unavailable. Choose another."
 
 #. Key:	Conflict
-#. SourceLocation:	Source/laby/Private/Player/MazeKeyBindings.cpp(133)
-#: Source/laby/Private/Player/MazeKeyBindings.cpp(133)
+#. SourceLocation:	Source/laby/Private/Player/MazeKeyBindings.cpp(143)
+#: Source/laby/Private/Player/MazeKeyBindings.cpp(143)
 msgctxt "Maze.Keys,Conflict"
 msgid "Клавиша уже назначена: {0}."
 msgstr "Key already assigned: {0}."
@@ -111,13 +111,6 @@ msgctxt "Maze.Keys,Map"
 msgid "Карта"
 msgstr "Map"
 
-#. Key:	NewMaze
-#. SourceLocation:	Source/laby/Private/Player/MazeKeyBindings.cpp(86)
-#: Source/laby/Private/Player/MazeKeyBindings.cpp(86)
-msgctxt "Maze.Keys,NewMaze"
-msgid "Новый лабиринт"
-msgstr "New maze"
-
 #. Key:	Headlamp
 #. SourceLocation:	Source/laby/Private/UI/MazeItemPresentation.cpp(228)
 #: Source/laby/Private/UI/MazeItemPresentation.cpp(228)
@@ -196,354 +189,403 @@ msgid "Завершение загрузки…"
 msgstr "Finishing loading…"
 
 #. Key:	Ward
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(21)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(21)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(22)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(22)
 msgctxt "Maze.Rooms,Ward"
 msgid "Палата {0}"
 msgstr "Ward {0}"
 
 #. Key:	TreatmentShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(27)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(27)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(28)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(28)
 msgctxt "Maze.Rooms,TreatmentShort"
 msgid "ПР"
 msgstr "TR"
 
 #. Key:	Treatment
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(28)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(28)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(29)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(29)
 msgctxt "Maze.Rooms,Treatment"
 msgid "Процедурная"
 msgstr "Treatment room"
 
 #. Key:	ExaminationShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(31)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(31)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(32)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(32)
 msgctxt "Maze.Rooms,ExaminationShort"
 msgid "СМ"
 msgstr "EX"
 
 #. Key:	Examination
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(32)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(32)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(33)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(33)
 msgctxt "Maze.Rooms,Examination"
 msgid "Смотровая"
 msgstr "Examination room"
 
 #. Key:	IsolationShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(35)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(35)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(36)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(36)
 msgctxt "Maze.Rooms,IsolationShort"
 msgid "ИЗ"
 msgstr "IS"
 
 #. Key:	Isolation
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(36)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(36)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(37)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(37)
 msgctxt "Maze.Rooms,Isolation"
 msgid "Изолятор"
 msgstr "Isolation room"
 
 #. Key:	StaffShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(39)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(39)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(40)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(40)
 msgctxt "Maze.Rooms,StaffShort"
 msgid "ПС"
 msgstr "ST"
 
 #. Key:	Staff
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(40)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(40)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(41)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(41)
 msgctxt "Maze.Rooms,Staff"
 msgid "Пост персонала"
 msgstr "Staff station"
 
 #. Key:	RecordsShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(43)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(43)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(44)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(44)
 msgctxt "Maze.Rooms,RecordsShort"
 msgid "АР"
 msgstr "AR"
 
 #. Key:	Records
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(44)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(44)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(45)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(45)
 msgctxt "Maze.Rooms,Records"
 msgid "Архив историй"
 msgstr "Records archive"
 
 #. Key:	StorageShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(47)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(47)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(48)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(48)
 msgctxt "Maze.Rooms,StorageShort"
 msgid "СК"
 msgstr "SR"
 
 #. Key:	Storage
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(48)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(48)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(49)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(49)
 msgctxt "Maze.Rooms,Storage"
 msgid "Склад"
 msgstr "Storage"
 
 #. Key:	LaundryShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(51)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(51)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(52)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(52)
 msgctxt "Maze.Rooms,LaundryShort"
 msgid "БЛ"
 msgstr "LN"
 
 #. Key:	Laundry
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(52)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(52)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(53)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(53)
 msgctxt "Maze.Rooms,Laundry"
 msgid "Бельевая"
 msgstr "Linen room"
 
 #. Key:	GeneratorShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(55)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(55)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(56)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(56)
 msgctxt "Maze.Rooms,GeneratorShort"
 msgid "ГН"
 msgstr "GN"
 
 #. Key:	Generator
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(56)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(56)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(57)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(57)
 msgctxt "Maze.Rooms,Generator"
 msgid "Генераторная"
 msgstr "Generator room"
 
 #. Key:	RecreationShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(59)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(59)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(60)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(60)
 msgctxt "Maze.Rooms,RecreationShort"
 msgid "ОТ"
 msgstr "BR"
 
 #. Key:	Recreation
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(60)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(60)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(61)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(61)
 msgctxt "Maze.Rooms,Recreation"
 msgid "Комната отдыха"
 msgstr "Break room"
 
 #. Key:	DiningShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(63)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(63)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(64)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(64)
 msgctxt "Maze.Rooms,DiningShort"
 msgid "СТ"
 msgstr "DR"
 
 #. Key:	Dining
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(64)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(64)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(65)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(65)
 msgctxt "Maze.Rooms,Dining"
 msgid "Столовая"
 msgstr "Dining room"
 
 #. Key:	HydrotherapyShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(67)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(67)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(68)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(68)
 msgctxt "Maze.Rooms,HydrotherapyShort"
 msgid "ВД"
 msgstr "HY"
 
 #. Key:	Hydrotherapy
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(68)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(68)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(69)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(69)
 msgctxt "Maze.Rooms,Hydrotherapy"
 msgid "Водолечебница"
 msgstr "Hydrotherapy"
 
 #. Key:	WashroomShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(71)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(71)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(72)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(72)
 msgctxt "Maze.Rooms,WashroomShort"
 msgid "МЧ"
 msgstr "WR"
 
 #. Key:	Washroom
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(72)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(72)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(73)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(73)
 msgctxt "Maze.Rooms,Washroom"
 msgid "Помывочная"
 msgstr "Washroom"
 
 #. Key:	Pool
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(75)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(75)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(76)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(76)
 msgctxt "Maze.Rooms,Pool"
 msgid "Бассейн"
 msgstr "Pool"
 
 #. Key:	PoolShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(75)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(75)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(76)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(76)
 msgctxt "Maze.Rooms,PoolShort"
 msgid "БС"
 msgstr "PL"
 
 #. Key:	NorthShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(788)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(788)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(840)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(840)
 msgctxt "Maze.Compass,NorthShort"
 msgid "N"
 msgstr "N"
 
 #. Key:	EastShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(789)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(789)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(841)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(841)
 msgctxt "Maze.Compass,EastShort"
 msgid "E"
 msgstr "E"
 
 #. Key:	SouthShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(790)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(790)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(842)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(842)
 msgctxt "Maze.Compass,SouthShort"
 msgid "S"
 msgstr "S"
 
 #. Key:	WestShort
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(791)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(791)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(843)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(843)
 msgctxt "Maze.Compass,WestShort"
 msgid "W"
 msgstr "W"
 
 #. Key:	North
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(792)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(792)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(844)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(844)
 msgctxt "Maze.Compass,North"
 msgid "North"
 msgstr "North"
 
 #. Key:	East
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(793)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(793)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(845)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(845)
 msgctxt "Maze.Compass,East"
 msgid "East"
 msgstr "East"
 
 #. Key:	South
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(794)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(794)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(846)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(846)
 msgctxt "Maze.Compass,South"
 msgid "South"
 msgstr "South"
 
 #. Key:	West
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(795)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(795)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(847)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(847)
 msgctxt "Maze.Compass,West"
 msgid "West"
 msgstr "West"
 
 #. Key:	You
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(839)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(839)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(891)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(891)
 msgctxt "Maze.Ward,You"
 msgid "Вы"
 msgstr "You"
 
 #. Key:	Explored
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(840)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(840)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(892)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(892)
 msgctxt "Maze.Ward,Explored"
 msgid "Исследовано"
 msgstr "Explored"
 
 #. Key:	Unknown
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(841)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(841)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(893)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(893)
 msgctxt "Maze.Ward,Unknown"
 msgid "Неизвестно"
 msgstr "Unknown"
 
 #. Key:	Start
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(842)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(842)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(894)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(894)
 msgctxt "Maze.Ward,Start"
 msgid "Начало"
 msgstr "Start"
 
 #. Key:	Exit
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(843)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(843)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(895)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(895)
 msgctxt "Maze.Ward,Exit"
 msgid "Выход"
 msgstr "Exit"
 
 #. Key:	Gap
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(844)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(844)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(896)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(896)
 msgctxt "Maze.Ward,Gap"
 msgid "Провал"
 msgstr "Pit"
 
 #. Key:	Room
-#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(845)
-#: Source/laby/Private/UI/MazeMapPaint.cpp(845)
+#. SourceLocation:	Source/laby/Private/UI/MazeMapPaint.cpp(897)
+#: Source/laby/Private/UI/MazeMapPaint.cpp(897)
 msgctxt "Maze.Ward,Room"
 msgid "Комната"
 msgstr "Room"
 
+#. Key:	AudioPercent
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(128)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(128)
+msgctxt "Maze.Settings,AudioPercent"
+msgid "{0}%"
+msgstr "{0}%"
+
 #. Key:	Video
-#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(240)
-#: Source/laby/Private/UI/MazeMenuSettings.cpp(240)
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(279)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(279)
 msgctxt "Maze.Ward,Video"
 msgid "Видео"
 msgstr "Video"
 
 #. Key:	Controls
-#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(241)
-#: Source/laby/Private/UI/MazeMenuSettings.cpp(241)
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(280)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(280)
 msgctxt "Maze.Ward,Controls"
 msgid "Управление"
 msgstr "Controls"
 
 #. Key:	Game
-#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(242)
-#: Source/laby/Private/UI/MazeMenuSettings.cpp(242)
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(281)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(281)
 msgctxt "Maze.Ward,Game"
 msgid "Игра"
 msgstr "Game"
 
 #. Key:	Audio
-#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(243)
-#: Source/laby/Private/UI/MazeMenuSettings.cpp(243)
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(282)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(282)
 msgctxt "Maze.Ward,Audio"
 msgid "Звук"
 msgstr "Audio"
 
 #. Key:	ArcPercent
-#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(285)
-#: Source/laby/Private/UI/MazeMenuSettings.cpp(285)
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(324)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(324)
 msgctxt "Maze.Settings,ArcPercent"
 msgid "{0}%"
 msgstr "{0}%"
 
-#. Key:	AudioPercent
-#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(91)
-#: Source/laby/Private/UI/MazeMenuSettings.cpp(91)
-msgctxt "Maze.Settings,AudioPercent"
-msgid "{0}%"
-msgstr "{0}%"
+#. Key:	Low
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(61)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(61)
+msgctxt "Maze.Ward,Low"
+msgid "Низкое"
+msgstr "Low"
+
+#. Key:	Medium
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(62)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(62)
+msgctxt "Maze.Ward,Medium"
+msgid "Среднее"
+msgstr "Medium"
+
+#. Key:	High
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(63)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(63)
+msgctxt "Maze.Ward,High"
+msgid "Высокое"
+msgstr "High"
+
+#. Key:	Epic
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(64)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(64)
+msgctxt "Maze.Ward,Epic"
+msgid "Эпическое"
+msgstr "Epic"
+
+#. Key:	Custom
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(65)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(65)
+msgctxt "Maze.Ward,Custom"
+msgid "Пользовательское"
+msgstr "Custom"
+
+#. Key:	Cinematic
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(68)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(68)
+msgctxt "Maze.Ward,Cinematic"
+msgid "Кинематографическое"
+msgstr "Cinematic"
+
+#. Key:	Unlimited
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(77)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(77)
+msgctxt "Maze.Ward,Unlimited"
+msgid "Без ограничения"
+msgstr "Unlimited"
+
+#. Key:	Current
+#. SourceLocation:	Source/laby/Private/UI/MazeMenuSettings.cpp(78)
+#: Source/laby/Private/UI/MazeMenuSettings.cpp(78)
+msgctxt "Maze.Ward,Current"
+msgid "Текущее значение"
+msgstr "Current value"
 
 #. Key:	ShortHeadlamp
-#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(228)
-#: Source/laby/Private/UI/MazeWidgets.cpp(228)
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(255)
+#: Source/laby/Private/UI/MazeWidgets.cpp(255)
 msgctxt "Maze.Items,ShortHeadlamp"
 msgid "ФОН"
 msgstr "LAMP"
-
-#. Key:	Version
-#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(255)
-#: Source/laby/Private/UI/MazeWidgets.cpp(255)
-msgctxt "Maze.HUD,Version"
-msgid "ALPHA {Version}"
-msgstr "ALPHA {Version}"
 
 #. Key:	SensitivityValue
 #. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(33)
@@ -553,36 +595,50 @@ msgid "{Value} x"
 msgstr "{Value} x"
 
 #. Key:	StaminaRecovering
-#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(341)
-#: Source/laby/Private/UI/MazeWidgets.cpp(341)
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(356)
+#: Source/laby/Private/UI/MazeWidgets.cpp(356)
 msgctxt "Maze.HUD,StaminaRecovering"
 msgid "ВОССТАНОВЛЕНИЕ"
 msgstr "RECOVERING"
 
 #. Key:	Recovering
-#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(345)
-#: Source/laby/Private/UI/MazeWidgets.cpp(345)
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(360)
+#: Source/laby/Private/UI/MazeWidgets.cpp(360)
 msgctxt "Maze.Ward,Recovering"
 msgid "Восстановление"
 msgstr "Recovering"
 
 #. Key:	Stamina
-#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(346)
-#: Source/laby/Private/UI/MazeWidgets.cpp(346)
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(361)
+#: Source/laby/Private/UI/MazeWidgets.cpp(361)
 msgctxt "Maze.Ward,Stamina"
 msgid "Выносливость"
 msgstr "Stamina"
 
 #. Key:	ExitText
-#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(360)
-#: Source/laby/Private/UI/MazeWidgets.cpp(360)
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(375)
+#: Source/laby/Private/UI/MazeWidgets.cpp(375)
 msgctxt "Maze.Widgets,ExitText"
 msgid "ВЫХОД НАЙДЕН"
 msgstr "EXIT FOUND"
 
+#. Key:	Version
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(82)
+#: Source/laby/Private/UI/MazeWidgets.cpp(82)
+msgctxt "Maze.HUD,Version"
+msgid "ALPHA {Version}"
+msgstr "ALPHA {Version}"
+
+#. Key:	Version
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(84)
+#: Source/laby/Private/UI/MazeWidgets.cpp(84)
+msgctxt "Maze.Ward,Version"
+msgid "Версия {0}"
+msgstr "Version {0}"
+
 #. Key:	Quit
-#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(59)
-#: Source/laby/Private/UI/MazeWidgets.cpp(59)
+#. SourceLocation:	Source/laby/Private/UI/MazeWidgets.cpp(86)
+#: Source/laby/Private/UI/MazeWidgets.cpp(86)
 msgctxt "Maze.Glass,Quit"
 msgid "ВЫХОД"
 msgstr "QUIT"
@@ -595,162 +651,162 @@ msgid "The room is full or has already started."
 msgstr "The room is full or has already started."
 
 #. Key:	SigningIn
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(107)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(107)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(109)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(109)
 msgctxt "Maze.Online,SigningIn"
 msgid "Signing in to Epic Games..."
 msgstr "Signing in to Epic Games..."
 
 #. Key:	SignInStartFailed
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(110)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(110)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(112)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(112)
 msgctxt "Maze.Online,SignInStartFailed"
 msgid "Could not start Epic Games sign-in."
 msgstr "Could not start Epic Games sign-in."
 
 #. Key:	CodeLength
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(130)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(130)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(132)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(132)
 msgctxt "Maze.Online,CodeLength"
 msgid "Enter a 10-character room code."
 msgstr "Enter a 10-character room code."
 
 #. Key:	CodeCharacters
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(138)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(138)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(140)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(140)
 msgctxt "Maze.Online,CodeCharacters"
 msgid "Room codes contain only 0-9 and A-F."
 msgstr "Room codes contain only 0-9 and A-F."
 
 #. Key:	SignInFailed
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(154)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(154)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(156)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(156)
 msgctxt "Maze.Online,SignInFailed"
 msgid "Sign-in was cancelled or is unavailable. Please try again."
 msgstr "Sign-in was cancelled or is unavailable. Please try again."
 
 #. Key:	CreatingRoom
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(161)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(161)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(163)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(163)
 msgctxt "Maze.Online,CreatingRoom"
 msgid "Creating room..."
 msgstr "Creating room..."
 
 #. Key:	CreateFailed
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(176)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(176)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(178)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(178)
 msgctxt "Maze.Online,CreateFailed"
 msgid "Could not create the room."
 msgstr "Could not create the room."
 
 #. Key:	FindingRoom
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(180)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(180)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(182)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(182)
 msgctxt "Maze.Online,FindingRoom"
 msgid "Finding room..."
 msgstr "Finding room..."
 
 #. Key:	SearchStartFailed
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(187)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(187)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(189)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(189)
 msgctxt "Maze.Online,SearchStartFailed"
 msgid "Could not start the room search."
 msgstr "Could not start the room search."
 
 #. Key:	CreateError
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(195)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(195)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(197)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(197)
 msgctxt "Maze.Online,CreateError"
 msgid "Room creation failed."
 msgstr "Room creation failed."
 
 #. Key:	SearchError
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(208)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(208)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(210)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(210)
 msgctxt "Maze.Online,SearchError"
 msgid "Room search failed."
 msgstr "Room search failed."
 
 #. Key:	Connecting
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(221)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(221)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(223)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(223)
 msgctxt "Maze.Online,Connecting"
 msgid "Connecting..."
 msgstr "Connecting..."
 
 #. Key:	ConnectFailed
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(224)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(224)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(226)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(226)
 msgctxt "Maze.Online,ConnectFailed"
 msgid "Could not connect."
 msgstr "Could not connect."
 
 #. Key:	RoomNotFound
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(230)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(230)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(232)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(232)
 msgctxt "Maze.Online,RoomNotFound"
 msgid "The room was not found, is full, or has already started."
 msgstr "The room was not found, is full, or has already started."
 
 #. Key:	JoinFailed
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(239)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(239)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(241)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(241)
 msgctxt "Maze.Online,JoinFailed"
 msgid "Could not join: the room is unavailable or full."
 msgstr "Could not join: the room is unavailable or full."
 
 #. Key:	ConnectionLost
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(307)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(307)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(309)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(309)
 msgctxt "Maze.Online,ConnectionLost"
 msgid "Connection lost or the host closed the room."
 msgstr "Connection lost or the host closed the room."
 
 #. Key:	TravelFailed
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(317)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(317)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(319)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(319)
 msgctxt "Maze.Online,TravelFailed"
 msgid "Could not load the multiplayer map."
 msgstr "Could not load the multiplayer map."
 
 #. Key:	Starting
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(337)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(337)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(339)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(339)
 msgctxt "Maze.Local,Starting"
 msgid "Starting local server..."
 msgstr "Starting local server..."
 
 #. Key:	InvalidAddress
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(397)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(397)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(399)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(399)
 msgctxt "Maze.Local,InvalidAddress"
 msgid "Enter an IPv4 address, such as 127.0.0.1:7777."
 msgstr "Enter an IPv4 address, such as 127.0.0.1:7777."
 
 #. Key:	Connecting
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(409)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(409)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(411)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(411)
 msgctxt "Maze.Local,Connecting"
 msgid "Connecting to local server..."
 msgstr "Connecting to local server..."
 
 #. Key:	EosNotConfigured
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(63)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(63)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(65)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(65)
 msgctxt "Maze.Online,EosNotConfigured"
 msgid "Online play is not configured yet."
 msgstr "Online play is not configured yet."
 
 #. Key:	EosUnavailable
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(73)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(73)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(75)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(75)
 msgctxt "Maze.Online,EosUnavailable"
 msgid "Online services are unavailable."
 msgstr "Online services are unavailable."
 
 #. Key:	LeaveCurrentRoom
-#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(80)
-#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(80)
+#. SourceLocation:	Source/laby/Private/World/MazeOnlineGameInstance.cpp(82)
+#: Source/laby/Private/World/MazeOnlineGameInstance.cpp(82)
 msgctxt "Maze.Online,LeaveCurrentRoom"
 msgid "Leave your current room first."
 msgstr "Leave your current room first."
@@ -832,51 +888,44 @@ msgctxt "Maze.Widgets,QuitButtonLabel"
 msgid "ВЫХОД"
 msgstr "QUIT"
 
-#. Key:	VersionText
+#. Key:	HealthText
 #. SourceLocation:	Source/laby/Public/UI/MazeText.h(20)
 #: Source/laby/Public/UI/MazeText.h(20)
-msgctxt "Maze.Widgets,VersionText"
-msgid "ALPHA 0.0.0.2"
-msgstr "ALPHA 0.0.0.2"
-
-#. Key:	HealthText
-#. SourceLocation:	Source/laby/Public/UI/MazeText.h(21)
-#: Source/laby/Public/UI/MazeText.h(21)
 msgctxt "Maze.Widgets,HealthText"
 msgid "ЗДОРОВЬЕ"
 msgstr "HEALTH"
 
 #. Key:	StaminaText
-#. SourceLocation:	Source/laby/Public/UI/MazeText.h(22)
-#: Source/laby/Public/UI/MazeText.h(22)
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(21)
+#: Source/laby/Public/UI/MazeText.h(21)
 msgctxt "Maze.Widgets,StaminaText"
 msgid "ВЫНОСЛИВОСТЬ"
 msgstr "STAMINA"
 
 #. Key:	DeathText
-#. SourceLocation:	Source/laby/Public/UI/MazeText.h(23)
-#: Source/laby/Public/UI/MazeText.h(23)
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(22)
+#: Source/laby/Public/UI/MazeText.h(22)
 msgctxt "Maze.Widgets,DeathText"
 msgid "СВЯЗЬ ПОТЕРЯНА"
 msgstr "CONNECTION LOST"
 
 #. Key:	SettingsSubtitle
-#. SourceLocation:	Source/laby/Public/UI/MazeText.h(39)
-#: Source/laby/Public/UI/MazeText.h(39)
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(38)
+#: Source/laby/Public/UI/MazeText.h(38)
 msgctxt "Maze.Widgets,SettingsSubtitle"
 msgid "ВИДЕО / УПРАВЛЕНИЕ / ИГРА"
 msgstr "VIDEO / CONTROLS / GAME"
 
 #. Key:	PauseSubtitle
-#. SourceLocation:	Source/laby/Public/UI/MazeText.h(40)
-#: Source/laby/Public/UI/MazeText.h(40)
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(39)
+#: Source/laby/Public/UI/MazeText.h(39)
 msgctxt "Maze.Widgets,PauseSubtitle"
 msgid "ПАУЗА"
 msgstr "PAUSED"
 
 #. Key:	MainSubtitle
-#. SourceLocation:	Source/laby/Public/UI/MazeText.h(41)
-#: Source/laby/Public/UI/MazeText.h(41)
+#. SourceLocation:	Source/laby/Public/UI/MazeText.h(40)
+#: Source/laby/Public/UI/MazeText.h(40)
 msgctxt "Maze.Widgets,MainSubtitle"
 msgid "ЛАБИРИНТ / ИССЛЕДОВАНИЕ"
 msgstr "MAZE / EXPLORATION"
@@ -1105,13 +1154,6 @@ msgctxt "Maze.Ward,Logo"
 msgid "LABY"
 msgstr "LABY"
 
-#. Key:	Version
-#. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(359)
-#: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(359)
-msgctxt "Maze.Ward,Version"
-msgid "Версия {0}"
-msgstr "Version {0}"
-
 #. Key:	Continue
 #. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(381)
 #: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(381)
@@ -1147,41 +1189,6 @@ msgctxt "Maze.Ward,Quit"
 msgid "Выход"
 msgstr "Exit"
 
-#. Key:	Low
-#. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(575)
-#: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(575)
-msgctxt "Maze.Ward,Low"
-msgid "Низкое"
-msgstr "Low"
-
-#. Key:	Medium
-#. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(576)
-#: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(576)
-msgctxt "Maze.Ward,Medium"
-msgid "Среднее"
-msgstr "Medium"
-
-#. Key:	High
-#. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(577)
-#: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(577)
-msgctxt "Maze.Ward,High"
-msgid "Высокое"
-msgstr "High"
-
-#. Key:	Epic
-#. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(578)
-#: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(578)
-msgctxt "Maze.Ward,Epic"
-msgid "Эпическое"
-msgstr "Epic"
-
-#. Key:	Custom
-#. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(579)
-#: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(579)
-msgctxt "Maze.Ward,Custom"
-msgid "Пользовательское"
-msgstr "Custom"
-
 #. Key:	Quality
 #. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(581)
 #: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(581)
@@ -1196,33 +1203,12 @@ msgctxt "Maze.Ward,Shadows"
 msgid "Качество теней"
 msgstr "Shadow quality"
 
-#. Key:	Cinematic
-#. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(587)
-#: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(587)
-msgctxt "Maze.Ward,Cinematic"
-msgid "Кинематографическое"
-msgstr "Cinematic"
-
 #. Key:	FPS
 #. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(589)
 #: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(589)
 msgctxt "Maze.Ward,FPS"
 msgid "Частота кадров"
 msgstr "Frame rate"
-
-#. Key:	Unlimited
-#. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(598)
-#: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(598)
-msgctxt "Maze.Ward,Unlimited"
-msgid "Без ограничения"
-msgstr "Unlimited"
-
-#. Key:	Current
-#. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(599)
-#: Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(599)
-msgctxt "Maze.Ward,Current"
-msgid "Текущее значение"
-msgstr "Current value"
 
 #. Key:	Render
 #. SourceLocation:	Source/labyEditor/Private/UI/MazeWardUIAssets.cpp(600)

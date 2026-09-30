@@ -61,6 +61,9 @@ public:
 
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	void InitializeMaze();
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	void InvalidateDevelopmentTeleportReadiness();
+#endif
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Seed, VisibleAnywhere, Category = "Maze")

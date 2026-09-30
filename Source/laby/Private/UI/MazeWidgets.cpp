@@ -45,6 +45,24 @@ namespace
 		if (auto* Widget = Owner->GetWidgetFromName(Name))
 			Widget->SetVisibility(bVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	}
+
+	FString ProjectVersion()
+	{
+		const TCHAR* Section = TEXT("/Script/EngineSettings.GeneralProjectSettings");
+		FString Version;
+
+		GConfig->GetString(Section, TEXT("ProjectVersion"), Version, GGameIni);
+
+#if WITH_EDITOR
+		FConfigFile CurrentGameConfig;
+
+		if (FConfigCacheIni::LoadLocalIniFile(CurrentGameConfig, TEXT("Game"), true, nullptr, true))
+			CurrentGameConfig.GetString(Section, TEXT("ProjectVersion"), Version);
+
+#endif
+
+		return Version;
+	}
 }
 
 void UMazeMenuWidget::NativeConstruct()
@@ -56,6 +74,14 @@ void UMazeMenuWidget::NativeConstruct()
 	for (const auto& Entry : MazeText::WidgetLabels())
 		if (Entry.Key != TEXT("QuitButtonLabel"))
 			Text(this, *Entry.Key.ToString(), Entry.Value);
+
+	const FText Version = FText::AsCultureInvariant(ProjectVersion());
+
+	Text(this,
+	     TEXT("VersionText"),
+	     FText::Format(NSLOCTEXT("Maze.HUD", "Version", "ALPHA {Version}"),
+	                   FFormatNamedArguments{{TEXT("Version"), Version}}));
+	Text(this, TEXT("WardVersion"), FText::Format(NSLOCTEXT("Maze.Ward", "Version", "Версия {0}"), Version));
 
 	Text(this, TEXT("QuitButtonLabel"), NSLOCTEXT("Maze.Glass", "Quit", "ВЫХОД"));
 
@@ -239,22 +265,10 @@ void UMazeHUDWidget::NativeConstruct()
 	Visible(this, TEXT("DeathHint"), false);
 	Visible(this, TEXT("ExitHint"), false);
 
-	const TCHAR* Section = TEXT("/Script/EngineSettings.GeneralProjectSettings");
-	FString Version;
-
-	GConfig->GetString(Section, TEXT("ProjectVersion"), Version, GGameIni);
-
-#if WITH_EDITOR
-	FConfigFile CurrentGameConfig;
-
-	if (FConfigCacheIni::LoadLocalIniFile(CurrentGameConfig, TEXT("Game"), true, nullptr, true))
-		CurrentGameConfig.GetString(Section, TEXT("ProjectVersion"), Version);
-
-#endif
 	Text(this,
 	     TEXT("VersionText"),
 	     FText::Format(NSLOCTEXT("Maze.HUD", "Version", "ALPHA {Version}"),
-	                   FFormatNamedArguments{{TEXT("Version"), FText::AsCultureInvariant(Version)}}));
+	                   FFormatNamedArguments{{TEXT("Version"), FText::AsCultureInvariant(ProjectVersion())}}));
 	NativeTick(FGeometry(), 0.f);
 }
 

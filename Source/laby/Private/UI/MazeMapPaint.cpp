@@ -1,4 +1,5 @@
 #include "MazeMapPaint.h"
+#include "UI/MazeRoomText.h"
 #include "Maze/MazeCrawlwayDefinition.h"
 #include "Maze/MazeNarrowPassageDefinition.h"
 #include "Maze/MazeRoomDefinition.h"
@@ -10,76 +11,74 @@
 #include "Rendering/SlateRenderer.h"
 #include "Styling/CoreStyle.h"
 
-namespace
+FText MazeRoomLabel(const FMazeLayout& Layout, int32 Index, bool bCompact)
 {
-	FText RoomLabel(const FMazeLayout& Layout, int32 Index, bool bCompact)
+	if (Layout.RoomPurpose(Index) == EMazeRoomPurpose::Ward)
 	{
-		if (Layout.RoomPurpose(Index) == EMazeRoomPurpose::Ward)
-		{
-			const int32 Number = Layout.WardNumbers.IsValidIndex(Index) ? Layout.WardNumbers[Index] : 0;
-			const FText Digits = FText::AsCultureInvariant(FString::Printf(TEXT("%03d"), Number));
+		const int32 Number = Layout.WardNumbers.IsValidIndex(Index) ? Layout.WardNumbers[Index] : 0;
+		const FText Digits = FText::AsCultureInvariant(FString::Printf(TEXT("%03d"), Number));
 
-			return bCompact ? Digits : FText::Format(NSLOCTEXT("Maze.Rooms", "Ward", "Палата {0}"), Digits);
-		}
-
-		switch (Layout.RoomPurpose(Index))
-		{
-		case EMazeRoomPurpose::Treatment:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "TreatmentShort", "ПР")
-			                : NSLOCTEXT("Maze.Rooms", "Treatment", "Процедурная");
-
-		case EMazeRoomPurpose::Examination:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "ExaminationShort", "СМ")
-			                : NSLOCTEXT("Maze.Rooms", "Examination", "Смотровая");
-
-		case EMazeRoomPurpose::Isolation:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "IsolationShort", "ИЗ")
-			                : NSLOCTEXT("Maze.Rooms", "Isolation", "Изолятор");
-
-		case EMazeRoomPurpose::Staff:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "StaffShort", "ПС")
-			                : NSLOCTEXT("Maze.Rooms", "Staff", "Пост персонала");
-
-		case EMazeRoomPurpose::Records:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "RecordsShort", "АР")
-			                : NSLOCTEXT("Maze.Rooms", "Records", "Архив историй");
-
-		case EMazeRoomPurpose::Storage:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "StorageShort", "СК")
-			                : NSLOCTEXT("Maze.Rooms", "Storage", "Склад");
-
-		case EMazeRoomPurpose::Laundry:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "LaundryShort", "БЛ")
-			                : NSLOCTEXT("Maze.Rooms", "Laundry", "Бельевая");
-
-		case EMazeRoomPurpose::Generator:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "GeneratorShort", "ГН")
-			                : NSLOCTEXT("Maze.Rooms", "Generator", "Генераторная");
-
-		case EMazeRoomPurpose::Recreation:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "RecreationShort", "ОТ")
-			                : NSLOCTEXT("Maze.Rooms", "Recreation", "Комната отдыха");
-
-		case EMazeRoomPurpose::Dining:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "DiningShort", "СТ")
-			                : NSLOCTEXT("Maze.Rooms", "Dining", "Столовая");
-
-		case EMazeRoomPurpose::Hydrotherapy:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "HydrotherapyShort", "ВД")
-			                : NSLOCTEXT("Maze.Rooms", "Hydrotherapy", "Водолечебница");
-
-		case EMazeRoomPurpose::Washroom:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "WashroomShort", "МЧ")
-			                : NSLOCTEXT("Maze.Rooms", "Washroom", "Помывочная");
-
-		case EMazeRoomPurpose::Pool:
-			return bCompact ? NSLOCTEXT("Maze.Rooms", "PoolShort", "БС") : NSLOCTEXT("Maze.Rooms", "Pool", "Бассейн");
-
-		default:
-			return FText::GetEmpty();
-		}
+		return bCompact ? Digits : FText::Format(NSLOCTEXT("Maze.Rooms", "Ward", "Палата {0}"), Digits);
 	}
 
+	switch (Layout.RoomPurpose(Index))
+	{
+	case EMazeRoomPurpose::Treatment:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "TreatmentShort", "ПР")
+		                : NSLOCTEXT("Maze.Rooms", "Treatment", "Процедурная");
+
+	case EMazeRoomPurpose::Examination:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "ExaminationShort", "СМ")
+		                : NSLOCTEXT("Maze.Rooms", "Examination", "Смотровая");
+
+	case EMazeRoomPurpose::Isolation:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "IsolationShort", "ИЗ")
+		                : NSLOCTEXT("Maze.Rooms", "Isolation", "Изолятор");
+
+	case EMazeRoomPurpose::Staff:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "StaffShort", "ПС")
+		                : NSLOCTEXT("Maze.Rooms", "Staff", "Пост персонала");
+
+	case EMazeRoomPurpose::Records:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "RecordsShort", "АР")
+		                : NSLOCTEXT("Maze.Rooms", "Records", "Архив историй");
+
+	case EMazeRoomPurpose::Storage:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "StorageShort", "СК") : NSLOCTEXT("Maze.Rooms", "Storage", "Склад");
+
+	case EMazeRoomPurpose::Laundry:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "LaundryShort", "БЛ")
+		                : NSLOCTEXT("Maze.Rooms", "Laundry", "Бельевая");
+
+	case EMazeRoomPurpose::Generator:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "GeneratorShort", "ГН")
+		                : NSLOCTEXT("Maze.Rooms", "Generator", "Генераторная");
+
+	case EMazeRoomPurpose::Recreation:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "RecreationShort", "ОТ")
+		                : NSLOCTEXT("Maze.Rooms", "Recreation", "Комната отдыха");
+
+	case EMazeRoomPurpose::Dining:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "DiningShort", "СТ") : NSLOCTEXT("Maze.Rooms", "Dining", "Столовая");
+
+	case EMazeRoomPurpose::Hydrotherapy:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "HydrotherapyShort", "ВД")
+		                : NSLOCTEXT("Maze.Rooms", "Hydrotherapy", "Водолечебница");
+
+	case EMazeRoomPurpose::Washroom:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "WashroomShort", "МЧ")
+		                : NSLOCTEXT("Maze.Rooms", "Washroom", "Помывочная");
+
+	case EMazeRoomPurpose::Pool:
+		return bCompact ? NSLOCTEXT("Maze.Rooms", "PoolShort", "БС") : NSLOCTEXT("Maze.Rooms", "Pool", "Бассейн");
+
+	default:
+		return FText::GetEmpty();
+	}
+}
+
+namespace
+{
 	// Extend known cells to an open junction, including at the exploration frontier.
 	// Only observed walls may cut it back; unseen cells are still never painted.
 	// A pit changes its own fill, not neighbouring contours or wall topology.
@@ -694,7 +693,7 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 					continue;
 
 				const FVector2D Available(Room.Width() * View.Step - 4.f, Room.Height() * View.Step - 4.f);
-				const FText Full = RoomLabel(*Layout, RoomIndex, false);
+				const FText Full = MazeRoomLabel(*Layout, RoomIndex, false);
 				TArray<FText> Lines;
 				int32 FontSize = 9;
 				bool bFits = WrapRoomLabel(Full, FontSize, Available, Lines);
@@ -708,13 +707,13 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 				if (!bFits)
 				{
 					FontSize = 9;
-					bFits = WrapRoomLabel(RoomLabel(*Layout, RoomIndex, true), FontSize, Available, Lines);
+					bFits = WrapRoomLabel(MazeRoomLabel(*Layout, RoomIndex, true), FontSize, Available, Lines);
 				}
 
 				if (!bFits)
 				{
 					FontSize = 8;
-					bFits = WrapRoomLabel(RoomLabel(*Layout, RoomIndex, true), FontSize, Available, Lines);
+					bFits = WrapRoomLabel(MazeRoomLabel(*Layout, RoomIndex, true), FontSize, Available, Lines);
 				}
 
 				if (!bFits)
@@ -757,6 +756,22 @@ int32 PaintMazeMap(const FGeometry& Geometry,
 	}
 
 	++Layer;
+
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+
+	if (View.Layout && View.DevelopmentRoute.Num() > 1)
+	{
+		TArray<FVector2D> Points;
+
+		for (int32 CellIndex : View.DevelopmentRoute)
+			Points.Add(Offset +
+			           FVector2D(CellIndex % View.Layout->Size + 0.5, CellIndex / View.Layout->Size + 0.5) * View.Step);
+
+		Path(Points, FLinearColor(1.f, 0.65f, 0.08f), 3.f);
+		++Layer;
+	}
+
+#endif
 
 	for (const FMazeMapSignal& Signal : View.Signals)
 	{

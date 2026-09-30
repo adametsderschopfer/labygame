@@ -416,7 +416,8 @@ void UMazeMenuWidget::ChangeVideoOption(FString Selected, ESelectInfo::Type Sele
 	if (bReadingSettings)
 		return;
 
-	const int32 Language = Index(this, TEXT("LanguageCombo"), CurrentLanguageIndex());
+	const auto* LanguageCombo = Find<UComboBoxString>(this, TEXT("LanguageCombo"));
+	const int32 Language = LanguageCombo ? LanguageCombo->FindOptionIndex(Selected) : INDEX_NONE;
 
 	if (Language >= 0 && Language < UE_ARRAY_COUNT(Languages) && Language != CurrentLanguageIndex())
 	{
@@ -428,11 +429,7 @@ void UMazeMenuWidget::ChangeVideoOption(FString Selected, ESelectInfo::Type Sele
 				SelectSettingsSection(Pages->GetActiveWidgetIndex());
 		}
 		else
-		{
-			TGuardValue<bool> Reading(bReadingSettings, true);
-
-			SetIndex(this, TEXT("LanguageCombo"), CurrentLanguageIndex());
-		}
+			ReadSettingsIntoControls();
 
 		return;
 	}

@@ -14,6 +14,7 @@ struct FMazeVitals
 	static constexpr float RecoveryDelay = 1.5f;
 	static constexpr float ResumeThreshold = 25.f;
 	static constexpr float JumpCost = 3.75f;
+	static constexpr float SignalCost = 25.f;
 
 	UPROPERTY()
 	float Health = HealthMaximum;
@@ -23,4 +24,9 @@ struct FMazeVitals
 	float RecoveryWait = 0.f;
 	UPROPERTY()
 	bool bExhausted = false;
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	// Development-only state owned by this player's vitals fragment; never serialized.
+	bool bInfiniteStamina = false;
+	bool bDevelopmentImmortal = false;
+#endif
 };

@@ -11,6 +11,9 @@
 #include "MassExecutionContext.h"
 #include "Engine/World.h"
 #include "Maze/MazeInterior.h"
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+#include "ECS/MazeDevelopmentSystem.h"
+#endif
 
 template <typename T> T* UMazeECSSubsystem::FindFragment(FMassEntityHandle Entity) const
 {
@@ -336,6 +339,59 @@ FMazeVitals UMazeECSSubsystem::ReadVitals(FMassEntityHandle Entity) const
 	return Missing;
 }
 
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+bool UMazeECSSubsystem::SetDevelopmentInfiniteStamina(FMassEntityHandle Entity, bool bEnabled)
+{
+	if (GetWorld()->GetNetMode() != NM_Standalone || !ReadSession().bSessionStarted)
+		return false;
+
+	if (auto* Vitals = FindVitals(Entity))
+	{
+		FMazeVitalsSystem::SetDevelopmentInfiniteStamina(*Vitals, bEnabled);
+
+		return true;
+	}
+
+	return false;
+}
+
+bool UMazeECSSubsystem::SetDevelopmentImmortal(FMassEntityHandle Entity, bool bEnabled)
+{
+	if (GetWorld()->GetNetMode() != NM_Standalone || !ReadSession().bSessionStarted)
+		return false;
+
+	if (auto* Vitals = FindVitals(Entity))
+		return FMazeVitalsSystem::SetDevelopmentImmortal(*Vitals, bEnabled);
+
+	return false;
+}
+
+bool UMazeECSSubsystem::ShouldDevelopmentRescue(FMassEntityHandle Entity) const
+{
+	const auto* Vitals = FindVitals(Entity);
+
+	return GetWorld()->GetNetMode() == NM_Standalone && ReadSession().bSessionStarted && Vitals &&
+	       FMazeVitalsSystem::ShouldDevelopmentRescue(*Vitals);
+}
+
+bool UMazeECSSubsystem::RequestDevelopmentTeleport(FMassEntityHandle Entity,
+                                                   const FVector& Position,
+                                                   bool bExit,
+                                                   FMazeDevelopmentTeleport& Out) const
+{
+	const auto* Vitals = FindVitals(Entity);
+
+	if (GetWorld()->GetNetMode() != NM_Standalone || GetWorld()->IsPaused() || !ReadSession().bSessionStarted ||
+	    !Vitals || !FMazeVitalsSystem::IsAlive(*Vitals))
+		return false;
+
+	const auto* Maze = FindFragment<FMazeGenerationFragment>(ReadSession().Maze);
+
+	return Maze && FMazeDevelopmentSystem::Teleport(*Maze, Position, bExit, Out);
+}
+
+#endif
+
 void UMazeECSSubsystem::SetLocomotion(FMassEntityHandle Entity, bool bRunning, bool bOnGround)
 {
 	check(IsInGameThread());
@@ -481,13 +537,13 @@ bool UMazeECSSubsystem::RequestSignal(FMassEntityHandle Entity, FMazeSignalSnaps
 
 	auto* Signal = FindFragment<FMazeSignalFragment>(Entity);
 	const auto* Pose = FindFragment<FMazePlayerPoseFragment>(Entity);
-	const auto* Vitals = FindVitals(Entity);
+	auto* Vitals = FindVitals(Entity);
 	const auto Session = ReadSession();
 	const auto Room = ReadRoom();
-	const bool bAllowed = Pose && Vitals && Pose->bInputEnabled && FMazeVitalsSystem::IsAlive(*Vitals) &&
-	                      Session.bSessionStarted && (!Room.bActive || Room.bStarted);
+	const bool bAllowed = Pose && Pose->bInputEnabled && Session.bSessionStarted && (!Room.bActive || Room.bStarted);
 
-	if (!Signal || !Pose || !FMazeSignalSystem::Request(*Signal, Pose->Location, Pose->Forward, bAllowed))
+	if (!Signal || !Pose || !Vitals ||
+	    !FMazeSignalSystem::Request(*Signal, *Vitals, Pose->Location, Pose->Forward, bAllowed))
 		return false;
 
 	OutSignal = Signal->Value;

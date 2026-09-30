@@ -82,8 +82,7 @@ TConstArrayView<FMazeKeyBinding> MazeKeyBindings::Definitions()
 	    {TEXT("Interact"), TEXT("Interact"), 0.f, EKeys::E, NSLOCTEXT("Maze.Keys", "Interact", "Подобрать")},
 	    {TEXT("DropItem"), TEXT("DropItem"), 0.f, EKeys::G, NSLOCTEXT("Maze.Keys", "DropItem", "Выбросить")},
 	    {TEXT("Signal"), TEXT("Signal"), 0.f, EKeys::X, NSLOCTEXT("Maze.Keys", "Signal", "Свисток")},
-	    {TEXT("Map"), TEXT("Map"), 0.f, EKeys::Tab, NSLOCTEXT("Maze.Keys", "Map", "Карта")},
-	    {TEXT("NewMaze"), TEXT("NewMaze"), 0.f, EKeys::R, NSLOCTEXT("Maze.Keys", "NewMaze", "Новый лабиринт")}};
+	    {TEXT("Map"), TEXT("Map"), 0.f, EKeys::Tab, NSLOCTEXT("Maze.Keys", "Map", "Карта")}};
 
 	return MakeArrayView(Bindings);
 }
@@ -114,6 +113,17 @@ bool MazeKeyBindings::IsHeld(const APlayerController& Controller, FName Id)
 
 bool MazeKeyBindings::SetKey(FName Id, FKey Key, FText& Error)
 {
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+
+	if (Key == EKeys::Backslash)
+	{
+		Error = NSLOCTEXT("Maze.Keys", "Reserved", "Эта клавиша недоступна. Выберите другую.");
+
+		return false;
+	}
+
+#endif
+
 	if (!Key.IsValid() || !Key.IsBindableToActions() || Key.IsGamepadKey() || Key == EKeys::Escape ||
 	    Key == EKeys::F6 || Key == EKeys::F11 || GetDefault<UInputSettings>()->ConsoleKeys.Contains(Key))
 	{
@@ -157,6 +167,15 @@ void MazeKeyBindings::Reset()
 void MazeKeyBindings::EnsureDefaults()
 {
 	bool bChanged = false;
+	auto* Settings = GetMutableDefault<UInputSettings>();
+	const auto OldMappings = Settings->GetActionMappings();
+
+	for (const auto& Mapping : OldMappings)
+		if (Mapping.ActionName == TEXT("NewMaze"))
+		{
+			Settings->RemoveActionMapping(Mapping, false);
+			bChanged = true;
+		}
 
 	bool bHeadlampMigrated = false;
 

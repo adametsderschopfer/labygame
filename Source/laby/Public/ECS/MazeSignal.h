@@ -34,10 +34,15 @@ struct FMazeSignalDefinition
 };
 
 struct FMazeSignalFragment;
+struct FMazeVitals;
 
 struct LABY_API FMazeSignalSystem
 {
 	static void Update(FMazeSignalFragment& Signal, float DeltaSeconds, bool bAuthority);
-	static bool Request(FMazeSignalFragment& Signal, const FVector& Location, const FVector& Direction, bool bAllowed);
+	static bool Request(FMazeSignalFragment& Signal,
+	                    FMazeVitals& Vitals,
+	                    const FVector& Location,
+	                    const FVector& Direction,
+	                    bool bAllowed);
 	static bool Receive(FMazeSignalFragment& Signal, const FMazeSignalSnapshot& Snapshot);
 };

@@ -39,4 +39,11 @@ private:
 	float Zoom = DefaultZoom;
 
 	void ClampCenter();
+
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	mutable TArray<int32> DevelopmentRoute;
+	mutable uint32 DevelopmentRouteRevision = 0;
+	mutable int32 DevelopmentRouteSeed = 0;
+	mutable int32 DevelopmentRouteCell = INDEX_NONE;
+#endif
 };

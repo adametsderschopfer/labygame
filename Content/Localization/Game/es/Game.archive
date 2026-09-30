@@ -499,15 +499,6 @@
 						},
 						{
 							"Source": {
-								"Text": "Новый лабиринт"
-							},
-							"Translation": {
-								"Text": "Nuevo laberinto"
-							},
-							"Key": "NewMaze"
-						},
-						{
-							"Source": {
 								"Text": "Подобрать"
 							},
 							"Translation": {
@@ -1611,15 +1602,6 @@
 								"Text": "1.00 x"
 							},
 							"Key": "SensitivityText"
-						},
-						{
-							"Source": {
-								"Text": "ALPHA 0.0.0.2"
-							},
-							"Translation": {
-								"Text": "ALPHA 0.0.0.2"
-							},
-							"Key": "VersionText"
 						},
 						{
 							"Source": {

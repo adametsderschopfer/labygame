@@ -370,3 +370,17 @@ work, pause, repeated travel, missing assets and two players far apart. Check
 memory after GC and frame-time spikes as well as averages. Use PSO validation
 to find Missed/TooLate cases; only add a collected bundled cache when evidence
 shows gaps. Do not launch these checks implicitly during feature development.
+
+## Development teleports
+
+Start/exit debug teleports retain the full resident physics shell and move only the
+existing pawn through native TeleportTo after a static floor trace/capsule fit.
+AMazeWorld invalidates its initial visual-preload gate on confirmed teleport and
+reports not ready. UpdateChunks follows the new local pawn position with the same
+load radius, one worker and bounded creation/eviction; stale unwanted payloads are
+still rejected. Until the entire new preload area is present, existing location
+readiness blocks gameplay input even if the debug panel is closed. No radius,
+collision residency, manifest asset, new asynchronous participant or memory-budget
+change is introduced. Diagnostic source bytes do not claim bounded world memory.
+These development-only paths need user-run teleport/loading checks; no Play/tests
+or performance captures were launched.

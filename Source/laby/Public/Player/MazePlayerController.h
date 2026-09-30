@@ -50,10 +50,40 @@ public:
 	void ShowMenu(bool Settings = false);
 	UFUNCTION(BlueprintCallable, Category = "Maze|UI")
 	void CloseMenu();
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	void ToggleDevelopmentMenu();
+	bool IsDevelopmentMenuOpen() const
+	{
+		return DevelopmentMenu.IsValid();
+	}
+
+	bool DevelopmentRevealMap() const
+	{
+		return bDevelopmentRevealMap;
+	}
+
+	bool DevelopmentShowRoute() const
+	{
+		return bDevelopmentShowRoute;
+	}
+
+#endif
 
 private:
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 	void ToggleDevelopmentCamera();
+	void CloseDevelopmentMenu();
+	void EnsureDevelopmentPresentation();
+	void RefreshDevelopmentPresentation(float DeltaTime);
+	void DestroyDevelopmentPresentation();
+	void DevelopmentRestartSeed();
+	void DevelopmentTeleport(bool bExit);
+	void SetDevelopmentCollision(bool bEnabled);
+
+	TSharedPtr<class SWidget> DevelopmentMenu;
+	TSharedPtr<struct FMazeDevelopmentPresentation> DevelopmentPresentation;
+	bool bDevelopmentRevealMap = false;
+	bool bDevelopmentShowRoute = false;
 #endif
 	void RemoveMenuWidget();
 

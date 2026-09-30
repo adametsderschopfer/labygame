@@ -31,6 +31,9 @@ struct FMazeMapPaintView
 	const FMazeLayout* Layout = nullptr;
 	TConstArrayView<uint8> Seen;
 	TConstArrayView<FMazeMapSignal> Signals;
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	TConstArrayView<int32> DevelopmentRoute;
+#endif
 };
 
 FSlateRect MazeMapContentRect(const FMazeMapPaintView& View);

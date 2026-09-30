@@ -10,6 +10,10 @@
 #include "ECS/MazeDoorSystem.h"
 #include "MazeECSSubsystem.generated.h"
 
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+struct FMazeDevelopmentTeleport;
+#endif
+
 enum class EMazeInputAxis
 {
 	Forward,
@@ -55,6 +59,15 @@ public:
 	void ReceiveWorldItemSnapshot(FMassEntityHandle Maze, uint32 Revision, const FVector& Location, bool bAvailable);
 	void ReceiveItems(FMassEntityHandle Entity, const FMazeItemsSnapshot& Snapshot);
 	FMazeVitals ReadVitals(FMassEntityHandle Entity) const;
+#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
+	bool SetDevelopmentInfiniteStamina(FMassEntityHandle Entity, bool bEnabled);
+	bool SetDevelopmentImmortal(FMassEntityHandle Entity, bool bEnabled);
+	bool ShouldDevelopmentRescue(FMassEntityHandle Entity) const;
+	bool RequestDevelopmentTeleport(FMassEntityHandle Entity,
+	                                const FVector& Position,
+	                                bool bExit,
+	                                FMazeDevelopmentTeleport& Out) const;
+#endif
 	void SetLocomotion(FMassEntityHandle Entity, bool bRunning, bool bOnGround);
 	bool SpendJumpStamina(FMassEntityHandle Entity);
 	float ApplyDamage(FMassEntityHandle Entity, float Amount);

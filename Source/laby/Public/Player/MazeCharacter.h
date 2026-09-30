@@ -41,6 +41,7 @@ public:
 	void ClearLocalInput();
 #if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
 	void ToggleDevelopmentCamera();
+	virtual void FellOutOfWorld(const class UDamageType& DamageType) override;
 #endif
 	int32 GetReachedExit() const;
 	virtual void SetupPlayerInputComponent(UInputComponent* Input) override;
@@ -133,5 +134,4 @@ private:
 	void RefreshStancePresentation();
 	void JumpStart();
 	void JumpStop();
-	void RestartMaze();
 };
